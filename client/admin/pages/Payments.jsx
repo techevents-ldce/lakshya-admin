@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineCheckCircle, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation } from 'react-icons/hi';
+import { HiOutlineCheckCircle, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation, HiOutlineSearch } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 export default function Payments() {
@@ -11,9 +11,12 @@ export default function Payments() {
   const [verifyError, setVerifyError] = useState('');
 
   const [payments, setPayments] = useState([]);
+  const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [eventFilter, setEventFilter] = useState('');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   // Confirmation modal state (for verify payment action)
@@ -31,11 +34,19 @@ export default function Payments() {
     } finally { setVerifying(false); }
   };
 
+  useEffect(() => {
+    if (verified) {
+      api.get('/events', { params: { limit: 200 } }).then(({ data }) => setEvents(data.events)).catch(() => {});
+    }
+  }, [verified]);
+
   const fetchPayments = async () => {
     setLoading(true);
     try {
       const params = { page, limit: 15 };
       if (statusFilter) params.status = statusFilter;
+      if (eventFilter) params.eventId = eventFilter;
+      if (search) params.search = search;
       const { data } = await api.get('/payments', { params });
       setPayments(data.payments);
       setTotal(data.pages);
@@ -43,7 +54,7 @@ export default function Payments() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { if (verified) fetchPayments(); }, [page, statusFilter, verified]);
+  useEffect(() => { if (verified) fetchPayments(); }, [page, statusFilter, eventFilter, search, verified]);
 
   const handleVerify = (id, participantName) => {
     setConfirmModal({
@@ -107,8 +118,17 @@ export default function Payments() {
     <div>
       <h1 className="text-lg sm:text-2xl font-bold mb-6">Payment Management</h1>
 
-      <div className="mb-6">
-        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input-field w-full sm:max-w-xs">
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 flex-wrap">
+        <div className="relative w-full sm:max-w-xs">
+          <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input type="text" placeholder="Search by name, email, or txn ID..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="input-field pl-10" />
+        </div>
+        <select value={eventFilter} onChange={(e) => { setEventFilter(e.target.value); setPage(1); }} className="input-field w-full sm:w-auto sm:min-w-[160px]">
+          <option value="">All Events</option>
+          {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
+        </select>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input-field w-full sm:w-auto sm:min-w-[140px]">
           <option value="">All Status</option>
           <option value="pending">Pending</option>
           <option value="completed">Completed</option>

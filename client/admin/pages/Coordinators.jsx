@@ -9,6 +9,7 @@ export default function Coordinators() {
   const [coordinators, setCoordinators] = useState([]);
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [assignModal, setAssignModal] = useState(null);
   const [resetModal, setResetModal] = useState(null);
@@ -21,7 +22,9 @@ export default function Coordinators() {
   const fetchCoordinators = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/users', { params: { role: 'coordinator', search, limit: 100 } });
+      const params = { role: 'coordinator', search, limit: 100 };
+      if (statusFilter) params.isActive = statusFilter;
+      const { data } = await api.get('/users', { params });
       setCoordinators(data.users);
     } catch { toast.error('Failed to load coordinators'); }
     finally { setLoading(false); }
@@ -32,7 +35,7 @@ export default function Coordinators() {
     setEvents(data.events);
   };
 
-  useEffect(() => { fetchCoordinators(); fetchEvents(); }, [search]);
+  useEffect(() => { fetchCoordinators(); fetchEvents(); }, [search, statusFilter]);
 
   const openAssign = (c) => { setAssignModal(c); setSelectedEvents(c.assignedEvents?.map((e) => e._id || e) || []); };
 
@@ -79,9 +82,16 @@ export default function Coordinators() {
         <Link to="/coordinators/new" className="btn-primary flex items-center gap-2 self-start sm:self-auto"><HiOutlinePlus className="w-5 h-5" /> Add Coordinator</Link>
       </div>
 
-      <div className="relative mb-6 w-full sm:max-w-md">
-        <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <input type="text" placeholder="Search coordinators..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 flex-wrap">
+        <div className="relative w-full sm:max-w-xs">
+          <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input type="text" placeholder="Search coordinators..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field w-full sm:w-auto sm:min-w-[140px]">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Blocked</option>
+        </select>
       </div>
 
       {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (

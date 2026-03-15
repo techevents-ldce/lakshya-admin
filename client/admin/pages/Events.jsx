@@ -13,6 +13,8 @@ export default function Events() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
@@ -22,14 +24,20 @@ export default function Events() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/events', { params: { page, limit: 10, search } });
+      const params = { page, limit: 10, search };
+      if (categoryFilter) params.category = categoryFilter;
+      if (typeFilter) params.eventType = typeFilter;
+      const { data } = await api.get('/events', { params });
       setEvents(data.events);
       setTotal(data.pages);
     } catch { toast.error('Failed to load events'); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchEvents(); }, [page, search]);
+  useEffect(() => { fetchEvents(); }, [page, search, categoryFilter, typeFilter]);
+
+  // Extract unique categories from events for filter dropdown
+  const categories = [...new Set(events.map((e) => e.category).filter(Boolean))];
 
   const handleDelete = (id, title) => {
     setConfirmModal({
@@ -71,11 +79,22 @@ export default function Events() {
         <Link to="/events/new" className="btn-primary flex items-center gap-2 self-start sm:self-auto"><HiOutlinePlus className="w-5 h-5" /> Create Event</Link>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6 w-full sm:max-w-md">
-        <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <input id="event-search" type="text" placeholder="Search events..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="input-field pl-10" />
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 flex-wrap">
+        <div className="relative w-full sm:max-w-xs">
+          <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input id="event-search" type="text" placeholder="Search events..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="input-field pl-10" />
+        </div>
+        <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }} className="input-field w-full sm:w-auto sm:min-w-[140px]">
+          <option value="">All Categories</option>
+          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input-field w-full sm:w-auto sm:min-w-[120px]">
+          <option value="">All Types</option>
+          <option value="solo">Solo</option>
+          <option value="team">Team</option>
+        </select>
       </div>
 
       {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (

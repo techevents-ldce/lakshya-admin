@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineSearch, HiOutlineBan, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineChevronUp } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlineBan, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineChevronUp, HiOutlineKey } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
@@ -11,23 +11,32 @@ export default function Users() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
   // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'danger', action: null });
 
+  // Reset password modal state
+  const [resetModal, setResetModal] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/users', { params: { page, limit: 15, search } });
+      const params = { page, limit: 15, search };
+      if (roleFilter) params.role = roleFilter;
+      if (statusFilter) params.isActive = statusFilter;
+      const { data } = await api.get('/users', { params });
       setUsers(data.users);
       setTotal(data.pages);
     } catch { toast.error('Failed to load users'); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchUsers(); }, [page, search]);
+  useEffect(() => { fetchUsers(); }, [page, search, roleFilter, statusFilter]);
 
   const toggleBlock = (id, name, isActive) => {
     const action = isActive ? 'block' : 'unblock';
@@ -46,22 +55,56 @@ export default function Users() {
     });
   };
 
+  const handleResetPassword = () => {
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    setConfirmModal({
+      open: true,
+      title: 'Reset Password',
+      message: `You are about to reset the password for "${resetModal.name}". This will immediately change their login credentials.`,
+      confirmLabel: 'Reset Password',
+      variant: 'danger',
+      action: async (password) => {
+        await api.patch(`/users/${resetModal._id}/reset-password`, { newPassword, adminPassword: password });
+        toast.success('Password reset successfully');
+        setResetModal(null);
+        setNewPassword('');
+      },
+    });
+  };
+
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
 
   return (
     <div>
       <h1 className="text-lg sm:text-2xl font-bold mb-6">User Management</h1>
 
-      <div className="relative mb-6 w-full sm:max-w-md">
-        <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="input-field pl-10" />
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 flex-wrap">
+        <div className="relative w-full sm:max-w-xs">
+          <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="input-field pl-10" />
+        </div>
+        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="input-field w-full sm:w-auto sm:min-w-[140px]">
+          <option value="">All Roles</option>
+          <option value="participant">Participant</option>
+          <option value="coordinator">Coordinator</option>
+          <option value="admin">Admin</option>
+        </select>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input-field w-full sm:w-auto sm:min-w-[140px]">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Blocked</option>
+        </select>
       </div>
 
       {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (
         <div className="card overflow-hidden p-0 overflow-x-auto">
           <table className="w-full text-sm min-w-[550px]">
             <thead><tr className="table-header">
-              <th className="px-5 py-3 w-8"></th><th className="px-5 py-3">Name</th><th className="px-5 py-3">Email</th><th className="px-5 py-3 hidden sm:table-cell">College</th><th className="px-5 py-3 hidden sm:table-cell">Role</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Action</th>
+              <th className="px-5 py-3 w-8"></th><th className="px-5 py-3">Name</th><th className="px-5 py-3">Email</th><th className="px-5 py-3 hidden sm:table-cell">College</th><th className="px-5 py-3 hidden sm:table-cell">Role</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Actions</th>
             </tr></thead>
             <tbody>
               {users.map((u) => (
@@ -76,11 +119,18 @@ export default function Users() {
                     <td className="px-5 py-3 hidden sm:table-cell"><span className={`badge ${u.role === 'admin' ? 'badge-yellow' : u.role === 'coordinator' ? 'badge-blue' : 'badge-green'}`}>{u.role}</span></td>
                     <td className="px-5 py-3"><span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>{u.isActive ? 'Active' : 'Blocked'}</span></td>
                     <td className="px-5 py-3" onClick={(ev) => ev.stopPropagation()}>
-                      {u.role !== 'admin' && (
-                        <button onClick={() => toggleBlock(u._id, u.name, u.isActive)} className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800'}`}>
-                          {u.isActive ? <><HiOutlineBan className="w-4 h-4" /> Block</> : <><HiOutlineCheckCircle className="w-4 h-4" /> Unblock</>}
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {u.role !== 'admin' && (
+                          <button onClick={() => toggleBlock(u._id, u.name, u.isActive)} className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800'}`}>
+                            {u.isActive ? <><HiOutlineBan className="w-4 h-4" /> Block</> : <><HiOutlineCheckCircle className="w-4 h-4" /> Unblock</>}
+                          </button>
+                        )}
+                        {u.role !== 'admin' && (
+                          <button onClick={() => setResetModal(u)} className="text-primary-600 hover:text-primary-800" title="Reset Password">
+                            <HiOutlineKey className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                   {/* Expanded Detail Row */}
@@ -115,6 +165,20 @@ export default function Users() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Reset Password for {resetModal.name}</h3>
+            <input type="password" placeholder="New password (min 8 chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input-field mb-4" />
+            <div className="flex gap-3">
+              <button onClick={handleResetPassword} disabled={newPassword.length < 8} className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed">Reset</button>
+              <button onClick={() => { setResetModal(null); setNewPassword(''); }} className="btn-outline flex-1">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 

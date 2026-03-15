@@ -2,10 +2,25 @@ const Payment = require('../models/Payment');
 const AppError = require('../middleware/AppError');
 
 const getPayments = async (query = {}) => {
-  const { page = 1, limit = 20, eventId, status } = query;
+  const { page = 1, limit = 20, eventId, status, search } = query;
   const filter = {};
   if (eventId) filter.eventId = eventId;
   if (status) filter.status = status;
+
+  // Search by participant name/email or transaction ID
+  if (search) {
+    const User = require('../models/User');
+    const matchingUsers = await User.find({
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ],
+    }).select('_id');
+    filter.$or = [
+      { userId: { $in: matchingUsers.map((u) => u._id) } },
+      { transactionId: { $regex: search, $options: 'i' } },
+    ];
+  }
 
   const skip = (Number(page) - 1) * Number(limit);
   const [payments, total] = await Promise.all([

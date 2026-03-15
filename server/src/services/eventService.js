@@ -2,9 +2,10 @@ const Event = require('../models/Event');
 const AppError = require('../middleware/AppError');
 
 const getAllEvents = async (query = {}) => {
-  const { page = 1, limit = 20, category, search, isRegistrationOpen } = query;
+  const { page = 1, limit = 20, category, search, isRegistrationOpen, eventType } = query;
   const filter = {};
   if (category) filter.category = category;
+  if (eventType) filter.eventType = eventType;
   if (search) filter.title = { $regex: search, $options: 'i' };
   if (isRegistrationOpen !== undefined) filter.isRegistrationOpen = isRegistrationOpen === 'true';
 
