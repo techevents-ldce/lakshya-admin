@@ -17,6 +17,8 @@ import Payments from '@admin/pages/Payments';
 import AuditLogs from '@admin/pages/AuditLogs';
 import Export from '@admin/pages/Export';
 import BulkEmail from '@admin/pages/BulkEmail';
+import Organizers from '@admin/pages/Organizers';
+import OrganizerForm from '@admin/pages/OrganizerForm';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
@@ -54,6 +56,9 @@ export default function App() {
           <Route path="events/:id/edit" element={<RoleRoute role="admin"><EventForm /></RoleRoute>} />
           <Route path="coordinators" element={<RoleRoute role="admin"><Coordinators /></RoleRoute>} />
           <Route path="coordinators/new" element={<RoleRoute role="admin"><CoordinatorForm /></RoleRoute>} />
+          <Route path="organizers" element={<RoleRoute role="admin"><Organizers /></RoleRoute>} />
+          <Route path="organizers/new" element={<RoleRoute role="admin"><OrganizerForm /></RoleRoute>} />
+          <Route path="organizers/:id/edit" element={<RoleRoute role="admin"><OrganizerForm /></RoleRoute>} />
           <Route path="users" element={<RoleRoute role="admin"><Users /></RoleRoute>} />
           <Route path="registrations" element={<RoleRoute role="admin"><Registrations /></RoleRoute>} />
           <Route path="payments" element={<RoleRoute role="admin"><Payments /></RoleRoute>} />
