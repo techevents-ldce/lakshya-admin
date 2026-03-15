@@ -51,7 +51,7 @@ export default function Participants() {
 
   return (
     <div>
-      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 mb-4">
+      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-600 mb-4">
         <HiOutlineArrowLeft className="w-4 h-4" /> Back to Events
       </Link>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
@@ -60,8 +60,8 @@ export default function Participants() {
           <p className="text-sm text-gray-500 mt-1">{eventTitle}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => handleExport('csv')} className="btn-outline text-xs px-3 py-1.5 flex items-center gap-1"><HiOutlineDocumentDownload className="w-4 h-4" /> CSV</button>
-          <button onClick={() => handleExport('excel')} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"><HiOutlineDocumentDownload className="w-4 h-4" /> Excel</button>
+          <button onClick={() => handleExport('csv')} className="btn-accent-outline text-xs px-3 py-1.5 flex items-center gap-1"><HiOutlineDocumentDownload className="w-4 h-4" /> CSV</button>
+          <button onClick={() => handleExport('excel')} className="btn-accent text-xs px-3 py-1.5 flex items-center gap-1"><HiOutlineDocumentDownload className="w-4 h-4" /> Excel</button>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ export default function Participants() {
           {totalPages > 1 && (
             <div className="flex flex-wrap items-center justify-center gap-2 py-4 border-t border-gray-100">
               {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 rounded-lg text-sm font-medium ${page === i + 1 ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{i + 1}</button>
+                <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 rounded-lg text-sm font-medium ${page === i + 1 ? 'bg-accent-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{i + 1}</button>
               ))}
             </div>
           )}

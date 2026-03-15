@@ -22,7 +22,7 @@ export default function Dashboard() {
     fetchAssigned();
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-600"></div></div>;
 
   return (
     <div>
@@ -40,7 +40,7 @@ export default function Dashboard() {
             <div key={ev._id} className="card group">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors">{ev.title}</h3>
+                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-accent-700 transition-colors">{ev.title}</h3>
                   <p className="text-xs text-gray-400 mt-1">{ev.category || 'General'} · {ev.eventType}</p>
                 </div>
                 <span className={`badge ${ev.isRegistrationOpen ? 'badge-green' : 'badge-red'}`}>
@@ -60,10 +60,10 @@ export default function Dashboard() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <Link to={`/events/${ev._id}/participants`} className="btn-primary text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
+                <Link to={`/events/${ev._id}/participants`} className="btn-accent text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
                   <HiOutlineUsers className="w-4 h-4" /> Participants
                 </Link>
-                <Link to={`/events/${ev._id}/scan`} className="btn-outline text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
+                <Link to={`/events/${ev._id}/scan`} className="btn-accent-outline text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
                   <HiOutlineQrcode className="w-4 h-4" /> Scan QR
                 </Link>
               </div>

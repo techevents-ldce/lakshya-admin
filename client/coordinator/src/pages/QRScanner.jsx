@@ -69,7 +69,7 @@ export default function QRScanner() {
 
   return (
     <div>
-      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 mb-4">
+      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-600 mb-4">
         <HiOutlineArrowLeft className="w-4 h-4" /> Back to Events
       </Link>
       <h1 className="text-lg sm:text-2xl font-bold mb-1">QR Ticket Scanner</h1>
@@ -81,7 +81,7 @@ export default function QRScanner() {
           <div id="qr-reader" ref={containerRef} className="rounded-lg overflow-hidden" style={{ minHeight: scanning ? '300px' : '0px' }} />
 
           {!scanning ? (
-            <button onClick={startScanner} className="w-full btn-primary text-base py-3 mt-2">
+            <button onClick={startScanner} className="w-full btn-accent text-base py-3 mt-2">
               🎥 Start Camera Scanner
             </button>
           ) : (
