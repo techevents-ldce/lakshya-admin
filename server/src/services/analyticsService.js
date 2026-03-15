@@ -16,8 +16,14 @@ const getDashboardStats = async () => {
       recentRegistrations,
       eventPopularity,
       registrationTrend,
+      userRoleBreakdown,
+      paymentStatusBreakdown,
+      revenueTrend,
+      registrationStatusBreakdown,
+      topPayingEvents,
     ] = await Promise.all([
-      User.countDocuments({ role: 'participant' }),
+      // Fix: count ALL users, not just participants
+      User.countDocuments(),
       Event.countDocuments(),
       Registration.countDocuments({ status: { $ne: 'cancelled' } }),
       Payment.aggregate([
@@ -47,6 +53,42 @@ const getDashboardStats = async () => {
         },
         { $sort: { _id: 1 } },
       ]),
+      // New: User role breakdown
+      User.aggregate([
+        { $group: { _id: '$role', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      // New: Payment status breakdown
+      Payment.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      // New: Revenue trend (last 30 days)
+      Payment.aggregate([
+        { $match: { status: 'completed', createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            total: { $sum: '$amount' },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      // New: Registration status breakdown
+      Registration.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      // New: Top paying events (by revenue)
+      Payment.aggregate([
+        { $match: { status: 'completed' } },
+        { $group: { _id: '$eventId', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
+        { $sort: { totalRevenue: -1 } },
+        { $limit: 5 },
+        { $lookup: { from: 'events', localField: '_id', foreignField: '_id', as: 'event' } },
+        { $unwind: '$event' },
+        { $project: { eventTitle: '$event.title', totalRevenue: 1, count: 1 } },
+      ]),
     ]);
 
     return {
@@ -57,6 +99,11 @@ const getDashboardStats = async () => {
       recentRegistrations,
       eventPopularity,
       registrationTrend,
+      userRoleBreakdown,
+      paymentStatusBreakdown,
+      revenueTrend,
+      registrationStatusBreakdown,
+      topPayingEvents,
     };
   } catch (err) {
     // If this is already an AppError, re-throw it

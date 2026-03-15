@@ -6,6 +6,30 @@ import { HiOutlineUsers, HiOutlineCalendar, HiOutlineTicket, HiOutlineCurrencyRu
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler);
 
+const CHART_COLORS = ['#d97706', '#0d9488', '#6366f1', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#3b82f6', '#10b981'];
+
+const STATUS_COLORS = {
+  pending: '#f59e0b',
+  confirmed: '#10b981',
+  cancelled: '#ef4444',
+  waitlisted: '#6366f1',
+  completed: '#10b981',
+  failed: '#ef4444',
+  refunded: '#8b5cf6',
+};
+
+const ROLE_COLORS = {
+  admin: '#d97706',
+  coordinator: '#3b82f6',
+  participant: '#10b981',
+};
+
+const doughnutOptions = {
+  responsive: true,
+  plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, color: '#6b7280' } } },
+  cutout: '60%',
+};
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +66,58 @@ export default function Dashboard() {
     labels: stats?.eventPopularity?.map((d) => d.eventTitle) || [],
     datasets: [{
       data: stats?.eventPopularity?.map((d) => d.count) || [],
-      backgroundColor: ['#d97706', '#0d9488', '#6366f1', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#3b82f6', '#10b981'],
+      backgroundColor: CHART_COLORS,
+    }],
+  };
+
+  // Revenue trend bar chart
+  const revenueTrendData = {
+    labels: stats?.revenueTrend?.map((d) => d._id) || [],
+    datasets: [{
+      label: 'Revenue (₹)',
+      data: stats?.revenueTrend?.map((d) => d.total) || [],
+      backgroundColor: 'rgba(16, 185, 129, 0.7)',
+      borderColor: '#10b981',
+      borderWidth: 1,
+      borderRadius: 4,
+    }],
+  };
+
+  // User role doughnut
+  const userRoleData = {
+    labels: stats?.userRoleBreakdown?.map((d) => d._id?.charAt(0).toUpperCase() + d._id?.slice(1)) || [],
+    datasets: [{
+      data: stats?.userRoleBreakdown?.map((d) => d.count) || [],
+      backgroundColor: stats?.userRoleBreakdown?.map((d) => ROLE_COLORS[d._id] || '#6b7280') || [],
+    }],
+  };
+
+  // Registration status doughnut
+  const regStatusData = {
+    labels: stats?.registrationStatusBreakdown?.map((d) => d._id?.charAt(0).toUpperCase() + d._id?.slice(1)) || [],
+    datasets: [{
+      data: stats?.registrationStatusBreakdown?.map((d) => d.count) || [],
+      backgroundColor: stats?.registrationStatusBreakdown?.map((d) => STATUS_COLORS[d._id] || '#6b7280') || [],
+    }],
+  };
+
+  // Payment status doughnut
+  const payStatusData = {
+    labels: stats?.paymentStatusBreakdown?.map((d) => d._id?.charAt(0).toUpperCase() + d._id?.slice(1)) || [],
+    datasets: [{
+      data: stats?.paymentStatusBreakdown?.map((d) => d.count) || [],
+      backgroundColor: stats?.paymentStatusBreakdown?.map((d) => STATUS_COLORS[d._id] || '#6b7280') || [],
+    }],
+  };
+
+  // Top paying events horizontal bar
+  const topEventsData = {
+    labels: stats?.topPayingEvents?.map((d) => d.eventTitle) || [],
+    datasets: [{
+      label: 'Revenue (₹)',
+      data: stats?.topPayingEvents?.map((d) => d.totalRevenue) || [],
+      backgroundColor: CHART_COLORS.slice(0, 5),
+      borderRadius: 4,
     }],
   };
 
@@ -70,15 +145,63 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      {/* Row 1: Registration Trend + Event Popularity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 card">
           <h3 className="font-semibold text-gray-900 mb-4">Registration Trend (Last 30 Days)</h3>
           <Line data={trendData} options={{ responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }} />
         </div>
         <div className="card">
           <h3 className="font-semibold text-gray-900 mb-4">Event Popularity</h3>
-          <Doughnut data={popularityData} options={{ responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }} />
+          <Doughnut data={popularityData} options={doughnutOptions} />
+        </div>
+      </div>
+
+      {/* Row 2: Revenue Trend + Top Paying Events */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 card">
+          <h3 className="font-semibold text-gray-900 mb-4">Revenue Trend (Last 30 Days)</h3>
+          {(stats?.revenueTrend?.length || 0) > 0 ? (
+            <Bar data={revenueTrendData} options={{ responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: (v) => `₹${v}` } } } }} />
+          ) : (
+            <p className="text-gray-400 text-sm py-8 text-center">No payment data available yet</p>
+          )}
+        </div>
+        <div className="card">
+          <h3 className="font-semibold text-gray-900 mb-4">Top Events by Revenue</h3>
+          {(stats?.topPayingEvents?.length || 0) > 0 ? (
+            <Bar data={topEventsData} options={{ indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: (v) => `₹${v}` } } } }} />
+          ) : (
+            <p className="text-gray-400 text-sm py-8 text-center">No payment data available yet</p>
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: User Roles + Registration Status + Payment Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="card">
+          <h3 className="font-semibold text-gray-900 mb-4">User Roles</h3>
+          {(stats?.userRoleBreakdown?.length || 0) > 0 ? (
+            <Doughnut data={userRoleData} options={doughnutOptions} />
+          ) : (
+            <p className="text-gray-400 text-sm py-8 text-center">No user data</p>
+          )}
+        </div>
+        <div className="card">
+          <h3 className="font-semibold text-gray-900 mb-4">Registration Status</h3>
+          {(stats?.registrationStatusBreakdown?.length || 0) > 0 ? (
+            <Doughnut data={regStatusData} options={doughnutOptions} />
+          ) : (
+            <p className="text-gray-400 text-sm py-8 text-center">No registration data</p>
+          )}
+        </div>
+        <div className="card">
+          <h3 className="font-semibold text-gray-900 mb-4">Payment Status</h3>
+          {(stats?.paymentStatusBreakdown?.length || 0) > 0 ? (
+            <Doughnut data={payStatusData} options={doughnutOptions} />
+          ) : (
+            <p className="text-gray-400 text-sm py-8 text-center">No payment data</p>
+          )}
         </div>
       </div>
 
@@ -96,6 +219,9 @@ export default function Dashboard() {
                   <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{new Date(r.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
+              {(!stats?.recentRegistrations || stats.recentRegistrations.length === 0) && (
+                <tr><td colSpan="3" className="text-center py-8 text-gray-400">No registrations yet</td></tr>
+              )}
             </tbody>
           </table>
         </div>
