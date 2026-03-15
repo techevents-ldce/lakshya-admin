@@ -10,8 +10,8 @@ export default defineConfig({
   resolve: {
     alias: [
       // Import pages/components from admin and coordinator folders
-      { find: '@admin', replacement: path.resolve(__dirname, 'admin/src') },
-      { find: '@coordinator', replacement: path.resolve(__dirname, 'coordinator/src') },
+      { find: '@admin', replacement: path.resolve(__dirname, 'admin') },
+      { find: '@coordinator', replacement: path.resolve(__dirname, 'coordinator') },
       // Redirect AuthContext imports so ALL components share our single provider
       { find: '../context/AuthContext', replacement: path.resolve(__dirname, 'src/context/AuthContext.jsx') },
       // Redirect api imports to our shared copy
