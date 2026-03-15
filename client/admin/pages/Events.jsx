@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineSearch } from 'react-icons/hi';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 export default function Events() {
   const [events, setEvents] = useState([]);
@@ -10,6 +11,9 @@ export default function Events() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'danger', action: null });
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -23,21 +27,35 @@ export default function Events() {
 
   useEffect(() => { fetchEvents(); }, [page, search]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this event?')) return;
-    try {
-      await api.delete(`/events/${id}`);
-      toast.success('Event deleted');
-      fetchEvents();
-    } catch { toast.error('Delete failed'); }
+  const handleDelete = (id, title) => {
+    setConfirmModal({
+      open: true,
+      title: 'Delete Event',
+      message: `You are about to permanently delete "${title}". This action cannot be undone.`,
+      confirmLabel: 'Delete Event',
+      variant: 'danger',
+      action: async (password) => {
+        await api.delete(`/events/${id}`, { data: { adminPassword: password } });
+        toast.success('Event deleted');
+        fetchEvents();
+      },
+    });
   };
 
-  const handleToggle = async (id, isOpen) => {
-    try {
-      await api.patch(`/events/${id}/toggle-registration`, { isOpen: !isOpen });
-      toast.success('Registration toggled');
-      fetchEvents();
-    } catch { toast.error('Toggle failed'); }
+  const handleToggle = (id, title, isOpen) => {
+    const action = isOpen ? 'close' : 'open';
+    setConfirmModal({
+      open: true,
+      title: `${isOpen ? 'Close' : 'Open'} Registration`,
+      message: `You are about to ${action} registration for "${title}".`,
+      confirmLabel: `${isOpen ? 'Close' : 'Open'} Registration`,
+      variant: 'warning',
+      action: async (password) => {
+        await api.patch(`/events/${id}/toggle-registration`, { isOpen: !isOpen, adminPassword: password });
+        toast.success('Registration toggled');
+        fetchEvents();
+      },
+    });
   };
 
   return (
@@ -69,13 +87,13 @@ export default function Events() {
                   <td className="px-5 py-3">{e.capacity}</td>
                   <td className="px-5 py-3">{e.isPaid ? `₹${e.registrationFee}` : 'Free'}</td>
                   <td className="px-5 py-3">
-                    <button onClick={() => handleToggle(e._id, e.isRegistrationOpen)} className={`badge cursor-pointer ${e.isRegistrationOpen ? 'badge-green' : 'badge-red'}`}>
+                    <button onClick={() => handleToggle(e._id, e.title, e.isRegistrationOpen)} className={`badge cursor-pointer ${e.isRegistrationOpen ? 'badge-green' : 'badge-red'}`}>
                       {e.isRegistrationOpen ? 'Open' : 'Closed'}
                     </button>
                   </td>
                   <td className="px-5 py-3 flex items-center gap-2">
                     <Link to={`/events/${e._id}/edit`} className="text-primary-600 hover:text-primary-800"><HiOutlinePencil className="w-4 h-4" /></Link>
-                    <button onClick={() => handleDelete(e._id)} className="text-red-500 hover:text-red-700"><HiOutlineTrash className="w-4 h-4" /></button>
+                    <button onClick={() => handleDelete(e._id, e.title)} className="text-red-500 hover:text-red-700"><HiOutlineTrash className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -92,6 +110,17 @@ export default function Events() {
           )}
         </div>
       )}
+
+      {/* Confirm with Password Modal */}
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+      />
     </div>
   );
 }

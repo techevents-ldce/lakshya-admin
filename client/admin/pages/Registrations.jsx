@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineSearch } from 'react-icons/hi';
+import { HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation } from 'react-icons/hi';
 
 export default function Registrations() {
+  const [verified, setVerified] = useState(false);
+  const [password, setPassword] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+
   const [regs, setRegs] = useState([]);
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
@@ -11,9 +16,23 @@ export default function Registrations() {
   const [eventFilter, setEventFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const handleVerifyPassword = async () => {
+    if (!password.trim()) { setVerifyError('Password is required'); return; }
+    setVerifying(true);
+    setVerifyError('');
+    try {
+      await api.post('/auth/verify-password', { password });
+      setVerified(true);
+    } catch (err) {
+      setVerifyError(err?.response?.data?.message || 'Incorrect password. Please try again.');
+    } finally { setVerifying(false); }
+  };
+
   useEffect(() => {
-    api.get('/events', { params: { limit: 200 } }).then(({ data }) => setEvents(data.events)).catch(() => {});
-  }, []);
+    if (verified) {
+      api.get('/events', { params: { limit: 200 } }).then(({ data }) => setEvents(data.events)).catch(() => {});
+    }
+  }, [verified]);
 
   const fetchRegs = async () => {
     setLoading(true);
@@ -27,10 +46,51 @@ export default function Registrations() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchRegs(); }, [page, eventFilter]);
+  useEffect(() => { if (verified) fetchRegs(); }, [page, eventFilter, verified]);
 
   const statusColor = { confirmed: 'badge-green', pending: 'badge-yellow', cancelled: 'badge-red', waitlisted: 'badge-blue' };
 
+  // --- Password Gate ---
+  if (!verified) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="card max-w-sm w-full p-6 text-center space-y-4">
+          <div className="mx-auto w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+            <HiOutlineShieldCheck className="w-8 h-8 text-blue-600" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">Verify Your Identity</h2>
+          <p className="text-gray-500 text-sm">Enter your admin password to view registration data.</p>
+          <div className="relative">
+            <HiOutlineLockClosed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setVerifyError(''); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !verifying) handleVerifyPassword(); }}
+              className="input-field pl-10"
+              autoComplete="current-password"
+              autoFocus
+            />
+          </div>
+          {verifyError && (
+            <p className="text-red-500 text-xs flex items-center justify-center gap-1">
+              <HiOutlineExclamation className="w-4 h-4 flex-shrink-0" />{verifyError}
+            </p>
+          )}
+          <button
+            onClick={handleVerifyPassword}
+            disabled={verifying || !password.trim()}
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {verifying ? 'Verifying...' : 'Unlock Registrations'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Main Content ---
   return (
     <div>
       <h1 className="text-lg sm:text-2xl font-bold mb-6">Registration Management</h1>

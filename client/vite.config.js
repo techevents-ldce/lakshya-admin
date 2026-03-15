@@ -16,6 +16,8 @@ export default defineConfig({
       { find: '../context/AuthContext', replacement: path.resolve(__dirname, 'src/context/AuthContext.jsx') },
       // Redirect api imports to our shared copy
       { find: '../services/api', replacement: path.resolve(__dirname, 'src/services/api.js') },
+      // Redirect ConfirmWithPassword imports to our shared component
+      { find: '../components/ConfirmWithPassword', replacement: path.resolve(__dirname, 'src/components/ConfirmWithPassword.jsx') },
     ],
   },
   server: {

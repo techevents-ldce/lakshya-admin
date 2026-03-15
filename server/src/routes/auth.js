@@ -9,5 +9,6 @@ router.post('/login', validate(loginSchema), authController.login);
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/refresh', validate(refreshSchema), authController.refresh);
 router.get('/me', protect, authController.me);
+router.post('/verify-password', protect, authController.verifyPassword);
 
 module.exports = router;

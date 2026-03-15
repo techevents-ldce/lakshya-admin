@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlineSearch, HiOutlineBan, HiOutlineCheckCircle } from 'react-icons/hi';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -9,6 +10,9 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'danger', action: null });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -22,13 +26,21 @@ export default function Users() {
 
   useEffect(() => { fetchUsers(); }, [page, search]);
 
-  const toggleBlock = async (id, isActive) => {
-    try {
-      if (isActive) await api.patch(`/users/${id}/block`);
-      else await api.patch(`/users/${id}/unblock`);
-      toast.success(isActive ? 'User blocked' : 'User unblocked');
-      fetchUsers();
-    } catch { toast.error('Action failed'); }
+  const toggleBlock = (id, name, isActive) => {
+    const action = isActive ? 'block' : 'unblock';
+    setConfirmModal({
+      open: true,
+      title: `${isActive ? 'Block' : 'Unblock'} User`,
+      message: `You are about to ${action} "${name}". ${isActive ? 'This user will lose access to their account.' : 'This will restore access to their account.'}`,
+      confirmLabel: `${isActive ? 'Block' : 'Unblock'} User`,
+      variant: isActive ? 'danger' : 'warning',
+      action: async (password) => {
+        if (isActive) await api.patch(`/users/${id}/block`, { adminPassword: password });
+        else await api.patch(`/users/${id}/unblock`, { adminPassword: password });
+        toast.success(isActive ? 'User blocked' : 'User unblocked');
+        fetchUsers();
+      },
+    });
   };
 
   return (
@@ -56,7 +68,7 @@ export default function Users() {
                   <td className="px-5 py-3"><span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>{u.isActive ? 'Active' : 'Blocked'}</span></td>
                   <td className="px-5 py-3">
                     {u.role !== 'admin' && (
-                      <button onClick={() => toggleBlock(u._id, u.isActive)} className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800'}`}>
+                      <button onClick={() => toggleBlock(u._id, u.name, u.isActive)} className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800'}`}>
                         {u.isActive ? <><HiOutlineBan className="w-4 h-4" /> Block</> : <><HiOutlineCheckCircle className="w-4 h-4" /> Unblock</>}
                       </button>
                     )}
@@ -75,6 +87,17 @@ export default function Users() {
           )}
         </div>
       )}
+
+      {/* Confirm with Password Modal */}
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlineKey, HiOutlineSearch } from 'react-icons/hi';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 export default function Coordinators() {
   const [coordinators, setCoordinators] = useState([]);
@@ -13,6 +14,9 @@ export default function Coordinators() {
   const [resetModal, setResetModal] = useState(null);
   const [selectedEvents, setSelectedEvents] = useState([]);
   const [newPassword, setNewPassword] = useState('');
+
+  // Confirmation with password modal state
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
 
   const fetchCoordinators = async () => {
     setLoading(true);
@@ -32,22 +36,40 @@ export default function Coordinators() {
 
   const openAssign = (c) => { setAssignModal(c); setSelectedEvents(c.assignedEvents?.map((e) => e._id || e) || []); };
 
-  const handleAssign = async () => {
-    try {
-      await api.patch(`/users/${assignModal._id}/assign-events`, { eventIds: selectedEvents });
-      toast.success('Events assigned');
-      setAssignModal(null);
-      fetchCoordinators();
-    } catch { toast.error('Assign failed'); }
+  const handleAssign = () => {
+    setConfirmModal({
+      open: true,
+      title: 'Assign Events',
+      message: `You are about to change event assignments for "${assignModal.name}".`,
+      confirmLabel: 'Save Assignments',
+      variant: 'warning',
+      action: async (password) => {
+        await api.patch(`/users/${assignModal._id}/assign-events`, { eventIds: selectedEvents, adminPassword: password });
+        toast.success('Events assigned');
+        setAssignModal(null);
+        fetchCoordinators();
+      },
+    });
   };
 
-  const handleResetPassword = async () => {
-    try {
-      await api.patch(`/users/${resetModal._id}/reset-password`, { newPassword });
-      toast.success('Password reset');
-      setResetModal(null);
-      setNewPassword('');
-    } catch { toast.error('Reset failed'); }
+  const handleResetPassword = () => {
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    setConfirmModal({
+      open: true,
+      title: 'Reset Password',
+      message: `You are about to reset the password for "${resetModal.name}". This will immediately change their login credentials.`,
+      confirmLabel: 'Reset Password',
+      variant: 'danger',
+      action: async (password) => {
+        await api.patch(`/users/${resetModal._id}/reset-password`, { newPassword, adminPassword: password });
+        toast.success('Password reset');
+        setResetModal(null);
+        setNewPassword('');
+      },
+    });
   };
 
   return (
@@ -122,6 +144,17 @@ export default function Coordinators() {
           </div>
         </div>
       )}
+
+      {/* Confirm with Password Modal */}
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+      />
     </div>
   );
 }

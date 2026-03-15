@@ -2,23 +2,28 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 export default function CoordinatorForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', college: '', branch: '' });
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const onChange = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setShowConfirm(true);
+  };
+
+  const handleConfirmedCreate = async (password) => {
     setLoading(true);
     try {
-      await api.post('/users/coordinators', form);
+      await api.post('/users/coordinators', { ...form, adminPassword: password });
       toast.success('Coordinator added');
       navigate('/coordinators');
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
-    finally { setLoading(false); }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -36,6 +41,17 @@ export default function CoordinatorForm() {
           <button type="button" onClick={() => navigate('/coordinators')} className="btn-outline">Cancel</button>
         </div>
       </form>
+
+      {/* Confirm with Password Modal */}
+      <ConfirmWithPassword
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirmedCreate}
+        title="Add Coordinator"
+        message={`You are about to create a new coordinator account for "${form.name || 'unnamed'}". Please confirm your admin password.`}
+        confirmLabel="Add Coordinator"
+        variant="warning"
+      />
     </div>
   );
 }

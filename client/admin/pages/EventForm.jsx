@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
 
 const defaultData = { title: '', description: '', category: '', eventType: 'solo', capacity: 100, registrationFee: 0, isPaid: false, teamSizeMin: 1, teamSizeMax: 4, registrationDeadline: '', venue: '', eventDate: '' };
 
@@ -11,6 +12,7 @@ export default function EventForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState(defaultData);
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (isEdit) {
@@ -28,15 +30,22 @@ export default function EventForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setShowConfirm(true);
+  };
+
+  const handleConfirmedSubmit = async (password) => {
     setLoading(true);
     try {
-      const payload = { ...form, capacity: Number(form.capacity), registrationFee: Number(form.registrationFee), teamSizeMin: Number(form.teamSizeMin), teamSizeMax: Number(form.teamSizeMax) };
-      if (isEdit) await api.put(`/events/${id}`, payload);
-      else await api.post('/events', payload);
-      toast.success(isEdit ? 'Event updated' : 'Event created');
+      const payload = { ...form, capacity: Number(form.capacity), registrationFee: Number(form.registrationFee), teamSizeMin: Number(form.teamSizeMin), teamSizeMax: Number(form.teamSizeMax), adminPassword: password };
+      if (isEdit) {
+        await api.put(`/events/${id}`, payload);
+        toast.success('Event updated');
+      } else {
+        await api.post('/events', payload);
+        toast.success('Event created');
+      }
       navigate('/events');
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
-    finally { setLoading(false); }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -106,6 +115,17 @@ export default function EventForm() {
           <button type="button" onClick={() => navigate('/events')} className="btn-outline">Cancel</button>
         </div>
       </form>
+
+      {/* Confirm with Password Modal */}
+      <ConfirmWithPassword
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirmedSubmit}
+        title={isEdit ? 'Update Event' : 'Create Event'}
+        message={isEdit ? `You are about to update "${form.title}". Please confirm your admin password.` : `You are about to create a new event "${form.title}". Please confirm your admin password.`}
+        confirmLabel={isEdit ? 'Update Event' : 'Create Event'}
+        variant="warning"
+      />
     </div>
   );
 }
