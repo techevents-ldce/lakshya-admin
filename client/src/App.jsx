@@ -16,6 +16,7 @@ import Registrations from '@admin/pages/Registrations';
 import Payments from '@admin/pages/Payments';
 import AuditLogs from '@admin/pages/AuditLogs';
 import Export from '@admin/pages/Export';
+import BulkEmail from '@admin/pages/BulkEmail';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="payments" element={<RoleRoute role="admin"><Payments /></RoleRoute>} />
           <Route path="audit-logs" element={<RoleRoute role="admin"><AuditLogs /></RoleRoute>} />
           <Route path="export" element={<RoleRoute role="admin"><Export /></RoleRoute>} />
+          <Route path="bulk-email" element={<RoleRoute role="admin"><BulkEmail /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />

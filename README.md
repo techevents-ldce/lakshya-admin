@@ -125,6 +125,8 @@ docker-compose up --build
 | `ALLOWED_ORIGINS`     | CORS origins (comma-separated) | http://localhost:5173   |
 | `RATE_LIMIT_WINDOW_MS`| Rate limit window              | 900000 (15 min)        |
 | `RATE_LIMIT_MAX`      | Max requests per window        | 20                     |
+| `RESEND_API_KEY`      | Resend API key for bulk email ([get one here](https://resend.com/api-keys)) | (required for email) |
+| `RESEND_FROM_EMAIL`   | Sender address (must be verified domain on Resend) | `Lakshya <onboarding@resend.dev>` |
 
 ---
 
@@ -176,6 +178,12 @@ docker-compose up --build
 | `/api/audit-logs`      | Admin              |
 | `/api/organizers`      | Public (GET), Admin (CUD) |
 
+### Bulk Email
+| Method | Endpoint               | Access             |
+|--------|------------------------|--------------------|
+| GET    | `/api/mail/recipients`  | Admin             |
+| POST   | `/api/mail/send`        | Admin (password-verified) |
+
 ---
 
 ## 🛡️ Security
@@ -196,6 +204,7 @@ docker-compose up --build
 |------------|--------------------------------------------|
 | Frontend   | React 18, Vite, TailwindCSS 3, Chart.js   |
 | Backend    | Node.js, Express, JWT, Joi, Winston        |
+| Email      | Resend (bulk email with HTML templates)    |
 | Database   | MongoDB, Mongoose                          |
 | QR Scanner | html5-qrcode                               |
 | Deploy     | Docker, Nginx, Vercel, Render              |

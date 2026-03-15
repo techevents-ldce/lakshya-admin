@@ -57,6 +57,7 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/export', require('./routes/export'));
 app.use('/api/audit-logs', require('./routes/auditLogs'));
 app.use('/api/organizers', require('./routes/organizers'));
+app.use('/api/mail', require('./routes/mail'));
 
 // ─── 404 catch ─────────────────────────────────────────────────────────────────
 app.use((req, res) => {
