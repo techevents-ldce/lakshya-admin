@@ -13,3 +13,9 @@ exports.toggleTicketStatus = asyncHandler(async (req, res) => {
   const ticket = await attendanceService.toggleTicketStatus(ticketId, status, req.user.id);
   res.json({ success: true, data: ticket });
 });
+
+exports.getTeamWiseAttendance = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
+  const result = await attendanceService.getTeamWiseAttendance(eventId, req.query);
+  res.json({ success: true, ...result });
+});

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import {
   HiOutlineSearch, HiOutlineArrowLeft, HiOutlineDocumentDownload,
   HiOutlineChevronDown, HiOutlineChevronUp, HiOutlineUserGroup,
-  HiOutlineStar, HiOutlineUsers,
+  HiOutlineStar, HiOutlineUsers, HiOutlineCheckCircle,
 } from 'react-icons/hi';
 
 export default function Participants() {
@@ -45,6 +45,11 @@ export default function Participants() {
         r.teamId?.teamName?.toLowerCase().includes(search.toLowerCase())
       )
     : regs;
+
+  // Attendance stats
+  const totalCount = filtered.length;
+  const checkedInCount = filtered.filter((r) => r.checkedIn).length;
+  const pendingCount = totalCount - checkedInCount;
 
   const handleExport = async (format) => {
     try {
@@ -97,6 +102,37 @@ export default function Participants() {
         </div>
       </div>
 
+      {/* Attendance Summary Stats */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="stat-card">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+            <span className="text-blue-700 font-bold text-sm">{totalCount}</span>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400">Total</p>
+            <p className="font-semibold text-gray-900">Registered</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <span className="text-emerald-700 font-bold text-sm">{checkedInCount}</span>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400">Scanned</p>
+            <p className="font-semibold text-emerald-700">Checked In</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+            <span className="text-gray-700 font-bold text-sm">{pendingCount}</span>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400">Not Yet</p>
+            <p className="font-semibold text-gray-700">Pending</p>
+          </div>
+        </div>
+      </div>
+
       <div className="relative mb-6 w-full sm:max-w-md">
         <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
         <input type="text" placeholder="Search by name, email or team..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
@@ -116,6 +152,7 @@ export default function Participants() {
               {isTeamEvent && <th className="px-4 py-3">Team</th>}
               {isTeamEvent && <th className="px-4 py-3">Role</th>}
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Check-in</th>
             </tr></thead>
             <tbody>
               {filtered.map((r) => {
@@ -159,11 +196,28 @@ export default function Participants() {
                       <td className="px-4 py-3">
                         <span className={`badge ${r.status === 'confirmed' ? 'badge-green' : r.status === 'pending' ? 'badge-yellow' : 'badge-red'}`}>{r.status}</span>
                       </td>
+                      <td className="px-4 py-3">
+                        {r.checkedIn ? (
+                          <div className="flex items-center gap-1.5">
+                            <HiOutlineCheckCircle className="w-5 h-5 text-emerald-500" />
+                            <div>
+                              <p className="text-xs font-semibold text-emerald-700">Entered</p>
+                              {r.checkedInAt && (
+                                <p className="text-[10px] text-gray-400">
+                                  {new Date(r.checkedInAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">pending</span>
+                        )}
+                      </td>
                     </tr>
                     {/* Expanded team members */}
                     {expandedRow === r._id && hasTeamMembers && (
                       <tr key={`${r._id}-members`} className="bg-accent-50/30">
-                        <td colSpan={isTeamEvent ? 10 : 8} className="px-6 py-4">
+                        <td colSpan={isTeamEvent ? 12 : 10} className="px-6 py-4">
                           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                             Team Members — {r.teamId?.teamName}
                           </div>
@@ -195,7 +249,7 @@ export default function Participants() {
                   </>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={isTeamEvent ? 10 : 8} className="text-center py-8 text-gray-400">No participants found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={isTeamEvent ? 12 : 10} className="text-center py-8 text-gray-400">No participants found</td></tr>}
             </tbody>
           </table>
           {totalPages > 1 && (
