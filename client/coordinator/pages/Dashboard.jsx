@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineUsers, HiOutlineQrcode, HiOutlineDocumentDownload } from 'react-icons/hi';
+import { HiOutlineUsers, HiOutlineQrcode, HiOutlineDocumentDownload, HiOutlineUserGroup, HiOutlineClipboardCheck } from 'react-icons/hi';
 
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
@@ -59,13 +59,25 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <Link to={`/events/${ev._id}/participants`} className="btn-accent text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
-                  <HiOutlineUsers className="w-4 h-4" /> Participants
-                </Link>
-                <Link to={`/events/${ev._id}/scan`} className="btn-accent-outline text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
-                  <HiOutlineQrcode className="w-4 h-4" /> Scan QR
-                </Link>
+              <div className="flex flex-col items-stretch gap-2">
+                <div className="flex items-stretch gap-2">
+                  <Link to={`/events/${ev._id}/participants`} className="btn-accent text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
+                    <HiOutlineUsers className="w-4 h-4" /> Participants
+                  </Link>
+                  <Link to={`/events/${ev._id}/scan`} className="btn-accent-outline text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
+                    <HiOutlineQrcode className="w-4 h-4" /> Scan QR
+                  </Link>
+                </div>
+                <div className="flex items-stretch gap-2">
+                  {ev.eventType === 'team' && (
+                    <Link to={`/events/${ev._id}/teams`} className="btn-accent-outline text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
+                      <HiOutlineUserGroup className="w-4 h-4" /> Teams
+                    </Link>
+                  )}
+                  <Link to={`/events/${ev._id}/attendance`} className="btn-accent-outline text-xs flex-1 text-center flex items-center justify-center gap-1.5 py-2">
+                    <HiOutlineClipboardCheck className="w-4 h-4" /> Attendance
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

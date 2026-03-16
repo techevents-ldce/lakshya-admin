@@ -17,7 +17,6 @@ const ticketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-ticketSchema.index({ ticketId: 1 });
 ticketSchema.index({ userId: 1, eventId: 1 });
 
 module.exports = mongoose.model('Ticket', ticketSchema);

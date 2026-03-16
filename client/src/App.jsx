@@ -22,6 +22,8 @@ import OrganizerForm from '@admin/pages/OrganizerForm';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
+import Teams from '@coordinator/pages/Teams';
+import Attendance from '@coordinator/pages/Attendance';
 import QRScanner from '@coordinator/pages/QRScanner';
 
 export default function App() {
@@ -68,6 +70,8 @@ export default function App() {
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />
+          <Route path="events/:id/teams" element={<RoleRoute role="coordinator"><Teams /></RoleRoute>} />
+          <Route path="events/:id/attendance" element={<RoleRoute role="coordinator"><Attendance /></RoleRoute>} />
           <Route path="events/:id/scan" element={<RoleRoute role="coordinator"><QRScanner /></RoleRoute>} />
         </Route>
 
