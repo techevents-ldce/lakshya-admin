@@ -25,7 +25,26 @@ export default function Export() {
       link.download = `${type}_export.${extension}`;
       link.click();
       toast.success(`${type} exported`);
-    } catch { toast.error('Export failed'); }
+    } catch (err) {
+      let msg = 'Export failed';
+      let isNoData = false;
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) msg = json.message;
+          if (err.response.status === 404) isNoData = true;
+        } catch { /* use default message */ }
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+        if (err.response.status === 404) isNoData = true;
+      }
+      if (isNoData) {
+        toast('No data available to export', { icon: 'ℹ️' });
+      } else {
+        toast.error(msg);
+      }
+    }
   };
 
   return (

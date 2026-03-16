@@ -177,8 +177,8 @@ export default function BulkEmail() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <HiOutlineMail className="w-7 h-7 text-primary-400" />
+      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-900">
+        <HiOutlineMail className="w-7 h-7 text-primary-600" />
         Bulk Email
       </h1>
 
@@ -187,7 +187,7 @@ export default function BulkEmail() {
         <div className="space-y-4">
           {/* Roles */}
           <div className="card">
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Target Roles</h2>
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Target Roles</h2>
             <div className="space-y-2">
               {ROLE_OPTIONS.map(({ value, label }) => (
                 <label key={value} className="flex items-center gap-3 cursor-pointer group">
@@ -195,9 +195,9 @@ export default function BulkEmail() {
                     type="checkbox"
                     checked={selectedRoles.includes(value)}
                     onChange={() => toggleRole(value)}
-                    className="w-4 h-4 rounded border-gray-600 text-primary-600 focus:ring-primary-500 bg-gray-700"
+                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 bg-white"
                   />
-                  <span className="text-sm text-gray-300 group-hover:text-gray-100 transition-colors">{label}</span>
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">{label}</span>
                 </label>
               ))}
             </div>
@@ -205,7 +205,7 @@ export default function BulkEmail() {
 
           {/* Individual Users */}
           <div className="card">
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Individual Users</h2>
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Individual Users</h2>
             <div className="relative mb-3">
               <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
@@ -216,15 +216,15 @@ export default function BulkEmail() {
                 className="input-field pl-9 text-sm"
               />
               {userResults.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
                   {userResults.map((u) => (
                     <button
                       key={u._id}
                       onClick={() => addUser(u)}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-700 transition-colors flex items-center justify-between"
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors flex items-center justify-between"
                     >
                       <span>
-                        <span className="text-gray-200 font-medium">{u.name}</span>
+                        <span className="text-gray-800 font-medium">{u.name}</span>
                         <span className="text-gray-500 ml-2 text-xs">{u.email}</span>
                       </span>
                       <span className="text-xs text-gray-500 capitalize">{u.role}</span>
@@ -237,7 +237,7 @@ export default function BulkEmail() {
             {selectedUsers.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedUsers.map((u) => (
-                  <span key={u._id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-600/20 text-primary-300 rounded-full text-xs font-medium">
+                  <span key={u._id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
                     {u.name || u.email}
                     <button onClick={() => removeUser(u._id)} className="hover:text-red-400 transition-colors">
                       <HiOutlineX className="w-3.5 h-3.5" />
@@ -250,7 +250,7 @@ export default function BulkEmail() {
 
           {/* Manual Emails */}
           <div className="card">
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">External Emails</h2>
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">External Emails</h2>
             <textarea
               value={manualEmails}
               onChange={(e) => setManualEmails(e.target.value)}
@@ -268,7 +268,7 @@ export default function BulkEmail() {
         <div className="lg:col-span-2 space-y-4">
           {/* Template Picker */}
           <div className="card">
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Email Template</h2>
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Email Template</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
               {TEMPLATE_OPTIONS.map(({ id, label, icon: Icon, desc }) => (
                 <button
@@ -276,8 +276,8 @@ export default function BulkEmail() {
                   onClick={() => setTemplate(id)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-center ${
                     template === id
-                      ? 'border-primary-500 bg-primary-600/15 text-primary-300'
-                      : 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300'
+                      ? 'border-primary-500 bg-primary-50 text-primary-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   <Icon className="w-6 h-6" />
@@ -331,7 +331,7 @@ export default function BulkEmail() {
               {sending ? 'Sending…' : 'Send Email'}
             </button>
             {hasRecipients && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-600">
                 Sending to {selectedUsers.length + manualCount} individual recipient{selectedUsers.length + manualCount !== 1 ? 's' : ''}
                 {selectedRoles.length > 0 && ` + all ${selectedRoles.join(', ')}`}
               </span>
@@ -339,8 +339,8 @@ export default function BulkEmail() {
           </div>
 
           {/* Security notice */}
-          <div className="flex items-start gap-2 text-xs text-amber-400/80 bg-amber-900/20 border border-amber-700/30 rounded-lg p-3">
-            <HiOutlineExclamation className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-300 rounded-lg p-3">
+            <HiOutlineExclamation className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
             <p>Sending bulk emails is an admin-only action. You will be asked to verify your password before sending. This action is logged for audit purposes.</p>
           </div>
         </div>

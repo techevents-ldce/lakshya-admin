@@ -4,11 +4,11 @@ const { generateCSV, generateExcel } = require('../utils/export');
 const AppError = require('../middleware/AppError');
 
 const exportParticipants = async (eventId, format = 'csv') => {
-  if (!eventId) {
-    throw new AppError('Event ID is required to export participants', 400, 'MISSING_EVENT_ID');
-  }
+  const query = eventId
+    ? { eventId, status: { $ne: 'cancelled' } }
+    : { status: { $ne: 'cancelled' } };
 
-  const regs = await Registration.find({ eventId, status: { $ne: 'cancelled' } })
+  const regs = await Registration.find(query)
     .populate('userId', 'name email phone college branch year')
     .populate('teamId', 'teamName');
 
