@@ -11,11 +11,15 @@ const registrationSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'cancelled', 'waitlisted'],
       default: 'pending',
     },
+    checkedIn: { type: Boolean, default: false },
+    checkedInAt: { type: Date, default: null },
+    checkedInBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true }
 );
 
 registrationSchema.index({ userId: 1, eventId: 1 }, { unique: true });
 registrationSchema.index({ eventId: 1 });
+registrationSchema.index({ checkedIn: 1, eventId: 1 });
 
 module.exports = mongoose.model('Registration', registrationSchema);

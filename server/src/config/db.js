@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
+const dns = require("node:dns/promises");
+dns.setServers(["1.1.1.1"]);
 
 const connectDB = async () => {
   let retries = 5;

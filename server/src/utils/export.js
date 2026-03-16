@@ -1,4 +1,15 @@
-const { Parser } = require('json2csv');
+let Parser;
+try {
+  // json2csv v5 and some v6-alpha builds
+  ({ Parser } = require('json2csv'));
+} catch {
+  // json2csv v6 final moved Parser to a sub-module
+  try {
+    Parser = require('@json2csv/plainjs').Parser;
+  } catch {
+    Parser = require('json2csv/lib/JSON2CSVParser');
+  }
+}
 const ExcelJS = require('exceljs');
 
 /**

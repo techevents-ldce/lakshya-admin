@@ -1,6 +1,6 @@
 # 🎯 Lakshya — College Tech-Fest Management System
 
-A production-ready **MERN stack** application for managing the **Lakshya** college tech-fest. Features two internal portals — Admin and Coordinator — connected to a shared Node.js/Express REST API with MongoDB.
+A production-ready **MERN stack** application for managing the **Lakshya** college tech-fest. Features a **unified portal** with role-based access for Admin and Coordinator — connected to a shared Node.js/Express REST API with MongoDB.
 
 ---
 
@@ -23,13 +23,18 @@ A production-ready **MERN stack** application for managing the **Lakshya** colle
 │   ├── .env.example
 │   └── Dockerfile
 │
-├── client/
-│   ├── admin/               # React Admin Portal (Vite + TailwindCSS)
-│   │   ├── src/pages/       # 11 pages (Dashboard, Events, Users, etc.)
-│   │   └── Dockerfile
-│   └── coordinator/         # React Coordinator Portal (Vite + TailwindCSS)
-│       ├── src/pages/       # 4 pages (Dashboard, Participants, QR Scanner)
-│       └── Dockerfile
+├── client/                  # Unified React Portal (Vite + TailwindCSS)
+│   ├── src/                 # Shared app entry, context, services
+│   │   ├── components/      # PrivateRoute, RoleLayout, RoleRoute
+│   │   ├── context/         # Shared AuthContext
+│   │   ├── pages/           # Login, RoleDashboard
+│   │   └── services/        # Shared Axios API client
+│   ├── admin/src/           # Admin-specific pages & components
+│   │   ├── components/      # Sidebar, Layout
+│   │   └── pages/           # Dashboard, Events, Users, etc. (9 pages)
+│   └── coordinator/src/     # Coordinator-specific pages & components
+│       ├── components/      # Layout (navbar)
+│       └── pages/           # Dashboard, Participants, QR Scanner
 │
 ├── nginx/nginx.conf         # Reverse proxy config
 ├── docker-compose.yml       # Full-stack orchestration
@@ -51,36 +56,31 @@ A production-ready **MERN stack** application for managing the **Lakshya** colle
 cd server
 cp .env.example .env        # Edit MONGO_URI, JWT_SECRET
 npm install
-npm run seed                 # Creates admin: admin@lakshya.com / Admin@1234
+npm run seed                 # Creates admin & coordinator accounts
 npm run dev                  # Runs on http://localhost:5000
 ```
 
-### 2. Admin Portal
+### 2. Frontend (Unified Portal)
 
 ```bash
-cd client/admin
+cd client
 npm install
 npm run dev                  # Runs on http://localhost:5173
 ```
 
-### 3. Coordinator Portal
-
-```bash
-cd client/coordinator
-npm install
-npm run dev                  # Runs on http://localhost:5174
-```
+> **That's it! Just 2 terminals** — one for the backend, one for the frontend.
+> The unified portal shows a **role selector** at login (Admin or Coordinator).
 
 ---
 
-## 🔑 Default Admin Credentials
+## 🔑 Default Credentials
 
-| Field    | Value              |
-|----------|--------------------|
-| Email    | admin@lakshya.com  |
-| Password | Admin@1234         |
+| Role         | Email                     | Password       |
+|--------------|---------------------------|----------------|
+| **Admin**    | `admin@lakshya.com`       | `Admin@1234`   |
+| **Coordinator** | `coordinator@lakshya.com` | `Coord@1234` |
 
-> Run `npm run seed` in the `server/` directory to create this account.
+> Run `npm run seed` in the `server/` directory to create these accounts.
 
 ---
 
@@ -92,10 +92,8 @@ cp server/.env.example server/.env  # Configure env vars
 docker-compose up --build
 
 # Access:
-#   API:          http://localhost/api/health
-#   Admin:        http://localhost:3000
-#   Coordinator:  http://localhost:3001
-#   Via Nginx:    http://localhost (reverse proxy)
+#   API:       http://localhost:5000
+#   Portal:    http://localhost:80 (via Nginx)
 ```
 
 ---
@@ -109,9 +107,8 @@ docker-compose up --build
 4. Set environment variables: `MONGO_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `ALLOWED_ORIGINS`
 
 ### Frontend → Vercel
-1. Deploy `client/admin` as a separate Vercel project
-2. Deploy `client/coordinator` as a separate Vercel project
-3. Set `VITE_API_URL` environment variable to your Render backend URL (e.g., `https://lakshya-api.onrender.com/api`)
+1. Deploy `client/` as a single Vercel project
+2. Set `VITE_API_URL` environment variable to your Render backend URL (e.g., `https://lakshya-api.onrender.com/api`)
 
 ---
 
@@ -125,9 +122,11 @@ docker-compose up --build
 | `JWT_REFRESH_SECRET`  | Refresh token secret           | (required)             |
 | `JWT_ACCESS_EXPIRES`  | Access token expiry            | 15m                    |
 | `JWT_REFRESH_EXPIRES` | Refresh token expiry           | 7d                     |
-| `ALLOWED_ORIGINS`     | CORS origins (comma-separated) | http://localhost:5173,http://localhost:5174 |
+| `ALLOWED_ORIGINS`     | CORS origins (comma-separated) | http://localhost:5173   |
 | `RATE_LIMIT_WINDOW_MS`| Rate limit window              | 900000 (15 min)        |
 | `RATE_LIMIT_MAX`      | Max requests per window        | 20                     |
+| `RESEND_API_KEY`      | Resend API key for bulk email ([get one here](https://resend.com/api-keys)) | (required for email) |
+| `RESEND_FROM_EMAIL`   | Sender address (must be verified domain on Resend) | `Lakshya <onboarding@resend.dev>` |
 
 ---
 
@@ -179,6 +178,12 @@ docker-compose up --build
 | `/api/audit-logs`      | Admin              |
 | `/api/organizers`      | Public (GET), Admin (CUD) |
 
+### Bulk Email
+| Method | Endpoint               | Access             |
+|--------|------------------------|--------------------|
+| GET    | `/api/mail/recipients`  | Admin             |
+| POST   | `/api/mail/send`        | Admin (password-verified) |
+
 ---
 
 ## 🛡️ Security
@@ -199,9 +204,22 @@ docker-compose up --build
 |------------|--------------------------------------------|
 | Frontend   | React 18, Vite, TailwindCSS 3, Chart.js   |
 | Backend    | Node.js, Express, JWT, Joi, Winston        |
+| Email      | Resend (bulk email with HTML templates)    |
 | Database   | MongoDB, Mongoose                          |
 | QR Scanner | html5-qrcode                               |
 | Deploy     | Docker, Nginx, Vercel, Render              |
+
+---
+
+## 🎨 Architecture — Unified Portal
+
+The frontend is a **single React app** with role-based routing:
+
+- **Login page** — choose Admin or Coordinator role, then enter credentials
+- **Admin view** — gold/amber theme, dark sidebar, full dashboard with analytics, event/user/coordinator management, payments, audit logs, data export
+- **Coordinator view** — cyan/teal theme, clean top navbar, assigned events dashboard, participant lists, QR ticket scanner
+
+Pages from `admin/src/` and `coordinator/src/` are imported via Vite aliases (`@admin`, `@coordinator`) into the unified app, sharing a single `AuthContext` and API client.
 
 ---
 

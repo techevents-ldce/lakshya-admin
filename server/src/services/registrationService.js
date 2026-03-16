@@ -14,6 +14,18 @@ const getRegistrations = async (query = {}) => {
   if (eventId) filter.eventId = eventId;
   if (status) filter.status = status;
 
+  // Search by participant name or email
+  if (search) {
+    const User = require('../models/User');
+    const matchingUsers = await User.find({
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ],
+    }).select('_id');
+    filter.userId = { $in: matchingUsers.map((u) => u._id) };
+  }
+
   const skip = (Number(page) - 1) * Number(limit);
   const [registrations, total] = await Promise.all([
     Registration.find(filter)
@@ -21,10 +33,41 @@ const getRegistrations = async (query = {}) => {
       .limit(Number(limit))
       .sort({ createdAt: -1 })
       .populate('userId', 'name email phone college branch year')
-      .populate('eventId', 'title slug eventType registrationFee isPaid'),
+      .populate('eventId', 'title slug eventType registrationFee isPaid')
+      .populate({
+        path: 'teamId',
+        populate: { path: 'leaderId', select: 'name email' },
+      }),
     Registration.countDocuments(filter),
   ]);
-  return { registrations, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
+
+  // Batch-fetch team members for registrations that have a team
+  const teamIds = registrations
+    .filter((r) => r.teamId)
+    .map((r) => r.teamId._id);
+
+  let teamMembersMap = {};
+  if (teamIds.length > 0) {
+    const members = await TeamMember.find({ teamId: { $in: teamIds } })
+      .populate('userId', 'name email')
+      .lean();
+    for (const m of members) {
+      const tid = m.teamId.toString();
+      if (!teamMembersMap[tid]) teamMembersMap[tid] = [];
+      teamMembersMap[tid].push(m);
+    }
+  }
+
+  // Attach team members to each registration (convert to plain objects)
+  const enriched = registrations.map((r) => {
+    const plain = r.toObject();
+    if (plain.teamId) {
+      plain.teamMembers = teamMembersMap[plain.teamId._id.toString()] || [];
+    }
+    return plain;
+  });
+
+  return { registrations: enriched, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
 };
 
 const getRegistrationById = async (id) => {

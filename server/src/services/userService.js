@@ -80,9 +80,9 @@ const assignEventsToCoordinator = async (coordinatorId, eventIds) => {
   return user;
 };
 
-const resetCoordinatorPassword = async (coordinatorId, newPassword) => {
+const resetUserPassword = async (userId, newPassword) => {
   const passwordHash = await hashPassword(newPassword);
-  const user = await User.findByIdAndUpdate(coordinatorId, { passwordHash }, { new: true });
+  const user = await User.findByIdAndUpdate(userId, { passwordHash }, { new: true });
   if (!user) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
 };
 
@@ -94,5 +94,5 @@ module.exports = {
   blockUser,
   unblockUser,
   assignEventsToCoordinator,
-  resetCoordinatorPassword,
+  resetUserPassword,
 };

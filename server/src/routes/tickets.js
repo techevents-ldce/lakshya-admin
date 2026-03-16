@@ -4,8 +4,8 @@ const ticketController = require('../controllers/ticketController');
 const protect = require('../middleware/auth');
 const authorize = require('../middleware/authorize');
 
-// Coordinator / Admin can verify tickets
-router.get('/verify/:ticketId', protect, authorize('admin', 'coordinator'), ticketController.verify);
+// Coordinator / Admin can verify tickets — event-specific route
+router.get('/verify/:eventId/:ticketId', protect, authorize('admin', 'coordinator'), ticketController.verify);
 router.get('/event/:eventId', protect, authorize('admin', 'coordinator'), ticketController.getByEvent);
 // Participant can get their own ticket
 router.get('/my', protect, ticketController.getMyTicket);

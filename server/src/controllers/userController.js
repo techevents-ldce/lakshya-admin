@@ -44,6 +44,6 @@ exports.assignEvents = asyncHandler(async (req, res) => {
 
 exports.resetPassword = asyncHandler(async (req, res) => {
   const { newPassword } = req.body;
-  await userService.resetCoordinatorPassword(req.params.id, newPassword);
+  await userService.resetUserPassword(req.params.id, newPassword);
   res.json({ success: true, message: 'Password reset successfully' });
 });

@@ -30,7 +30,6 @@ eventSchema.pre('save', function (next) {
   next();
 });
 
-eventSchema.index({ slug: 1 });
 eventSchema.index({ category: 1 });
 
 module.exports = mongoose.model('Event', eventSchema);

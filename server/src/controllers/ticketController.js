@@ -2,8 +2,12 @@ const ticketService = require('../services/ticketService');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.verify = asyncHandler(async (req, res) => {
-  const result = await ticketService.verifyTicket(req.params.ticketId, req.user.id);
-  const statusCode = result.status === 'valid' ? 200 : result.status === 'already_used' ? 200 : 404;
+  const { ticketId, eventId } = req.params;
+  const result = await ticketService.verifyTicket(ticketId, eventId, req.user.id);
+  const statusCode = result.status === 'valid' ? 200
+    : result.status === 'already_used' ? 200
+    : result.status === 'wrong_event' ? 422
+    : 404;
   res.status(statusCode).json({ success: true, ...result });
 });
 
