@@ -18,6 +18,7 @@ export default function Registrations() {
   const [eventFilter, setEventFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [referralFilter, setReferralFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
@@ -46,6 +47,7 @@ export default function Registrations() {
       if (eventFilter) params.eventId = eventFilter;
       if (statusFilter) params.status = statusFilter;
       if (search) params.search = search;
+      if (referralFilter.trim()) params.referralCode = referralFilter.trim();
       const { data } = await api.get('/registrations', { params });
       setRegs(data.registrations);
       setTotal(data.pages);
@@ -53,7 +55,7 @@ export default function Registrations() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { if (verified) fetchRegs(); }, [page, eventFilter, statusFilter, search, verified]);
+  useEffect(() => { if (verified) fetchRegs(); }, [page, eventFilter, statusFilter, search, referralFilter, verified]);
 
   const statusColor = { confirmed: 'badge-green', pending: 'badge-yellow', cancelled: 'badge-red', waitlisted: 'badge-blue' };
 
@@ -121,6 +123,13 @@ export default function Registrations() {
           <option value="cancelled">Cancelled</option>
           <option value="waitlisted">Waitlisted</option>
         </select>
+        <input
+          type="text"
+          placeholder="Referral code…"
+          value={referralFilter}
+          onChange={(e) => { setReferralFilter(e.target.value); setPage(1); }}
+          className="input-field w-full sm:w-auto sm:min-w-[120px] max-w-[160px]"
+        />
       </div>
 
       {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (
@@ -172,6 +181,7 @@ export default function Registrations() {
                               <DetailItem label="Fee" value={r.eventId?.isPaid ? `₹${r.eventId.registrationFee}` : 'Free'} />
                               <DetailItem label="Registration Status" value={r.status} />
                               <DetailItem label="Registered On" value={fmtDT(r.createdAt)} />
+                              <DetailItem label="Referral code" value={r.referralCodeUsed || '—'} />
                             </div>
                           </div>
 

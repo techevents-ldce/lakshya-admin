@@ -58,6 +58,7 @@ app.use('/api/export', require('./routes/export'));
 app.use('/api/audit-logs', require('./routes/auditLogs'));
 app.use('/api/organizers', require('./routes/organizers'));
 app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/referrals', require('./routes/referrals'));
 app.use('/uploads', express.static(require('path').join(__dirname, '..', 'uploads')));
 app.use('/api/mail', require('./routes/mail'));
 

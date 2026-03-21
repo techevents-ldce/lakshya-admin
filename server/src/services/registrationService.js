@@ -8,11 +8,17 @@ const AppError = require('../middleware/AppError');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 
+const { normalizeReferralCode } = require('../utils/referralCode');
+
 const getRegistrations = async (query = {}) => {
-  const { page = 1, limit = 20, eventId, status, search } = query;
+  const { page = 1, limit = 20, eventId, status, search, referralCode } = query;
   const filter = {};
   if (eventId) filter.eventId = eventId;
   if (status) filter.status = status;
+  if (referralCode) {
+    const n = normalizeReferralCode(referralCode);
+    if (n) filter.referralCodeUsed = n;
+  }
 
   // Search by participant name or email
   if (search) {

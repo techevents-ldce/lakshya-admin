@@ -19,6 +19,7 @@ import Export from '@admin/pages/Export';
 import BulkEmail from '@admin/pages/BulkEmail';
 import Organizers from '@admin/pages/Organizers';
 import OrganizerForm from '@admin/pages/OrganizerForm';
+import Referrals from '@admin/pages/Referrals';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="audit-logs" element={<RoleRoute role="admin"><AuditLogs /></RoleRoute>} />
           <Route path="export" element={<RoleRoute role="admin"><Export /></RoleRoute>} />
           <Route path="bulk-email" element={<RoleRoute role="admin"><BulkEmail /></RoleRoute>} />
+          <Route path="referrals" element={<RoleRoute role="admin"><Referrals /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />

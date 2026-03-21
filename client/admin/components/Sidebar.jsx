@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineIdentification, HiOutlineTicket, HiOutlineCreditCard, HiOutlineClipboardList, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX } from 'react-icons/hi';
+import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineIdentification, HiOutlineTicket, HiOutlineCreditCard, HiOutlineClipboardList, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX, HiOutlineTag } from 'react-icons/hi';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: HiOutlineChartBar },
@@ -9,6 +9,7 @@ const links = [
   { to: '/organizers', label: 'Organizers', icon: HiOutlineIdentification },
   { to: '/users', label: 'Users', icon: HiOutlineUsers },
   { to: '/registrations', label: 'Registrations', icon: HiOutlineTicket },
+  { to: '/referrals', label: 'Referrals', icon: HiOutlineTag },
   { to: '/payments', label: 'Payments', icon: HiOutlineCreditCard },
   { to: '/audit-logs', label: 'Audit Logs', icon: HiOutlineShieldCheck },
   { to: '/export', label: 'Export', icon: HiOutlineDocumentDownload },

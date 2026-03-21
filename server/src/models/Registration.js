@@ -14,6 +14,8 @@ const registrationSchema = new mongoose.Schema(
     checkedIn: { type: Boolean, default: false },
     checkedInAt: { type: Date, default: null },
     checkedInBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    /** Set by fest portal checkout flow; used for referral analytics (source of truth for counts). */
+    referralCodeUsed: { type: String, trim: true, uppercase: true, default: null },
   },
   { timestamps: true }
 );
@@ -21,5 +23,6 @@ const registrationSchema = new mongoose.Schema(
 registrationSchema.index({ userId: 1, eventId: 1 }, { unique: true });
 registrationSchema.index({ eventId: 1 });
 registrationSchema.index({ checkedIn: 1, eventId: 1 });
+registrationSchema.index({ referralCodeUsed: 1 });
 
 module.exports = mongoose.model('Registration', registrationSchema);
