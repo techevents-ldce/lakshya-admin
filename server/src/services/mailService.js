@@ -12,7 +12,15 @@ const getResend = () => {
   return _resend;
 };
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Lakshya <noreply@yourdomain.com>';
+// Admin Manual Sender Identities mapped securely on backend
+const SENDER_IDENTITIES = {
+  updates: process.env.MAIL_FROM_UPDATES || 'Lakshya Updates <updates@notify.lakshyaldce.in>',
+  events: process.env.MAIL_FROM_EVENTS || 'Lakshya Events <events@notify.lakshyaldce.in>',
+  tarkshaastra: process.env.MAIL_FROM_TARKSHAASTRA || 'Tarkshaastra <tarkshaastra@notify.lakshyaldce.in>',
+};
+
+// Fixed Reply-To address
+const REPLY_TO_EMAIL = process.env.MAIL_REPLY_TO || 'contact@lakshyaldce.in';
 
 // ─── HTML Email Templates ───────────────────────────────────────────────────────
 
@@ -104,14 +112,18 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {string} subject
  * @param {string} body
  * @param {string} template – one of 'raw','success','congratulations','important','formal'
+ * @param {string} senderIdentity - allowed key (updates, events, tarkshaastra)
  * @returns {{ sent: number, failed: number }}
  */
-const sendBulkEmail = async (recipients, subject, body, template = 'raw') => {
+const sendBulkEmail = async (recipients, subject, body, template = 'raw', senderIdentity = 'updates') => {
   if (!recipients || recipients.length === 0) {
     throw new AppError('No recipients specified', 400, 'NO_RECIPIENTS');
   }
   if (!subject || !body) {
     throw new AppError('Subject and body are required', 400, 'MISSING_FIELDS');
+  }
+  if (!SENDER_IDENTITIES[senderIdentity]) {
+    throw new AppError('Invalid sender identity', 400, 'INVALID_SENDER');
   }
 
   const templateFn = templates[template] || templates.raw;
@@ -128,7 +140,8 @@ const sendBulkEmail = async (recipients, subject, body, template = 'raw') => {
       try {
         const html = templateFn({ subject, body, recipientName: recipient.name });
         const result = await getResend().emails.send({
-          from: FROM_EMAIL,
+          from: SENDER_IDENTITIES[senderIdentity],
+          reply_to: REPLY_TO_EMAIL,
           to: recipient.email,
           subject,
           html,
@@ -140,7 +153,7 @@ const sendBulkEmail = async (recipients, subject, body, template = 'raw') => {
           errors.push({ email: recipient.email, error: result.error.message || result.error.name });
           failed++;
         } else {
-          console.log(`[Mail] Sent to ${recipient.email} — id: ${result.data?.id}`);
+          console.log(`[Mail] Sent to ${recipient.email} via ${senderIdentity} — id: ${result.data?.id}`);
           sent++;
         }
       } catch (err) {

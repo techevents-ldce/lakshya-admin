@@ -23,6 +23,12 @@ const TEMPLATE_OPTIONS = [
   { id: 'formal', label: 'Formal', icon: HiOutlineShieldCheck, desc: 'Professional dark theme' },
 ];
 
+const SENDER_OPTIONS = [
+  { value: 'updates', label: 'Lakshya Updates', email: 'updates@notify.lakshyaldce.in' },
+  { value: 'events', label: 'Lakshya Events', email: 'events@notify.lakshyaldce.in' },
+  { value: 'tarkshaastra', label: 'Tarkshaastra', email: 'tarkshaastra@notify.lakshyaldce.in' },
+];
+
 const ROLE_OPTIONS = [
   { value: 'admin', label: 'Admins' },
   { value: 'coordinator', label: 'Coordinators' },
@@ -41,6 +47,7 @@ export default function BulkEmail() {
   const [template, setTemplate] = useState('raw');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [senderIdentity, setSenderIdentity] = useState('updates');
 
   // ─── UI state ─────────────────────────────────────────────────────────────────
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -151,6 +158,7 @@ export default function BulkEmail() {
         recipientEmails,
         roles: selectedRoles,
         adminPassword: password,
+        senderIdentity,
       });
 
       toast.success(data.message || 'Emails sent successfully!');
@@ -161,6 +169,7 @@ export default function BulkEmail() {
       setSelectedRoles([]);
       setSelectedUsers([]);
       setManualEmails('');
+      setSenderIdentity('updates');
     } catch (err) {
       toast.error(err.userMessage || 'Failed to send emails');
       throw err; // let ConfirmWithPassword show the error
@@ -266,6 +275,27 @@ export default function BulkEmail() {
 
         {/* ── RIGHT: Compose Area ───────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Sender Identity */}
+          <div className="card">
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Sender Identity</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {SENDER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSenderIdentity(opt.value)}
+                  className={`flex flex-col items-start p-3 rounded-xl border-2 transition-all duration-200 ${
+                    senderIdentity === opt.value
+                      ? 'border-primary-500 bg-primary-50 text-primary-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <span className="font-semibold text-sm mb-1">{opt.label}</span>
+                  <span className="text-xs opacity-80">{opt.email}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Template Picker */}
           <div className="card">
             <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Email Template</h2>

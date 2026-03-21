@@ -8,7 +8,7 @@ const asyncHandler = require('../utils/asyncHandler');
  * Protected by: protect → authorize('admin') → verifyAdminPassword
  */
 exports.sendBulkEmail = asyncHandler(async (req, res) => {
-  const { subject, body, template, recipientEmails = [], roles = [] } = req.body;
+  const { subject, body, template, senderIdentity = 'updates', recipientEmails = [], roles = [] } = req.body;
 
   // Build recipient list
   const recipientMap = new Map(); // email → { email, name }
@@ -29,7 +29,7 @@ exports.sendBulkEmail = asyncHandler(async (req, res) => {
 
   const recipients = Array.from(recipientMap.values());
 
-  const result = await mailService.sendBulkEmail(recipients, subject, body, template);
+  const result = await mailService.sendBulkEmail(recipients, subject, body, template, senderIdentity);
 
   res.json({
     success: true,
