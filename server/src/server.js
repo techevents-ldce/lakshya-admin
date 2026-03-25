@@ -1,6 +1,9 @@
 const app = require('./app');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
+const { recoverStaleJobs } = require('./services/bulkEmailWorker');
+const fs = require('fs');
+const path = require('path');
 
 const PORT = process.env.PORT || 5000;
 
@@ -28,6 +31,14 @@ process.on('uncaughtException', (err) => {
 
 const start = async () => {
   await connectDB();
+
+  // Ensure temp uploads directory exists
+  const tempDir = path.join(__dirname, '../uploads/temp');
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+  // Recover any interrupted bulk email jobs from a previous crash
+  await recoverStaleJobs();
+
   app.listen(PORT, () => {
     logger.info(`Lakshya API running on port ${PORT}`);
   });

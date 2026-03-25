@@ -17,6 +17,8 @@ import Payments from '@admin/pages/Payments';
 import AuditLogs from '@admin/pages/AuditLogs';
 import Export from '@admin/pages/Export';
 import BulkEmail from '@admin/pages/BulkEmail';
+import BulkEmailJobs from '@admin/pages/BulkEmailJobs';
+import BulkEmailJobDetail from '@admin/pages/BulkEmailJobDetail';
 import Organizers from '@admin/pages/Organizers';
 import OrganizerForm from '@admin/pages/OrganizerForm';
 import Referrals from '@admin/pages/Referrals';
@@ -68,6 +70,8 @@ export default function App() {
           <Route path="audit-logs" element={<RoleRoute role="admin"><AuditLogs /></RoleRoute>} />
           <Route path="export" element={<RoleRoute role="admin"><Export /></RoleRoute>} />
           <Route path="bulk-email" element={<RoleRoute role="admin"><BulkEmail /></RoleRoute>} />
+          <Route path="bulk-email/jobs" element={<RoleRoute role="admin"><BulkEmailJobs /></RoleRoute>} />
+          <Route path="bulk-email/jobs/:jobId" element={<RoleRoute role="admin"><BulkEmailJobDetail /></RoleRoute>} />
           <Route path="referrals" element={<RoleRoute role="admin"><Referrals /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}

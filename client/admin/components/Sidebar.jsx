@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineIdentification, HiOutlineTicket, HiOutlineCreditCard, HiOutlineClipboardList, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX, HiOutlineTag } from 'react-icons/hi';
+import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineIdentification, HiOutlineTicket, HiOutlineCreditCard, HiOutlineClipboardList, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX, HiOutlineTag, HiOutlineInboxIn } from 'react-icons/hi';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: HiOutlineChartBar },
@@ -14,6 +14,7 @@ const links = [
   { to: '/audit-logs', label: 'Audit Logs', icon: HiOutlineShieldCheck },
   { to: '/export', label: 'Export', icon: HiOutlineDocumentDownload },
   { to: '/bulk-email', label: 'Bulk Email', icon: HiOutlineMail },
+  { to: '/bulk-email/jobs', label: 'Email Jobs', icon: HiOutlineInboxIn },
 ];
 
 export default function Sidebar({ open, onClose }) {

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import ConfirmWithPassword from '../../src/components/ConfirmWithPassword';
@@ -13,6 +14,9 @@ import {
   HiOutlineStar,
   HiOutlineShieldCheck,
   HiOutlineDocumentText,
+  HiOutlineUpload,
+  HiOutlineClipboardList,
+  HiOutlineInformationCircle,
 } from 'react-icons/hi';
 
 const TEMPLATE_OPTIONS = [
@@ -36,12 +40,20 @@ const ROLE_OPTIONS = [
 ];
 
 export default function BulkEmail() {
+  const navigate = useNavigate();
+
   // ─── Target filters ──────────────────────────────────────────────────────────
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [userSearch, setUserSearch] = useState('');
   const [userResults, setUserResults] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [manualEmails, setManualEmails] = useState('');
+
+  // ─── File upload ─────────────────────────────────────────────────────────────
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // ─── Compose ──────────────────────────────────────────────────────────────────
   const [template, setTemplate] = useState('raw');
@@ -86,51 +98,65 @@ export default function BulkEmail() {
     setSelectedUsers((prev) => prev.filter((u) => u._id !== userId));
   };
 
+  // ─── File Upload Handler ──────────────────────────────────────────────────────
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadedFile(file);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { data } = await api.post('/mail/upload-recipients', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setUploadPreview(data.data);
+      toast.success(`Parsed ${data.data.validCount} valid emails`);
+    } catch (err) {
+      toast.error(err.userMessage || 'Failed to parse file');
+      setUploadedFile(null);
+      setUploadPreview(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const clearUpload = () => {
+    setUploadedFile(null);
+    setUploadPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   // ─── Preview HTML ─────────────────────────────────────────────────────────────
   const getPreviewHtml = () => {
-    const name = 'Preview User';
+    const baseLayout = (content, accentColor = '#334155') => `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <div style="padding: 24px 32px; border-bottom: 2px solid ${accentColor}; background-color: #f8fafc; text-align: left;">
+          <h1 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase;">LAKSHYA</h1>
+        </div>
+        <div style="padding: 40px 32px; color: #334155; line-height: 1.6; font-size: 15px;">
+          <div style="margin-bottom: 32px;">${content}</div>
+          <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0; color: #64748b; font-size: 14px;">Regards,</p>
+            <p style="margin: 4px 0 0; color: #0f172a; font-size: 15px; font-weight: 600;">Team Lakshya</p>
+          </div>
+        </div>
+        <div style="background-color: #f1f5f9; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px;">This is an automated message from Lakshya Tech-Fest.</p>
+          <a href="#" style="color: #0f172a; text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">lakshyaldce.in</a>
+        </div>
+      </div>
+    `;
     const templateMap = {
-      raw: `<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-        <p style="margin:0 0 8px;">Hi ${name},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body || '(message body)'}</p>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p></div>`,
-      success: `<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0fdf4;border-radius:16px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">✅</div>
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${subject || '(subject)'}</h1></div>
-        <div style="padding:28px 24px;color:#1e293b;">
-        <p style="margin:0 0 8px;font-weight:600;">Hi ${name},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body || '(message body)'}</p>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p></div></div>`,
-      congratulations: `<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:linear-gradient(135deg,#fef3c7,#fef9c3);border-radius:16px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">🎉</div>
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${subject || '(subject)'}</h1></div>
-        <div style="padding:28px 24px;color:#1e293b;">
-        <p style="margin:0 0 8px;font-weight:600;">Hi ${name},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body || '(message body)'}</p>
-        <div style="text-align:center;padding:16px 0;"><span style="font-size:32px;">🏆</span></div>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p></div></div>`,
-      important: `<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:#fef2f2;border-radius:16px;overflow:hidden;border:2px solid #fca5a5;">
-        <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">⚠️</div>
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${subject || '(subject)'}</h1></div>
-        <div style="padding:28px 24px;color:#1e293b;">
-        <div style="background:#fee2e2;border-left:4px solid #dc2626;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
-        <p style="margin:0;font-weight:600;color:#991b1b;font-size:14px;">⚡ Important Notice</p></div>
-        <p style="margin:0 0 8px;font-weight:600;">Hi ${name},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body || '(message body)'}</p>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p></div></div>`,
-      formal: `<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f172a;border-radius:16px;overflow:hidden;border:1px solid #334155;">
-        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:32px 24px;text-align:center;border-bottom:1px solid #334155;">
-        <h1 style="margin:0;color:#f1f5f9;font-size:22px;font-weight:700;letter-spacing:0.5px;">${subject || '(subject)'}</h1>
-        <p style="margin:8px 0 0;color:#64748b;font-size:13px;">Official Communication</p></div>
-        <div style="padding:28px 24px;color:#e2e8f0;">
-        <p style="margin:0 0 8px;font-weight:600;">Dear ${name},</p>
-        <p style="white-space:pre-wrap;line-height:1.8;margin:0 0 24px;color:#cbd5e1;">${body || '(message body)'}</p>
-        <div style="border-top:1px solid #334155;padding-top:16px;margin-top:24px;">
-        <p style="margin:0;color:#64748b;font-size:13px;">Warm regards,</p>
-        <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;font-weight:600;">Team Lakshya</p></div></div></div>`,
+      raw: baseLayout(`<p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#334155'),
+      success: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject || '(subject)'}</h2><p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#059669'),
+      congratulations: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject || '(subject)'}</h2><p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#d97706'),
+      important: baseLayout(`<div style="border-left: 3px solid #dc2626; padding-left: 16px; margin-bottom: 24px;"><p style="margin: 0 0 4px 0; font-weight: 600; color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Notice</p><h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject || '(subject)'}</h2></div><p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#dc2626'),
+      formal: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">${subject || '(subject)'}</h2><p style="white-space: pre-wrap; margin: 0; color: #475569;">${body || '(message body)'}</p>`, '#1e293b'),
     };
     return templateMap[template] || templateMap.raw;
   };
@@ -139,19 +165,18 @@ export default function BulkEmail() {
   const handleSend = async (password) => {
     setSending(true);
     try {
-      // Collect all manual emails
-      const manualList = manualEmails
-        .split(',')
-        .map((e) => e.trim())
-        .filter(Boolean);
+      const manualList = manualEmails.split(',').map((e) => e.trim()).filter(Boolean);
 
-      // Combine individual user emails + manual emails
+      // Combine: individual users + manual + uploaded valid emails
       const recipientEmails = [
         ...selectedUsers.map((u) => u.email),
         ...manualList,
+        ...(uploadPreview?.validEmails || []),
       ];
 
-      const { data } = await api.post('/mail/send', {
+      const sourceType = uploadPreview ? 'excel_upload' : 'manual_selection';
+
+      const { data } = await api.post('/mail/jobs', {
         subject,
         body,
         template,
@@ -159,37 +184,47 @@ export default function BulkEmail() {
         roles: selectedRoles,
         adminPassword: password,
         senderIdentity,
+        sourceType,
       });
 
-      toast.success(data.message || 'Emails sent successfully!');
+      toast.success(data.message || 'Bulk email job created!');
 
-      // Reset form
-      setSubject('');
-      setBody('');
-      setSelectedRoles([]);
-      setSelectedUsers([]);
-      setManualEmails('');
-      setSenderIdentity('updates');
+      // Navigate to job detail page
+      if (data.data?.jobId) {
+        navigate(`/bulk-email/jobs/${data.data.jobId}`);
+      } else {
+        navigate('/bulk-email/jobs');
+      }
     } catch (err) {
-      toast.error(err.userMessage || 'Failed to send emails');
-      throw err; // let ConfirmWithPassword show the error
+      toast.error(err.userMessage || 'Failed to create email job');
+      throw err;
     } finally {
       setSending(false);
     }
   };
 
-  // ─── Computed recipient count ─────────────────────────────────────────────────
+  // ─── Computed ─────────────────────────────────────────────────────────────────
   const manualCount = manualEmails.split(',').map((e) => e.trim()).filter(Boolean).length;
-  const recipientCount = selectedUsers.length + manualCount + (selectedRoles.length > 0 ? '(+ roles)' : 0);
-  const hasRecipients = selectedRoles.length > 0 || selectedUsers.length > 0 || manualCount > 0;
+  const uploadCount = uploadPreview?.validCount || 0;
+  const individualCount = selectedUsers.length + manualCount + uploadCount;
+  const hasRecipients = selectedRoles.length > 0 || individualCount > 0;
   const canSend = hasRecipients && subject.trim() && body.trim();
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-900">
-        <HiOutlineMail className="w-7 h-7 text-primary-600" />
-        Bulk Email
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
+          <HiOutlineMail className="w-7 h-7 text-primary-600" />
+          Compose Bulk Email
+        </h1>
+        <button
+          onClick={() => navigate('/bulk-email/jobs')}
+          className="btn-secondary flex items-center gap-2 text-sm"
+        >
+          <HiOutlineClipboardList className="w-5 h-5" />
+          View Jobs
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── LEFT: Target Filters ──────────────────────────────────────────── */}
@@ -242,7 +277,6 @@ export default function BulkEmail() {
                 </div>
               )}
             </div>
-            {/* Selected users chips */}
             {selectedUsers.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedUsers.map((u) => (
@@ -269,6 +303,80 @@ export default function BulkEmail() {
             />
             {manualCount > 0 && (
               <p className="text-xs text-gray-500 mt-1">{manualCount} email{manualCount !== 1 ? 's' : ''} added</p>
+            )}
+          </div>
+
+          {/* File Upload */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Upload CSV / Excel</h2>
+              <div className="group relative">
+                <HiOutlineInformationCircle className="w-4 h-4 text-gray-400 cursor-help" />
+                <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                  <p className="font-bold mb-1">Upload Format:</p>
+                  <ul className="list-disc pl-3 space-y-1">
+                    <li>Include a column named <b>email</b> or <b>email address</b>.</li>
+                    <li>If no header exists, system will auto-detect the email column.</li>
+                    <li>Supported: .csv, .xlsx, .xls</li>
+                    <li>Duplicates and invalid emails are auto-filtered.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            {!uploadPreview ? (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
+                    uploading ? 'border-primary-300 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-primary-50/50'
+                  }`}
+                >
+                  <HiOutlineUpload className={`w-8 h-8 mb-2 ${uploading ? 'text-primary-500 animate-pulse' : 'text-gray-400'}`} />
+                  <span className="text-sm text-gray-600 font-medium">
+                    {uploading ? 'Parsing file...' : 'Click to upload'}
+                  </span>
+                  <span className="text-xs text-gray-400 mt-1">CSV, XLSX, XLS (max 5MB)</span>
+                </label>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 font-medium truncate">{uploadedFile?.name}</span>
+                  <button onClick={clearUpload} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <HiOutlineX className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                    <p className="text-lg font-bold text-green-700">{uploadPreview.validCount}</p>
+                    <p className="text-xs text-green-600">Valid</p>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
+                    <p className="text-lg font-bold text-red-700">{uploadPreview.invalidCount}</p>
+                    <p className="text-xs text-red-600">Invalid</p>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
+                    <p className="text-lg font-bold text-amber-700">{uploadPreview.duplicateCount}</p>
+                    <p className="text-xs text-amber-600">Dupes</p>
+                  </div>
+                </div>
+                {uploadPreview.invalidCount > 0 && (
+                  <details className="text-xs">
+                    <summary className="text-red-600 cursor-pointer hover:text-red-700">View invalid emails</summary>
+                    <div className="mt-1 p-2 bg-red-50 rounded text-red-700 max-h-24 overflow-y-auto">
+                      {uploadPreview.invalidEmails.join(', ')}
+                    </div>
+                  </details>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -358,12 +466,12 @@ export default function BulkEmail() {
               className="btn-primary flex items-center gap-2"
             >
               <HiOutlinePaperAirplane className="w-5 h-5" />
-              {sending ? 'Sending…' : 'Send Email'}
+              {sending ? 'Creating Job…' : 'Send Email'}
             </button>
             {hasRecipients && (
               <span className="text-xs text-gray-600">
-                Sending to {selectedUsers.length + manualCount} individual recipient{selectedUsers.length + manualCount !== 1 ? 's' : ''}
-                {selectedRoles.length > 0 && ` + all ${selectedRoles.join(', ')}`}
+                {individualCount > 0 && `${individualCount} individual recipient${individualCount !== 1 ? 's' : ''}`}
+                {selectedRoles.length > 0 && ` ${individualCount > 0 ? '+ ' : ''}all ${selectedRoles.join(', ')}`}
               </span>
             )}
           </div>
@@ -371,7 +479,7 @@ export default function BulkEmail() {
           {/* Security notice */}
           <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-300 rounded-lg p-3">
             <HiOutlineExclamation className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
-            <p>Sending bulk emails is an admin-only action. You will be asked to verify your password before sending. This action is logged for audit purposes.</p>
+            <p>Sending bulk emails is an admin-only action. You will be asked to verify your password before sending. Emails are processed in the background — you can track progress on the Jobs page.</p>
           </div>
         </div>
       </div>
@@ -402,8 +510,8 @@ export default function BulkEmail() {
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleSend}
         title="Send Bulk Email"
-        message={`You are about to send an email to ${selectedUsers.length + manualCount} individual recipient${selectedUsers.length + manualCount !== 1 ? 's' : ''}${selectedRoles.length > 0 ? ` plus all ${selectedRoles.join(', ')}` : ''}. This action cannot be undone.`}
-        confirmLabel="Send Now"
+        message={`You are about to create a bulk email job for ${individualCount} individual recipient${individualCount !== 1 ? 's' : ''}${selectedRoles.length > 0 ? ` plus all ${selectedRoles.join(', ')}` : ''}. Emails will be sent in the background.`}
+        confirmLabel="Create Job"
         variant="warning"
       />
     </div>

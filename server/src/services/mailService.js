@@ -1,7 +1,8 @@
 const { Resend } = require('resend');
 const AppError = require('../middleware/AppError');
+const logger = require('../utils/logger');
 
-// Lazy-init: only create the Resend client when actually sending
+// ─── Lazy Resend client ────────────────────────────────────────────────────────
 let _resend;
 const getResend = () => {
   if (!_resend) {
@@ -12,176 +13,167 @@ const getResend = () => {
   return _resend;
 };
 
-// Admin Manual Sender Identities mapped securely on backend
+// ─── Sender Identities ────────────────────────────────────────────────────────
 const SENDER_IDENTITIES = {
   updates: process.env.MAIL_FROM_UPDATES || 'Lakshya Updates <updates@notify.lakshyaldce.in>',
   events: process.env.MAIL_FROM_EVENTS || 'Lakshya Events <events@notify.lakshyaldce.in>',
   tarkshaastra: process.env.MAIL_FROM_TARKSHAASTRA || 'Tarkshaastra <tarkshaastra@notify.lakshyaldce.in>',
 };
 
-// Fixed Reply-To address
 const REPLY_TO_EMAIL = process.env.MAIL_REPLY_TO || 'contact@lakshyaldce.in';
 
-// ─── HTML Email Templates ───────────────────────────────────────────────────────
+// ─── Email Templates ──────────────────────────────────────────────────────────
+const baseLayout = (content, accentColor = '#334155') => `
+  <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    <div style="padding: 24px 32px; border-bottom: 2px solid ${accentColor}; background-color: #f8fafc; text-align: left;">
+      <h1 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase;">
+        LAKSHYA
+      </h1>
+    </div>
+    <div style="padding: 40px 32px; color: #334155; line-height: 1.6; font-size: 15px;">
+      <div style="margin-bottom: 32px;">
+        ${content}
+      </div>
+      <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0; color: #64748b; font-size: 14px;">Regards,</p>
+        <p style="margin: 4px 0 0; color: #0f172a; font-size: 15px; font-weight: 600;">Team Lakshya</p>
+      </div>
+    </div>
+    <div style="background-color: #f1f5f9; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
+      <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px;">This is an automated message from Lakshya Tech-Fest.</p>
+      <a href="https://lakshyaldce.in" style="color: #0f172a; text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">lakshyaldce.in</a>
+    </div>
+  </div>
+`;
 
 const templates = {
-  raw: ({ subject, body, recipientName }) => `
-    <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      <p style="margin:0 0 8px;">Hi ${recipientName || 'there'},</p>
-      <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body}</p>
-      <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p>
-    </div>
-  `,
+  raw: ({ body }) => baseLayout(`
+    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+  `, '#334155'),
 
-  success: ({ subject, body, recipientName }) => `
-    <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0fdf4;border-radius:16px;overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">✅</div>
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${subject}</h1>
-      </div>
-      <div style="padding:28px 24px;color:#1e293b;">
-        <p style="margin:0 0 8px;font-weight:600;">Hi ${recipientName || 'there'},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body}</p>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p>
-      </div>
-    </div>
-  `,
+  success: ({ subject, body }) => baseLayout(`
+    <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject}</h2>
+    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+  `, '#059669'),
 
-  congratulations: ({ subject, body, recipientName }) => `
-    <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:linear-gradient(135deg,#fef3c7,#fef9c3);border-radius:16px;overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">🎉</div>
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${subject}</h1>
-      </div>
-      <div style="padding:28px 24px;color:#1e293b;">
-        <p style="margin:0 0 8px;font-weight:600;">Hi ${recipientName || 'there'},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body}</p>
-        <div style="text-align:center;padding:16px 0;">
-          <span style="font-size:32px;">🏆</span>
-        </div>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p>
-      </div>
-    </div>
-  `,
+  congratulations: ({ subject, body }) => baseLayout(`
+    <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject}</h2>
+    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+  `, '#d97706'),
 
-  important: ({ subject, body, recipientName }) => `
-    <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:#fef2f2;border-radius:16px;overflow:hidden;border:2px solid #fca5a5;">
-      <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:8px;">⚠️</div>
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${subject}</h1>
-      </div>
-      <div style="padding:28px 24px;color:#1e293b;">
-        <div style="background:#fee2e2;border-left:4px solid #dc2626;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
-          <p style="margin:0;font-weight:600;color:#991b1b;font-size:14px;">⚡ Important Notice</p>
-        </div>
-        <p style="margin:0 0 8px;font-weight:600;">Hi ${recipientName || 'there'},</p>
-        <p style="white-space:pre-wrap;line-height:1.7;margin:0 0 24px;">${body}</p>
-        <p style="margin:0;color:#94a3b8;font-size:13px;">&mdash; Team Lakshya</p>
-      </div>
+  important: ({ subject, body }) => baseLayout(`
+    <div style="border-left: 3px solid #dc2626; padding-left: 16px; margin-bottom: 24px;">
+      <p style="margin: 0 0 4px 0; font-weight: 600; color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Notice</p>
+      <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject}</h2>
     </div>
-  `,
+    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+  `, '#dc2626'),
 
-  formal: ({ subject, body, recipientName }) => `
-    <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f172a;border-radius:16px;overflow:hidden;border:1px solid #334155;">
-      <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:32px 24px;text-align:center;border-bottom:1px solid #334155;">
-        <h1 style="margin:0;color:#f1f5f9;font-size:22px;font-weight:700;letter-spacing:0.5px;">${subject}</h1>
-        <p style="margin:8px 0 0;color:#64748b;font-size:13px;">Official Communication</p>
-      </div>
-      <div style="padding:28px 24px;color:#e2e8f0;">
-        <p style="margin:0 0 8px;font-weight:600;">Dear ${recipientName || 'Participant'},</p>
-        <p style="white-space:pre-wrap;line-height:1.8;margin:0 0 24px;color:#cbd5e1;">${body}</p>
-        <div style="border-top:1px solid #334155;padding-top:16px;margin-top:24px;">
-          <p style="margin:0;color:#64748b;font-size:13px;">Warm regards,</p>
-          <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;font-weight:600;">Team Lakshya</p>
-        </div>
-      </div>
-    </div>
-  `,
+  formal: ({ subject, body }) => baseLayout(`
+    <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">${subject}</h2>
+    <p style="white-space: pre-wrap; margin: 0; color: #475569;">${body}</p>
+  `, '#1e293b'),
 };
 
-// ─── Bulk Send ───────────────────────────────────────────────────────────────────
+// ─── Single Email Send (with retry + backoff) ─────────────────────────────────
 
-const BATCH_SIZE = 50;
-const BATCH_DELAY_MS = 1100; // stay well within Resend rate limits
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 1000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * sendBulkEmail
- * @param {Array<{email: string, name?: string}>} recipients
+ * Send a single email via Resend with automatic retry and exponential backoff.
+ * @param {{ email: string, name?: string }} recipient
  * @param {string} subject
  * @param {string} body
- * @param {string} template – one of 'raw','success','congratulations','important','formal'
- * @param {string} senderIdentity - allowed key (updates, events, tarkshaastra)
- * @returns {{ sent: number, failed: number }}
+ * @param {string} template
+ * @param {string} senderIdentity
+ * @returns {{ success: boolean, error?: string }}
  */
-const sendBulkEmail = async (recipients, subject, body, template = 'raw', senderIdentity = 'updates') => {
-  if (!recipients || recipients.length === 0) {
-    throw new AppError('No recipients specified', 400, 'NO_RECIPIENTS');
-  }
-  if (!subject || !body) {
-    throw new AppError('Subject and body are required', 400, 'MISSING_FIELDS');
-  }
-  if (!SENDER_IDENTITIES[senderIdentity]) {
-    throw new AppError('Invalid sender identity', 400, 'INVALID_SENDER');
-  }
+const sendSingleEmail = async (recipient, subject, body, template = 'raw', senderIdentity = 'updates') => {
+  const fromAddress = SENDER_IDENTITIES[senderIdentity];
+  if (!fromAddress) return { success: false, error: 'Invalid sender identity' };
 
   const templateFn = templates[template] || templates.raw;
+  const html = templateFn({ subject, body, recipientName: recipient.name });
 
-  let sent = 0;
-  let failed = 0;
-  const errors = [];
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await getResend().emails.send({
+        from: fromAddress,
+        reply_to: REPLY_TO_EMAIL,
+        to: recipient.email,
+        subject,
+        html,
+      });
 
-  // Process in batches
-  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-    const batch = recipients.slice(i, i + BATCH_SIZE);
+      if (result.error) {
+        const errMsg = result.error.message || result.error.name || 'Unknown Resend error';
 
-    const promises = batch.map(async (recipient) => {
-      try {
-        const html = templateFn({ subject, body, recipientName: recipient.name });
-        const result = await getResend().emails.send({
-          from: SENDER_IDENTITIES[senderIdentity],
-          reply_to: REPLY_TO_EMAIL,
-          to: recipient.email,
-          subject,
-          html,
-        });
-
-        // Resend returns { data, error } — check for error
-        if (result.error) {
-          console.error(`[Mail] Failed to send to ${recipient.email}:`, result.error);
-          errors.push({ email: recipient.email, error: result.error.message || result.error.name });
-          failed++;
-        } else {
-          console.log(`[Mail] Sent to ${recipient.email} via ${senderIdentity} — id: ${result.data?.id}`);
-          sent++;
+        // If rate limited or temporary error, retry
+        if (attempt < MAX_RETRIES && isRetryableError(result.error)) {
+          const delay = BASE_BACKOFF_MS * Math.pow(2, attempt);
+          logger.warn(`[Mail] Retryable error for ${recipient.email} (attempt ${attempt + 1}/${MAX_RETRIES}): ${errMsg}. Retrying in ${delay}ms`);
+          await sleep(delay);
+          continue;
         }
-      } catch (err) {
-        console.error(`[Mail] Exception sending to ${recipient.email}:`, err.message);
-        errors.push({ email: recipient.email, error: err.message });
-        failed++;
+
+        return { success: false, error: errMsg };
       }
-    });
 
-    await Promise.all(promises);
+      return { success: true, resendId: result.data?.id };
+    } catch (err) {
+      const errMsg = err.message || 'Unknown exception';
 
-    // Delay between batches (skip delay for the last batch)
-    if (i + BATCH_SIZE < recipients.length) {
-      await sleep(BATCH_DELAY_MS);
+      if (attempt < MAX_RETRIES && isRetryableException(err)) {
+        const delay = BASE_BACKOFF_MS * Math.pow(2, attempt);
+        logger.warn(`[Mail] Retryable exception for ${recipient.email} (attempt ${attempt + 1}/${MAX_RETRIES}): ${errMsg}. Retrying in ${delay}ms`);
+        await sleep(delay);
+        continue;
+      }
+
+      return { success: false, error: errMsg };
     }
   }
 
-  // If ALL emails failed, throw so the frontend shows an error
-  if (sent === 0 && failed > 0) {
-    const firstError = errors[0]?.error || 'Unknown error';
-    throw new AppError(
-      `All ${failed} email(s) failed to send. Error: ${firstError}`,
-      502,
-      'EMAIL_SEND_FAILED'
-    );
-  }
-
-  return { sent, failed, total: recipients.length, errors: errors.length > 0 ? errors : undefined };
+  return { success: false, error: 'Max retries exceeded' };
 };
 
-module.exports = { sendBulkEmail, templates };
+/**
+ * Check if a Resend error object is retryable (rate limit, server error).
+ */
+function isRetryableError(error) {
+  const name = (error.name || '').toLowerCase();
+  const message = (error.message || '').toLowerCase();
+  return (
+    name.includes('rate') ||
+    name.includes('too_many') ||
+    message.includes('rate') ||
+    message.includes('too many') ||
+    message.includes('429') ||
+    name.includes('internal') ||
+    message.includes('500') ||
+    message.includes('503')
+  );
+}
+
+/**
+ * Check if a thrown exception is a retryable network/timeout error.
+ */
+function isRetryableException(err) {
+  const msg = (err.message || '').toLowerCase();
+  const code = (err.code || '').toLowerCase();
+  return (
+    code === 'econnreset' ||
+    code === 'econnaborted' ||
+    code === 'etimedout' ||
+    code === 'epipe' ||
+    msg.includes('timeout') ||
+    msg.includes('socket hang up') ||
+    msg.includes('network') ||
+    (err.status && err.status >= 500)
+  );
+}
+
+module.exports = { sendSingleEmail, templates, SENDER_IDENTITIES, REPLY_TO_EMAIL };

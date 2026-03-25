@@ -7,10 +7,18 @@ const mailController = require('../controllers/mailController');
 // All routes require authentication + admin role
 router.use(protect, authorize('admin'));
 
-// GET  /api/mail/recipients  – lightweight user list for picker
+// ─── Recipients & Sender Identities ──────────────────────────────────────────
 router.get('/recipients', mailController.getRecipients);
+router.get('/sender-identities', mailController.getSenderIdentities);
 
-// POST /api/mail/send        – send bulk email (requires admin password)
-router.post('/send', verifyAdminPassword, mailController.sendBulkEmail);
+// ─── File Upload (parse CSV/Excel for preview) ───────────────────────────────
+router.post('/upload-recipients', mailController.uploadMiddleware, mailController.uploadRecipients);
+
+// ─── Bulk Email Jobs ─────────────────────────────────────────────────────────
+router.post('/jobs', verifyAdminPassword, mailController.createBulkEmailJob);
+router.get('/jobs', mailController.getJobs);
+router.get('/jobs/:jobId', mailController.getJobDetail);
+router.post('/jobs/:jobId/retry', verifyAdminPassword, mailController.retryFailedRecipients);
+router.post('/jobs/:jobId/cancel', mailController.cancelJob);
 
 module.exports = router;
