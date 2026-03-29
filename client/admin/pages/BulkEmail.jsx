@@ -171,15 +171,28 @@ export default function BulkEmail() {
 
   // ─── Preview HTML ─────────────────────────────────────────────────────────────
   const getPreviewHtml = () => {
-    const baseLayout = (content, accentColor = '#334155') => `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 48px 32px; text-align: left; border-bottom: 1px solid #e2e8f0;">
-          <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase;">LAKSHYA</h1>
-          <p style="margin: 4px 0 0; color: rgba(255,255,255,0.95); font-size: 12px; letter-spacing: 0.08em; font-style: italic; font-weight: 500;">Where Legacy meets Innovation</p>
+    const baseLayout = (content, templateMode = 'default') => `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);">
+        <!-- Brand Header -->
+        <div style="background-color: #ffffff; background-image: 
+          linear-gradient(215deg, #0d9488 20%, transparent 20.5%),
+          linear-gradient(235deg, #2dd4bf 40%, transparent 40.5%),
+          linear-gradient(45deg, #f59e0b 15%, transparent 15.5%),
+          radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+          background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+          padding: 64px 32px; text-align: center; border-bottom: 1px solid #f1f5f9; position: relative;">
+          <h1 style="margin: 0; color: #0f172a; font-size: 42px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.15em; text-transform: uppercase;">LAKSHYA</h1>
+          <p style="margin: 8px 0 0; color: #0d9488; font-size: 14px; letter-spacing: 0.1em; font-style: italic; font-weight: 600;">Where Legacy meets Innovation</p>
         </div>
-        <div style="padding: 40px 32px; color: #334155; line-height: 1.6; font-size: 15px;">
-          <div style="margin-bottom: 32px;">${content}</div>
+
+        <!-- Main Content Area -->
+        <div style="padding: 48px 40px; color: #334155; line-height: 1.8; font-size: 15px;">
+          <div style="margin-bottom: 32px;">
+            ${content}
+          </div>
         </div>
+
+        <!-- Branded Footer -->
         <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
           <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
           <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
@@ -221,59 +234,15 @@ export default function BulkEmail() {
     const pb = processBody(body);
     const standardContent = headerHtml + pb;
     const s = subject || '(subject)';
+    
     const templateMap = {
-      raw: baseLayout(`<div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#334155'),
-      success: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#059669'),
-      congratulations: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#d97706'),
-      important: baseLayout(`<div style="border-left: 3px solid #dc2626; padding-left: 16px; margin-bottom: 24px;"><p style="margin: 0 0 4px 0; font-weight: 600; color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Notice</p><h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${s}</h2></div><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#dc2626'),
-      formal: `
-        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
-          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
-            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
-          </div>
-          <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
-            <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2>
-            <div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
-            <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
-            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
-          </div>
-        </div>
-      `,
-      marketing: `
-        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
-          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
-            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
-          </div>
-          <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
-            <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2>
-            <div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
-            <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
-            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
-          </div>
-        </div>
-      `,
-      club: `
-        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
-          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
-            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
-          </div>
-          <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
-            <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2>
-            <div style="margin: 0 0 32px 0; line-height: 1.7;">${headerHtml}${pb}</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
-            <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
-            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
-          </div>
-        </div>
-      `,
+      raw: baseLayout(`<div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
+      success: baseLayout(`<h2 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
+      congratulations: baseLayout(`<h2 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
+      important: baseLayout(`<div style="border-left: 4px solid #dc2626; padding-left: 20px; margin-bottom: 32px;"><p style="margin: 0 0 6px 0; font-weight: 700; color: #dc2626; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Urgent Notice</p><h2 style="margin: 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2></div><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
+      formal: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>`),
+      marketing: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>`),
+      club: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${headerHtml}${pb}</div>`),
     };
     return templateMap[template] || templateMap.raw;
   };
