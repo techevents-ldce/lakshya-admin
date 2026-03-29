@@ -14,10 +14,13 @@ const bulkEmailJobSchema = new mongoose.Schema(
       default: 'updates',
     },
     subject: { type: String, required: true },
-    body: { type: String, required: true },
+    body: { 
+      type: String, 
+      required: function() { return this.template !== 'club'; } 
+    },
     template: {
       type: String,
-      enum: ['raw', 'success', 'congratulations', 'important', 'formal'],
+      enum: ['raw', 'success', 'congratulations', 'important', 'formal', 'marketing', 'club'],
       default: 'raw',
     },
     totalRecipients: { type: Number, required: true, default: 0 },

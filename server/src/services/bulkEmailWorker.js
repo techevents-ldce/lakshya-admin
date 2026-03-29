@@ -144,7 +144,13 @@ async function processBatchWithConcurrency(batch, job, concurrencyLimit) {
 async function processRecipient(recipient, subject, body, template, senderIdentity, jobId) {
   try {
     const result = await sendSingleEmail(
-      { email: recipient.email, name: recipient.name },
+      { 
+        email: recipient.email, 
+        name: recipient.name,
+        college: recipient.college,
+        department: recipient.department,
+        clubName: recipient.clubName
+      },
       subject,
       body,
       template,

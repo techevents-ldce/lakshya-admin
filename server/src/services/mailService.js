@@ -22,57 +22,162 @@ const SENDER_IDENTITIES = {
 
 const REPLY_TO_EMAIL = process.env.MAIL_REPLY_TO || 'contact@lakshyaldce.in';
 
+// ─── Body Processor (linkify URLs + preserve whitespace) ──────────────────────
+const getSmartLabel = (url) => {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    if (hostname.includes('unstop.com')) return 'Register Now';
+    if (hostname.includes('drive.google.com')) return 'Download Brochure';
+    return hostname;
+  } catch { return url; }
+};
+
+const processBody = (text) => {
+  if (!text) return '';
+  // 1. Escape HTML special chars
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // 2. Linkify URLs → styled pill buttons with smart labels
+  html = html.replace(
+    /https?:\/\/[^\s<>"']+/gi,
+    (url) => {
+      const label = getSmartLabel(url);
+      return `</span><a href="${url}" target="_blank" style="display:inline-block;padding:8px 20px;background:#2563eb;color:#ffffff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:4px 0;">${label} →</a><span>`;
+    }
+  );
+  html = html.replace(/Lakshya 2\.0/gi, 'Lakshya&nbsp;2.0');
+  html = html.replace(/Tark Shaastra/gi, 'Tark&nbsp;Shaastra');
+  html = html.replace(/L\.D\. College of Engineering/gi, 'L.D.&nbsp;College&nbsp;of&nbsp;Engineering');
+  // 3. Preserve whitespace: newlines → <br>, spaces → &nbsp;
+  html = html.replace(/\n/g, '<br>');
+  html = html.replace(/ {2}/g, '&nbsp;&nbsp;');
+  return `<span>${html}</span>`;
+};
+
 // ─── Email Templates ──────────────────────────────────────────────────────────
 const baseLayout = (content, accentColor = '#334155') => `
-  <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-    <div style="padding: 24px 32px; border-bottom: 2px solid ${accentColor}; background-color: #f8fafc; text-align: left;">
-      <h1 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase;">
-        LAKSHYA
-      </h1>
+  <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 48px 32px; text-align: left; border-bottom: 1px solid #e2e8f0;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase;">LAKSHYA</h1>
+      <p style="margin: 4px 0 0; color: rgba(255,255,255,0.95); font-size: 12px; letter-spacing: 0.08em; font-style: italic; font-weight: 500;">Where Legacy meets Innovation</p>
     </div>
     <div style="padding: 40px 32px; color: #334155; line-height: 1.6; font-size: 15px;">
       <div style="margin-bottom: 32px;">
         ${content}
       </div>
-      <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
-        <p style="margin: 0; color: #64748b; font-size: 14px;">Regards,</p>
-        <p style="margin: 4px 0 0; color: #0f172a; font-size: 15px; font-weight: 600;">Team Lakshya</p>
-      </div>
     </div>
-    <div style="background-color: #f1f5f9; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-      <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px;">This is an automated message from Lakshya Tech-Fest.</p>
-      <a href="https://lakshyaldce.in" style="color: #0f172a; text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">lakshyaldce.in</a>
+    <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+      <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+      <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
     </div>
   </div>
 `;
 
+const getPersonalizedHeader = (recipient, templateMode = 'default') => {
+  if (!recipient) return '';
+  
+  if (templateMode === 'club') {
+    const clubName = recipient.clubName || 'Tech Enthusiasts';
+    const collegeText = recipient.college ? `${recipient.college}<br>` : '';
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Hello <strong>${clubName}</strong>,<br>${collegeText}</p>`;
+  }
+  
+  if (templateMode === 'marketing') {
+    const deptText = recipient.department ? `Department of ${recipient.department}<br>` : '';
+    const collegeText = recipient.college ? `${recipient.college}<br>` : '';
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>${deptText}${collegeText}</p>`;
+  }
+  
+  if (recipient.clubName) {
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${recipient.clubName} Team,</p>`;
+  }
+  
+  if (recipient.department) {
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>Department of ${recipient.department}</p>`;
+  }
+  
+  if (recipient.name) {
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${recipient.name},</p>`;
+  }
+  
+  return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
+};
+
 const templates = {
-  raw: ({ body }) => baseLayout(`
-    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+  raw: ({ body, recipient }) => baseLayout(`
+    <div style="margin: 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
   `, '#334155'),
 
-  success: ({ subject, body }) => baseLayout(`
+  success: ({ subject, body, recipient }) => baseLayout(`
     <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject}</h2>
-    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+    <div style="margin: 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
   `, '#059669'),
 
-  congratulations: ({ subject, body }) => baseLayout(`
+  congratulations: ({ subject, body, recipient }) => baseLayout(`
     <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject}</h2>
-    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+    <div style="margin: 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
   `, '#d97706'),
 
-  important: ({ subject, body }) => baseLayout(`
+  important: ({ subject, body, recipient }) => baseLayout(`
     <div style="border-left: 3px solid #dc2626; padding-left: 16px; margin-bottom: 24px;">
       <p style="margin: 0 0 4px 0; font-weight: 600; color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Notice</p>
       <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject}</h2>
     </div>
-    <p style="white-space: pre-wrap; margin: 0;">${body}</p>
+    <div style="margin: 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
   `, '#dc2626'),
 
-  formal: ({ subject, body }) => baseLayout(`
-    <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">${subject}</h2>
-    <p style="white-space: pre-wrap; margin: 0; color: #475569;">${body}</p>
-  `, '#1e293b'),
+  formal: ({ subject, body, recipient }) => `
+    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
+      <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+        <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
+        <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
+      </div>
+      <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
+        <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${subject}</h2>
+        <div style="margin: 0 0 32px 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+        <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+        <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+      </div>
+    </div>
+  `,
+
+  marketing: ({ subject, body, recipient }) => `
+    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
+      <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+        <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
+        <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
+      </div>
+      <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
+        <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${subject}</h2>
+        <div style="margin: 0 0 32px 0; line-height: 1.7;">${getPersonalizedHeader(recipient, 'marketing')}${processBody(body)}</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+        <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+        <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+      </div>
+    </div>
+  `,
+
+  club: ({ subject, body, recipient }) => `
+    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
+      <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+        <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
+        <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
+      </div>
+      <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
+        <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${subject}</h2>
+        <div style="margin: 0 0 32px 0; line-height: 1.7;">${getPersonalizedHeader(recipient, 'club')}${processBody(body)}</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+        <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+        <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+      </div>
+    </div>
+  `,
 };
 
 // ─── Single Email Send (with retry + backoff) ─────────────────────────────────
@@ -96,13 +201,13 @@ const sendSingleEmail = async (recipient, subject, body, template = 'raw', sende
   if (!fromAddress) return { success: false, error: 'Invalid sender identity' };
 
   const templateFn = templates[template] || templates.raw;
-  const html = templateFn({ subject, body, recipientName: recipient.name });
+  const html = templateFn({ subject, body, recipientName: recipient.name, recipient });
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const result = await getResend().emails.send({
         from: fromAddress,
-        reply_to: REPLY_TO_EMAIL,
+        replyTo: REPLY_TO_EMAIL,
         to: recipient.email,
         subject,
         html,

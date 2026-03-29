@@ -17,7 +17,10 @@ import {
   HiOutlineUpload,
   HiOutlineClipboardList,
   HiOutlineInformationCircle,
+  HiOutlineSpeakerphone,
+  HiOutlineUserGroup,
 } from 'react-icons/hi';
+
 
 const TEMPLATE_OPTIONS = [
   { id: 'raw', label: 'Raw', icon: HiOutlineDocumentText, desc: 'Plain text email' },
@@ -25,7 +28,10 @@ const TEMPLATE_OPTIONS = [
   { id: 'congratulations', label: 'Congrats', icon: HiOutlineStar, desc: 'Celebratory theme' },
   { id: 'important', label: 'Important', icon: HiOutlineExclamation, desc: 'Warning/alert theme' },
   { id: 'formal', label: 'Formal', icon: HiOutlineShieldCheck, desc: 'Professional dark theme' },
+  { id: 'marketing', label: 'HOD Invite', icon: HiOutlineSpeakerphone, desc: 'Marketing theme for HODs' },
+  { id: 'club', label: 'Club Invite', icon: HiOutlineUserGroup, desc: 'Dark theme for Clubs' },
 ];
+
 
 const SENDER_OPTIONS = [
   { value: 'updates', label: 'Lakshya Updates', email: 'updates@notify.lakshyaldce.in' },
@@ -131,35 +137,147 @@ export default function BulkEmail() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // ─── Smart link label resolver ────────────────────────────────────────────────
+  const getSmartLabel = (url) => {
+    try {
+      const hostname = new URL(url).hostname.replace(/^www\./, '');
+      if (hostname.includes('unstop.com')) return 'Register Now';
+      if (hostname.includes('drive.google.com')) return 'Download Brochure';
+      return hostname;
+    } catch { return url; }
+  };
+
+  // ─── Body Processor (linkify URLs + preserve whitespace) ─────────────────────
+  const processBody = (text) => {
+    if (!text) return '<span style="color:#94a3b8;">(message body)</span>';
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    html = html.replace(
+      /https?:\/\/[^\s<>"']+/gi,
+      (url) => {
+        const label = getSmartLabel(url);
+        return `</span><a href="${url}" target="_blank" style="display:inline-block;padding:8px 20px;background:#2563eb;color:#ffffff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:4px 0;">${label} →</a><span>`;
+      }
+    );
+    html = html.replace(/Lakshya 2\.0/gi, 'Lakshya&nbsp;2.0');
+    html = html.replace(/Tark Shaastra/gi, 'Tark&nbsp;Shaastra');
+    html = html.replace(/L\.D\. College of Engineering/gi, 'L.D.&nbsp;College&nbsp;of&nbsp;Engineering');
+    html = html.replace(/\n/g, '<br>');
+    html = html.replace(/ {2}/g, '&nbsp;&nbsp;');
+    return `<span>${html}</span>`;
+  };
+
   // ─── Preview HTML ─────────────────────────────────────────────────────────────
   const getPreviewHtml = () => {
     const baseLayout = (content, accentColor = '#334155') => `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <div style="padding: 24px 32px; border-bottom: 2px solid ${accentColor}; background-color: #f8fafc; text-align: left;">
-          <h1 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase;">LAKSHYA</h1>
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 48px 32px; text-align: left; border-bottom: 1px solid #e2e8f0;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase;">LAKSHYA</h1>
+          <p style="margin: 4px 0 0; color: rgba(255,255,255,0.95); font-size: 12px; letter-spacing: 0.08em; font-style: italic; font-weight: 500;">Where Legacy meets Innovation</p>
         </div>
         <div style="padding: 40px 32px; color: #334155; line-height: 1.6; font-size: 15px;">
           <div style="margin-bottom: 32px;">${content}</div>
-          <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
-            <p style="margin: 0; color: #64748b; font-size: 14px;">Regards,</p>
-            <p style="margin: 4px 0 0; color: #0f172a; font-size: 15px; font-weight: 600;">Team Lakshya</p>
-          </div>
         </div>
-        <div style="background-color: #f1f5f9; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px;">This is an automated message from Lakshya Tech-Fest.</p>
-          <a href="#" style="color: #0f172a; text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">lakshyaldce.in</a>
+        <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+          <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+          <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
         </div>
       </div>
     `;
+
+    let headerHtml = '';
+    const sampleRecipient = uploadPreview?.validEmails?.find(e => e.department || e.college || e.clubName);
+    
+    if (template === 'club') {
+      const clubName = sampleRecipient?.clubName || 'Tech Enthusiasts';
+      const collegeText = sampleRecipient?.college ? `${sampleRecipient.college}<br>` : '';
+      headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Hello <strong>${clubName}</strong>,<br>${collegeText}</p>`;
+    } else if (template === 'marketing') {
+      if (sampleRecipient) {
+        const deptText = sampleRecipient.department ? `Department of ${sampleRecipient.department}<br>` : '';
+        const collegeText = sampleRecipient.college ? `${sampleRecipient.college}<br>` : '';
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>${deptText}${collegeText}</p>`;
+      } else if (!uploadPreview?.validEmails?.length) {
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Dear Head of Department,<br>[College Name]</p>`;
+      }
+    } else {
+      if (sampleRecipient) {
+        if (sampleRecipient.clubName) {
+          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${sampleRecipient.clubName} Team,</p>`;
+        } else if (sampleRecipient.department) {
+          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>Department of ${sampleRecipient.department}</p>`;
+        } else if (sampleRecipient.name) {
+          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${sampleRecipient.name},</p>`;
+        } else {
+          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
+        }
+      } else if (!uploadPreview?.validEmails?.length) {
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Respected Sir/Ma'am,</p>`;
+      }
+    }
+
+    const pb = processBody(body);
+    const standardContent = headerHtml + pb;
+    const s = subject || '(subject)';
     const templateMap = {
-      raw: baseLayout(`<p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#334155'),
-      success: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject || '(subject)'}</h2><p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#059669'),
-      congratulations: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject || '(subject)'}</h2><p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#d97706'),
-      important: baseLayout(`<div style="border-left: 3px solid #dc2626; padding-left: 16px; margin-bottom: 24px;"><p style="margin: 0 0 4px 0; font-weight: 600; color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Notice</p><h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${subject || '(subject)'}</h2></div><p style="white-space: pre-wrap; margin: 0;">${body || '(message body)'}</p>`, '#dc2626'),
-      formal: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">${subject || '(subject)'}</h2><p style="white-space: pre-wrap; margin: 0; color: #475569;">${body || '(message body)'}</p>`, '#1e293b'),
+      raw: baseLayout(`<div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#334155'),
+      success: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#059669'),
+      congratulations: baseLayout(`<h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#d97706'),
+      important: baseLayout(`<div style="border-left: 3px solid #dc2626; padding-left: 16px; margin-bottom: 24px;"><p style="margin: 0 0 4px 0; font-weight: 600; color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Notice</p><h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${s}</h2></div><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`, '#dc2626'),
+      formal: `
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
+          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
+            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
+          </div>
+          <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
+            <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2>
+            <div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+            <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+          </div>
+        </div>
+      `,
+      marketing: `
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
+          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
+            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
+          </div>
+          <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
+            <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2>
+            <div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+            <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+          </div>
+        </div>
+      `,
+      club: `
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);">
+          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 64px 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 36px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;">LAKSHYA</h1>
+            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; letter-spacing: 0.08em; font-style: italic; font-weight: 500; white-space: nowrap;">Where Legacy meets Innovation</p>
+          </div>
+          <div style="padding: 48px 32px; color: #334155; line-height: 1.7; font-size: 15px;">
+            <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2>
+            <div style="margin: 0 0 32px 0; line-height: 1.7;">${headerHtml}${pb}</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
+            <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
+            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+          </div>
+        </div>
+      `,
     };
     return templateMap[template] || templateMap.raw;
   };
+
 
   // ─── Send handler ─────────────────────────────────────────────────────────────
   const handleSend = async (password) => {
@@ -168,10 +286,10 @@ export default function BulkEmail() {
       const manualList = manualEmails.split(',').map((e) => e.trim()).filter(Boolean);
 
       // Combine: individual users + manual + uploaded valid emails
-      const recipientEmails = [
-        ...selectedUsers.map((u) => u.email),
-        ...manualList,
-        ...(uploadPreview?.validEmails || []),
+      const recipients = [
+        ...selectedUsers.map((u) => ({ email: u.email, name: u.name, college: '', department: '', clubName: '' })),
+        ...manualList.map((email) => ({ email, name: '', college: '', department: '', clubName: '' })),
+        ...(uploadPreview?.validEmails || []), // These are now objects from backend {email, college, department, clubName}
       ];
 
       const sourceType = uploadPreview ? 'excel_upload' : 'manual_selection';
@@ -180,7 +298,7 @@ export default function BulkEmail() {
         subject,
         body,
         template,
-        recipientEmails,
+        recipients, // changed from recipientEmails
         roles: selectedRoles,
         adminPassword: password,
         senderIdentity,
@@ -315,8 +433,8 @@ export default function BulkEmail() {
                 <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
                   <p className="font-bold mb-1">Upload Format:</p>
                   <ul className="list-disc pl-3 space-y-1">
-                    <li>Include a column named <b>email</b> or <b>email address</b>.</li>
-                    <li>If no header exists, system will auto-detect the email column.</li>
+                    <li>Must include <b>Email</b>, and optionally <b>College</b>, <b>Department</b>, or <b>Club Name</b> columns.</li>
+                    <li>If no header exists, system will try to auto-detect emails.</li>
                     <li>Supported: .csv, .xlsx, .xls</li>
                     <li>Duplicates and invalid emails are auto-filtered.</li>
                   </ul>
@@ -372,9 +490,33 @@ export default function BulkEmail() {
                   <details className="text-xs">
                     <summary className="text-red-600 cursor-pointer hover:text-red-700">View invalid emails</summary>
                     <div className="mt-1 p-2 bg-red-50 rounded text-red-700 max-h-24 overflow-y-auto">
-                      {uploadPreview.invalidEmails.join(', ')}
+                      {uploadPreview.invalidEmails.map(e => typeof e === 'object' ? (e.email || 'Invalid') : e).sort().join(', ')}
                     </div>
                   </details>
+                )}
+                {uploadPreview.validEmails?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 mb-2">Selected Emails ({uploadPreview.validEmails.length})</p>
+                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                      {uploadPreview.validEmails.map((item) => (
+                        <span key={item.email} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-[11px] font-medium" title={item.college ? `${item.department} - ${item.college}` : ''}>
+                          {item.email}
+                          <button
+                            onClick={() => {
+                              setUploadPreview((prev) => ({
+                                ...prev,
+                                validEmails: prev.validEmails.filter((e) => e.email !== item.email),
+                                validCount: prev.validCount - 1,
+                              }));
+                            }}
+                            className="hover:text-red-500 transition-colors"
+                          >
+                            <HiOutlineX className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -407,7 +549,7 @@ export default function BulkEmail() {
           {/* Template Picker */}
           <div className="card">
             <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Email Template</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
               {TEMPLATE_OPTIONS.map(({ id, label, icon: Icon, desc }) => (
                 <button
                   key={id}

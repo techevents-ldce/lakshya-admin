@@ -37,11 +37,11 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // ─── POST /api/mail/jobs — Create a new bulk email job ────────────────────────
 exports.createBulkEmailJob = asyncHandler(async (req, res) => {
   const {
-    subject, body, template = 'raw', senderIdentity = 'updates',
-    recipientEmails = [], roles = [], sourceType = 'manual_selection',
+    subject, body = '', template = 'raw', senderIdentity = 'updates',
+    recipients = [], roles = [], sourceType = 'manual_selection', // using renamed `recipients` array
   } = req.body;
 
-  if (!subject || !body) {
+  if (!subject || (!body && template !== 'club')) {
     throw new AppError('Subject and body are required', 400, 'MISSING_FIELDS');
   }
   if (!SENDER_IDENTITIES[senderIdentity]) {
@@ -57,16 +57,23 @@ exports.createBulkEmailJob = asyncHandler(async (req, res) => {
     users.forEach((u) => recipientMap.set(u.email.toLowerCase(), { email: u.email.toLowerCase(), name: u.name }));
   }
 
-  // Add individually specified emails
-  recipientEmails.forEach((email) => {
-    const trimmed = (email || '').trim().toLowerCase();
+  // Add individually specified users mapping
+  recipients.forEach((r) => {
+    // Handling case where old format array of strings is sent
+    const emailStr = typeof r === 'string' ? r : r.email;
+    const name = typeof r === 'string' ? '' : (r.name || '');
+    const college = typeof r === 'string' ? '' : (r.college || '');
+    const department = typeof r === 'string' ? '' : (r.department || '');
+    const clubName = typeof r === 'string' ? '' : (r.clubName || '');
+
+    const trimmed = (emailStr || '').trim().toLowerCase();
     if (trimmed && EMAIL_REGEX.test(trimmed) && !recipientMap.has(trimmed)) {
-      recipientMap.set(trimmed, { email: trimmed, name: '' });
+      recipientMap.set(trimmed, { email: trimmed, name, college, department, clubName });
     }
   });
 
-  const recipients = Array.from(recipientMap.values());
-  if (recipients.length === 0) {
+  const finalRecipients = Array.from(recipientMap.values());
+  if (finalRecipients.length === 0) {
     throw new AppError('No valid recipients specified', 400, 'NO_RECIPIENTS');
   }
 
@@ -78,27 +85,30 @@ exports.createBulkEmailJob = asyncHandler(async (req, res) => {
     body,
     template,
     sourceType,
-    totalRecipients: recipients.length,
-    pendingCount: recipients.length,
+    totalRecipients: finalRecipients.length,
+    pendingCount: finalRecipients.length,
   });
 
   // Bulk-insert all recipients
-  const recipientDocs = recipients.map((r) => ({
+  const recipientDocs = finalRecipients.map((r) => ({
     jobId: job._id,
     email: r.email,
     name: r.name,
+    college: r.college,
+    department: r.department,
+    clubName: r.clubName,
     status: 'pending',
   }));
   await BulkEmailRecipient.insertMany(recipientDocs, { ordered: false });
 
-  logger.info(`[Mail] Bulk email job ${job._id} created by ${req.user.email} with ${recipients.length} recipients`);
+  logger.info(`[Mail] Bulk email job ${job._id} created by ${req.user.email} with ${finalRecipients.length} recipients`);
 
   // Fire off the worker (non-blocking)
   setImmediate(() => processJob(job._id));
 
   res.status(201).json({
     success: true,
-    message: `Bulk email job created with ${recipients.length} recipients`,
+    message: `Bulk email job created with ${finalRecipients.length} recipients`,
     data: { jobId: job._id },
   });
 });
@@ -250,11 +260,12 @@ exports.uploadRecipients = asyncHandler(async (req, res) => {
     let duplicateCount = 0;
 
     for (const entry of emails) {
-      const email = (entry || '').trim().toLowerCase();
+      const emailObj = typeof entry === 'string' ? { email: entry } : entry;
+      const email = (emailObj.email || '').trim().toLowerCase();
       if (!email) continue;
 
       if (!EMAIL_REGEX.test(email)) {
-        invalid.push(email);
+        invalid.push(typeof entry === 'string' ? entry : (entry.email || 'Unknown'));
         continue;
       }
 
@@ -264,7 +275,12 @@ exports.uploadRecipients = asyncHandler(async (req, res) => {
       }
 
       seen.add(email);
-      valid.push(email);
+      valid.push({
+        email,
+        college: typeof emailObj.college === 'string' ? emailObj.college.trim() : '',
+        department: typeof emailObj.department === 'string' ? emailObj.department.trim() : '',
+        clubName: typeof emailObj.clubName === 'string' ? emailObj.clubName.trim() : ''
+      });
     }
 
     res.json({
@@ -322,9 +338,16 @@ async function parseCSV(filePath) {
   const lines = content.split(/\r?\n/);
   const emails = [];
 
-  // Try to detect if first line is a header
-  const firstLine = lines[0]?.trim().toLowerCase();
-  const startIndex = (firstLine === 'email' || firstLine === 'emails' || firstLine.includes('email')) ? 1 : 0;
+  if (lines.length === 0) return emails;
+
+  const headerRow = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.trim().replace(/^["']|["']$/g, ''));
+  
+  let emailColIndex = headerRow.findIndex(h => h === 'email' || h === 'emails' || h.includes('email'));
+  let collegeColIndex = headerRow.findIndex(h => h === 'college' || h === 'college name' || h.includes('college'));
+  let departmentColIndex = headerRow.findIndex(h => h === 'department' || h === 'department name' || h.includes('department'));
+  let clubColIndex = headerRow.findIndex(h => h === 'club' || h === 'club name' || h.includes('club'));
+  
+  const startIndex = emailColIndex !== -1 ? 1 : 0;
 
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -332,10 +355,23 @@ async function parseCSV(filePath) {
 
     // Split by comma, semicolon, or tab
     const parts = line.split(/[,;\t]/);
+    
+    // If headers exist, try mapping by index
+    if (emailColIndex !== -1 && EMAIL_REGEX.test(parts[emailColIndex]?.trim().replace(/^["']|["']$/g, ''))) {
+      const email = parts[emailColIndex].trim().replace(/^["']|["']$/g, '');
+      const college = collegeColIndex !== -1 && parts[collegeColIndex] ? parts[collegeColIndex].trim().replace(/^["']|["']$/g, '') : '';
+      const department = departmentColIndex !== -1 && parts[departmentColIndex] ? parts[departmentColIndex].trim().replace(/^["']|["']$/g, '') : '';
+      const clubName = clubColIndex !== -1 && parts[clubColIndex] ? parts[clubColIndex].trim().replace(/^["']|["']$/g, '') : '';
+      emails.push({ email, college, department, clubName });
+      continue;
+    }
+
+    // fallback mapping if it doesn't align with headers or if there are no headers
     for (const part of parts) {
       const cleaned = part.trim().replace(/^["']|["']$/g, ''); // Remove quotes
       if (EMAIL_REGEX.test(cleaned)) {
-        emails.push(cleaned);
+        emails.push({ email: cleaned, college: '', department: '', clubName: '' });
+        break; // take first email match
       }
     }
   }
@@ -351,14 +387,26 @@ async function parseExcel(filePath) {
   const sheet = workbook.worksheets[0];
   if (!sheet) return emails;
 
-  // Find the email column
+  // Find the required columns
   let emailColIndex = -1;
+  let collegeColIndex = -1;
+  let departmentColIndex = -1;
+  let clubColIndex = -1;
   const headerRow = sheet.getRow(1);
 
   headerRow.eachCell((cell, colNumber) => {
     const val = (cell.value || '').toString().toLowerCase().trim();
-    if (val === 'email' || val === 'e-mail' || val === 'email address' || val === 'emailaddress') {
-      emailColIndex = colNumber;
+    if (
+      val === 'email' || val === 'e-mail' || val === 'email address' ||
+      val === 'emailaddress' || val === 'department email' || val.includes('email')
+    ) {
+      if (emailColIndex === -1) emailColIndex = colNumber; // take first match
+    } else if (val === 'college' || val === 'college name' || val.includes('college')) {
+      if (collegeColIndex === -1) collegeColIndex = colNumber;
+    } else if (val === 'department' || val === 'department name' || val.includes('department')) {
+      if (departmentColIndex === -1) departmentColIndex = colNumber;
+    } else if (val === 'club' || val === 'club name' || val.includes('club')) {
+      if (clubColIndex === -1) clubColIndex = colNumber;
     }
   });
 
@@ -385,9 +433,28 @@ async function parseExcel(filePath) {
     ? 2 : 1;
 
   for (let i = startRow; i <= sheet.rowCount; i++) {
-    const cell = sheet.getRow(i).getCell(emailColIndex);
-    const val = (cell.value || '').toString().trim();
-    if (val) emails.push(val);
+    const row = sheet.getRow(i);
+    const emailCell = row.getCell(emailColIndex);
+    let emailVal = '';
+    if (emailCell.value && typeof emailCell.value === 'object' && emailCell.value.text) {
+      emailVal = emailCell.value.text.toString().trim();
+    } else {
+      emailVal = (emailCell.value || '').toString().trim();
+    }
+    
+    if (emailVal) {
+      const getCellValue = (cell) => {
+        if (!cell.value) return '';
+        if (typeof cell.value === 'object' && cell.value.text) return cell.value.text.toString().trim();
+        return cell.value.toString().trim();
+      };
+
+      const collegeVal = collegeColIndex !== -1 ? getCellValue(row.getCell(collegeColIndex)) : '';
+      const departmentVal = departmentColIndex !== -1 ? getCellValue(row.getCell(departmentColIndex)) : '';
+      const clubVal = clubColIndex !== -1 ? getCellValue(row.getCell(clubColIndex)) : '';
+
+      emails.push({ email: emailVal, college: collegeVal, department: departmentVal, clubName: clubVal });
+    }
   }
 
   return emails;
