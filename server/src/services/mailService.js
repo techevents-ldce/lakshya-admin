@@ -57,18 +57,26 @@ const processBody = (text) => {
 };
 
 // ─── Email Templates ──────────────────────────────────────────────────────────
-const baseLayout = (content, accentColor = '#334155', templateMode = 'default') => `
+const baseLayout = (content, accentColor = '#334155', templateMode = 'default') => `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Lakshya</title>
+  <style>
+  :root { color-scheme: light; supported-color-schemes: light; }
+  u + .body .lakshya-header { background-color: #ffffff !important; }
+  [data-ogsc] .lakshya-header { background-color: #ffffff !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 20px 0; background-color: #f1f5f9; -webkit-font-smoothing: antialiased;">
   <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);">
     <!-- Brand Header -->
-    <div style="background-color: #ffffff; background-image: 
-      linear-gradient(215deg, #0d9488 20%, transparent 20.5%),
-      linear-gradient(235deg, #2dd4bf 40%, transparent 40.5%),
-      linear-gradient(45deg, #f59e0b 15%, transparent 15.5%),
-      radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
-      background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px;
-      padding: 64px 32px; text-align: center; border-bottom: 1px solid #f1f5f9; position: relative;">
-      <h1 style="margin: 0; color: #0f172a; font-size: 42px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.15em; text-transform: uppercase;">LAKSHYA</h1>
-      <p style="margin: 8px 0 0; color: #0d9488; font-size: 14px; letter-spacing: 0.1em; font-style: italic; font-weight: 600;">Where Legacy meets Innovation</p>
+    <!-- Brand Header -->
+    <div style="background-color: #ffffff; text-align: center; border-bottom: 1px solid #f1f5f9;">
+      <img src="https://lakshyaldce.in/mail-head.png" alt="Lakshya - Where Legacy meets Innovation" style="display: block; width: 100%; max-width: 600px; height: auto; border: none; margin: 0 auto;" />
     </div>
 
     <!-- Main Content Area -->
@@ -84,6 +92,8 @@ const baseLayout = (content, accentColor = '#334155', templateMode = 'default') 
       <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
     </div>
   </div>
+</body>
+</html>
 `;
 
 const getPersonalizedHeader = (recipient, templateMode = 'default') => {
