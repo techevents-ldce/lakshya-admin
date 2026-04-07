@@ -23,6 +23,13 @@ import Organizers from '@admin/pages/Organizers';
 import OrganizerForm from '@admin/pages/OrganizerForm';
 import Referrals from '@admin/pages/Referrals';
 
+// ── SES Campaign pages (separate from Resend bulk email) ──
+import Campaigns from '@admin/pages/Campaigns';
+import CampaignCompose from '@admin/pages/CampaignCompose';
+import CampaignDetail from '@admin/pages/CampaignDetail';
+import EmailTemplates from '@admin/pages/EmailTemplates';
+import SuppressionList from '@admin/pages/SuppressionList';
+
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
 import Teams from '@coordinator/pages/Teams';
@@ -73,6 +80,14 @@ export default function App() {
           <Route path="bulk-email/jobs" element={<RoleRoute role="admin"><BulkEmailJobs /></RoleRoute>} />
           <Route path="bulk-email/jobs/:jobId" element={<RoleRoute role="admin"><BulkEmailJobDetail /></RoleRoute>} />
           <Route path="referrals" element={<RoleRoute role="admin"><Referrals /></RoleRoute>} />
+
+          {/* ── SES Campaign routes (separate from Resend bulk-email routes above) ── */}
+          <Route path="campaigns" element={<RoleRoute role="admin"><Campaigns /></RoleRoute>} />
+          <Route path="campaigns/new" element={<RoleRoute role="admin"><CampaignCompose /></RoleRoute>} />
+          <Route path="campaigns/:id" element={<RoleRoute role="admin"><CampaignDetail /></RoleRoute>} />
+          <Route path="campaigns/:id/edit" element={<RoleRoute role="admin"><CampaignCompose /></RoleRoute>} />
+          <Route path="email-templates" element={<RoleRoute role="admin"><EmailTemplates /></RoleRoute>} />
+          <Route path="suppressions" element={<RoleRoute role="admin"><SuppressionList /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />

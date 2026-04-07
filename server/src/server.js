@@ -2,6 +2,9 @@ const app = require('./app');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
 const { recoverStaleJobs } = require('./services/bulkEmailWorker');
+// ── SES Campaign infrastructure (separate from Resend) ──
+const { recoverStaleCampaigns, startScheduler } = require('./services/sesCampaignWorker');
+const { seedStarterTemplates } = require('./controllers/templateController');
 const fs = require('fs');
 const path = require('path');
 
@@ -36,8 +39,15 @@ const start = async () => {
   const tempDir = path.join(__dirname, '../uploads/temp');
   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-  // Recover any interrupted bulk email jobs from a previous crash
+  // Recover any interrupted bulk email jobs from a previous crash (Resend)
   await recoverStaleJobs();
+
+  // Recover interrupted SES campaigns + start scheduled campaign poller
+  await recoverStaleCampaigns();
+  startScheduler();
+
+  // Seed starter email templates if none exist
+  await seedStarterTemplates();
 
   app.listen(PORT, () => {
     logger.info(`Lakshya API running on port ${PORT}`);
