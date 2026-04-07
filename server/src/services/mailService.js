@@ -89,7 +89,8 @@ const baseLayout = (content, accentColor = '#334155', templateMode = 'default') 
     <!-- Branded Footer -->
     <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
       <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
-      <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+      <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+      <a href="https://lakshyaldce.in" target="_blank" style="color: #ffffff; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; opacity: 0.95;">lakshyaldce.in</a>
     </div>
   </div>
 </body>
@@ -100,15 +101,34 @@ const getPersonalizedHeader = (recipient, templateMode = 'default') => {
   if (!recipient) return '';
   
   if (templateMode === 'club') {
-    const clubName = recipient.clubName || 'Tech Enthusiasts';
-    const collegeText = recipient.college ? `${recipient.college}<br>` : '';
-    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Hello <strong>${clubName}</strong>,<br>${collegeText}</p>`;
+    if (!recipient.clubName) return ''; // No club name — skip auto-greeting to avoid duplication
+    const collegeText = recipient.college ? `<span style="font-size:13px;color:#64748b;">${recipient.college}</span><br>` : '';
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;"><strong>${recipient.clubName}</strong><br>${collegeText}</p>`;
   }
   
   if (templateMode === 'marketing') {
     const deptText = recipient.department ? `Department of ${recipient.department}<br>` : '';
     const collegeText = recipient.college ? `${recipient.college}<br>` : '';
     return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>${deptText}${collegeText}</p>`;
+  }
+
+  if (templateMode === 'formal') {
+    if (recipient.name) {
+      const collegeText = recipient.college ? `<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span>` : '';
+      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${recipient.name},${collegeText}</p>`;
+    }
+    if (recipient.clubName) {
+      const collegeText = recipient.college ? `<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span>` : '';
+      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${recipient.clubName} Team,${collegeText}</p>`;
+    }
+    if (recipient.department) {
+      const collegeText = recipient.college ? `<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span>` : '';
+      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear Head of Department,<br><span style="font-size:13px;color:#64748b;">Department of ${recipient.department}</span>${collegeText}</p>`;
+    }
+    if (recipient.college) {
+      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Respected Sir/Ma'am,<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span></p>`;
+    }
+    return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Respected Sir/Ma'am,</p>`;
   }
   
   if (recipient.clubName) {
@@ -149,10 +169,14 @@ const templates = {
     <div style="margin: 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
   `, '#dc2626'),
 
-  formal: ({ subject, body, recipient }) => baseLayout(`
-    <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${subject}</h2>
-    <div style="margin: 0 0 32px 0; line-height: 1.7;">${getPersonalizedHeader(recipient)}${processBody(body)}</div>
-  `),
+  formal: ({ subject, body, recipient }) => {
+    const divider = `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">`;
+    return baseLayout(`
+    <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center; letter-spacing: -0.3px;">${subject}</h2>
+    ${divider}
+    <div style="margin: 0 0 32px 0; line-height: 1.8; color: #1e293b;">${getPersonalizedHeader(recipient, 'formal')}${processBody(body)}</div>
+  `);
+  },
 
   marketing: ({ subject, body, recipient }) => baseLayout(`
     <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${subject}</h2>

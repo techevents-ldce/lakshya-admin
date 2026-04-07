@@ -277,6 +277,7 @@ exports.uploadRecipients = asyncHandler(async (req, res) => {
       seen.add(email);
       valid.push({
         email,
+        name: typeof emailObj.name === 'string' ? emailObj.name.trim() : '',
         college: typeof emailObj.college === 'string' ? emailObj.college.trim() : '',
         department: typeof emailObj.department === 'string' ? emailObj.department.trim() : '',
         clubName: typeof emailObj.clubName === 'string' ? emailObj.clubName.trim() : ''
@@ -343,6 +344,7 @@ async function parseCSV(filePath) {
   const headerRow = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.trim().replace(/^["']|["']$/g, ''));
   
   let emailColIndex = headerRow.findIndex(h => h === 'email' || h === 'emails' || h.includes('email'));
+  let nameColIndex = headerRow.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname' || h === 'recipient name');
   let collegeColIndex = headerRow.findIndex(h => h === 'college' || h === 'college name' || h.includes('college'));
   let departmentColIndex = headerRow.findIndex(h => h === 'department' || h === 'department name' || h.includes('department'));
   let clubColIndex = headerRow.findIndex(h => h === 'club' || h === 'club name' || h.includes('club'));
@@ -359,10 +361,11 @@ async function parseCSV(filePath) {
     // If headers exist, try mapping by index
     if (emailColIndex !== -1 && EMAIL_REGEX.test(parts[emailColIndex]?.trim().replace(/^["']|["']$/g, ''))) {
       const email = parts[emailColIndex].trim().replace(/^["']|["']$/g, '');
+      const name = nameColIndex !== -1 && parts[nameColIndex] ? parts[nameColIndex].trim().replace(/^["']|["']$/g, '') : '';
       const college = collegeColIndex !== -1 && parts[collegeColIndex] ? parts[collegeColIndex].trim().replace(/^["']|["']$/g, '') : '';
       const department = departmentColIndex !== -1 && parts[departmentColIndex] ? parts[departmentColIndex].trim().replace(/^["']|["']$/g, '') : '';
       const clubName = clubColIndex !== -1 && parts[clubColIndex] ? parts[clubColIndex].trim().replace(/^["']|["']$/g, '') : '';
-      emails.push({ email, college, department, clubName });
+      emails.push({ email, name, college, department, clubName });
       continue;
     }
 
@@ -389,24 +392,31 @@ async function parseExcel(filePath) {
 
   // Find the required columns
   let emailColIndex = -1;
+  let nameColIndex = -1;
   let collegeColIndex = -1;
   let departmentColIndex = -1;
   let clubColIndex = -1;
   const headerRow = sheet.getRow(1);
 
   headerRow.eachCell((cell, colNumber) => {
-    const val = (cell.value || '').toString().toLowerCase().trim();
+    const rawVal = cell.value;
+    const val = (rawVal || '').toString().toLowerCase().trim();
+    logger.info(`[Mail/Excel] Header col ${colNumber}: rawType=${typeof rawVal} rawVal=${JSON.stringify(rawVal)} → normalized="${val}"`);
     if (
       val === 'email' || val === 'e-mail' || val === 'email address' ||
       val === 'emailaddress' || val === 'department email' || val.includes('email')
     ) {
       if (emailColIndex === -1) emailColIndex = colNumber; // take first match
+    } else if (val === 'name' || val === 'full name' || val === 'fullname' || val === 'recipient name') {
+      if (nameColIndex === -1) nameColIndex = colNumber;
     } else if (val === 'college' || val === 'college name' || val.includes('college')) {
       if (collegeColIndex === -1) collegeColIndex = colNumber;
     } else if (val === 'department' || val === 'department name' || val.includes('department')) {
       if (departmentColIndex === -1) departmentColIndex = colNumber;
     } else if (val === 'club' || val === 'club name' || val.includes('club')) {
       if (clubColIndex === -1) clubColIndex = colNumber;
+    } else {
+      logger.warn(`[Mail/Excel] Header col ${colNumber} did NOT match any known field: "${val}"`);
     }
   });
 
@@ -425,6 +435,8 @@ async function parseExcel(filePath) {
     }
   }
 
+  logger.info(`[Mail/Excel] Detected columns — email:${emailColIndex} name:${nameColIndex} college:${collegeColIndex} dept:${departmentColIndex} club:${clubColIndex} | totalRows:${sheet.rowCount}`);
+
   if (emailColIndex === -1) return emails;
 
   // Start from row 2 if header was identified, else row 1
@@ -432,28 +444,40 @@ async function parseExcel(filePath) {
     !EMAIL_REGEX.test((headerRow.getCell(emailColIndex).value || '').toString().trim())
     ? 2 : 1;
 
+  const getCellValue = (cell) => {
+    if (!cell || !cell.value) return '';
+    const v = cell.value;
+    // Hyperlink cell: { text: '...', hyperlink: 'mailto:...' }
+    if (typeof v === 'object' && v.text) return v.text.toString().trim();
+    // Rich text cell: { richText: [{text: '...'}] }
+    if (typeof v === 'object' && v.richText) return v.richText.map(r => r.text).join('').trim();
+    return v.toString().trim();
+  };
+
+  const getEmailValue = (cell) => {
+    if (!cell || !cell.value) return '';
+    const v = cell.value;
+    // Hyperlink mailto: cells store email in hyperlink property
+    if (typeof v === 'object' && v.hyperlink) {
+      const link = v.hyperlink.toString().replace(/^mailto:/i, '').trim();
+      if (EMAIL_REGEX.test(link)) return link;
+    }
+    return getCellValue(cell);
+  };
+
   for (let i = startRow; i <= sheet.rowCount; i++) {
     const row = sheet.getRow(i);
     const emailCell = row.getCell(emailColIndex);
-    let emailVal = '';
-    if (emailCell.value && typeof emailCell.value === 'object' && emailCell.value.text) {
-      emailVal = emailCell.value.text.toString().trim();
-    } else {
-      emailVal = (emailCell.value || '').toString().trim();
-    }
-    
-    if (emailVal) {
-      const getCellValue = (cell) => {
-        if (!cell.value) return '';
-        if (typeof cell.value === 'object' && cell.value.text) return cell.value.text.toString().trim();
-        return cell.value.toString().trim();
-      };
+    const emailVal = getEmailValue(emailCell);
 
+    if (emailVal) {
+      const nameVal = nameColIndex !== -1 ? getCellValue(row.getCell(nameColIndex)) : '';
       const collegeVal = collegeColIndex !== -1 ? getCellValue(row.getCell(collegeColIndex)) : '';
       const departmentVal = departmentColIndex !== -1 ? getCellValue(row.getCell(departmentColIndex)) : '';
       const clubVal = clubColIndex !== -1 ? getCellValue(row.getCell(clubColIndex)) : '';
 
-      emails.push({ email: emailVal, college: collegeVal, department: departmentVal, clubName: clubVal });
+      logger.info(`[Mail/Excel] Row ${i}: email=${emailVal} | name=${nameVal} | college=${collegeVal} | club=${clubVal}`);
+      emails.push({ email: emailVal, name: nameVal, college: collegeVal, department: departmentVal, clubName: clubVal });
     }
   }
 

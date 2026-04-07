@@ -120,8 +120,12 @@ export default function BulkEmail() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
+      console.log('[BulkEmail] Upload response:', JSON.stringify(data.data, null, 2));
       setUploadPreview(data.data);
       toast.success(`Parsed ${data.data.validCount} valid emails`);
+      // Debug: check if clubName is present
+      const sample = data.data?.validEmails?.[0];
+      if (sample) console.log('[BulkEmail] First recipient:', sample);
     } catch (err) {
       toast.error(err.userMessage || 'Failed to parse file');
       setUploadedFile(null);
@@ -188,29 +192,53 @@ export default function BulkEmail() {
         <!-- Branded Footer -->
         <div style="background: linear-gradient(135deg, #F5A623 0%, #4DD9E8 50%, #1A8C8C 100%); padding: 32px 32px; text-align: center;">
           <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 14px; font-weight: 600;">Team Lakshya</p>
-          <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+          <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.85); font-size: 13px;">L.D. College of Engineering, Ahmedabad – 380015</p>
+          <a href="https://lakshyaldce.in" target="_blank" style="color: #ffffff; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; opacity: 0.95;">lakshyaldce.in</a>
         </div>
       </div>
     `;
 
     let headerHtml = '';
-    const sampleRecipient = uploadPreview?.validEmails?.find(e => e.department || e.college || e.clubName);
+    const sampleRecipient = uploadPreview?.validEmails?.find(e => e.name || e.department || e.college || e.clubName);
     
     if (template === 'club') {
-      const clubName = sampleRecipient?.clubName || 'Tech Enthusiasts';
-      const collegeText = sampleRecipient?.college ? `${sampleRecipient.college}<br>` : '';
-      headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Hello <strong>${clubName}</strong>,<br>${collegeText}</p>`;
+      const hasUpload = uploadPreview?.validEmails?.length > 0;
+      if (sampleRecipient?.clubName) {
+        const collegeText = sampleRecipient?.college ? `<span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span><br>` : '';
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;"><strong>${sampleRecipient.clubName}</strong><br>${collegeText}</p>`;
+      } else if (hasUpload && sampleRecipient?.college) {
+        // Upload done but no clubName column — show just college
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;"><strong>[Club Name missing in Excel]</strong><br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span><br></p>`;
+      } else {
+        // No upload yet — show placeholder
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Upload Excel first to see real club name]<br><strong>{Club Name}</strong><br><span style="font-size:13px;color:#64748b;">{College / Institution Name}</span><br></p>`;
+      }
     } else if (template === 'marketing') {
       if (sampleRecipient) {
         const deptText = sampleRecipient.department ? `Department of ${sampleRecipient.department}<br>` : '';
         const collegeText = sampleRecipient.college ? `${sampleRecipient.college}<br>` : '';
         headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>${deptText}${collegeText}</p>`;
       } else if (!uploadPreview?.validEmails?.length) {
-        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Dear Head of Department,<br>[College Name]</p>`;
+        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Auto-generated] Dear Head of Department,<br>{College / Institution Name}</p>`;
       }
     } else {
       if (sampleRecipient) {
-        if (sampleRecipient.clubName) {
+        if (template === 'formal') {
+          if (sampleRecipient.name) {
+            const collegeText = sampleRecipient.college ? `<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span>` : '';
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${sampleRecipient.name},${collegeText}</p>`;
+          } else if (sampleRecipient.clubName) {
+            const collegeText = sampleRecipient.college ? `<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span>` : '';
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Dear ${sampleRecipient.clubName} Team,${collegeText}</p>`;
+          } else if (sampleRecipient.department) {
+            const collegeText = sampleRecipient.college ? `<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span>` : '';
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Dear Head of Department,<br><span style="font-size:13px;color:#64748b;">Department of ${sampleRecipient.department}</span>${collegeText}</p>`;
+          } else if (sampleRecipient.college) {
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir/Ma'am,<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span></p>`;
+          } else {
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir/Ma'am,</p>`;
+          }
+        } else if (sampleRecipient.clubName) {
           headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${sampleRecipient.clubName} Team,</p>`;
         } else if (sampleRecipient.department) {
           headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>Department of ${sampleRecipient.department}</p>`;
@@ -220,7 +248,11 @@ export default function BulkEmail() {
           headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
         }
       } else if (!uploadPreview?.validEmails?.length) {
-        headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Respected Sir/Ma'am,</p>`;
+        if (template === 'formal') {
+          headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; opacity: 0.6; font-style: italic;">[Preview] Dear {Name},</p>`;
+        } else {
+          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Respected Sir/Ma'am,</p>`;
+        }
       }
     }
 
@@ -233,7 +265,10 @@ export default function BulkEmail() {
       success: baseLayout(`<h2 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
       congratulations: baseLayout(`<h2 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
       important: baseLayout(`<div style="border-left: 4px solid #dc2626; padding-left: 20px; margin-bottom: 32px;"><p style="margin: 0 0 6px 0; font-weight: 700; color: #dc2626; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Urgent Notice</p><h2 style="margin: 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2></div><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
-      formal: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 24px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>`),
+      formal: (() => {
+        const divider = `<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">`;
+        return baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center; letter-spacing: -0.3px;">${s}</h2>${divider}<div style="margin: 0 0 32px 0; line-height: 1.8; color: #1e293b;">${headerHtml}${pb}</div>`);
+      })(),
       marketing: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>`),
       club: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${headerHtml}${pb}</div>`),
     };
@@ -395,7 +430,8 @@ export default function BulkEmail() {
                 <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
                   <p className="font-bold mb-1">Upload Format:</p>
                   <ul className="list-disc pl-3 space-y-1">
-                    <li>Must include <b>Email</b>, and optionally <b>College</b>, <b>Department</b>, or <b>Club Name</b> columns.</li>
+                    <li>Must include <b>Email</b>, and optionally <b>Name</b>, <b>College</b>, <b>Department</b>, or <b>Club Name</b> columns.</li>
+                    <li>The <b>Name</b> column enables personalized <em>"Dear {'{Name}'}",</em> greetings.</li>
                     <li>If no header exists, system will try to auto-detect emails.</li>
                     <li>Supported: .csv, .xlsx, .xls</li>
                     <li>Duplicates and invalid emails are auto-filtered.</li>
@@ -459,10 +495,19 @@ export default function BulkEmail() {
                 {uploadPreview.validEmails?.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 mb-2">Selected Emails ({uploadPreview.validEmails.length})</p>
-                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto p-2 bg-gray-50 border border-gray-200 rounded-lg">
                       {uploadPreview.validEmails.map((item) => (
-                        <span key={item.email} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-[11px] font-medium" title={item.college ? `${item.department} - ${item.college}` : ''}>
-                          {item.email}
+                        <div key={item.email} className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-[11px]">
+                          <div className="min-w-0">
+                            {(item.name || item.clubName || item.college) && (
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                {item.name && <span className="font-semibold text-gray-800 truncate">{item.name}</span>}
+                                {item.clubName && <span className="font-bold text-primary-700 truncate">{item.clubName}</span>}
+                                {item.college && <span className="text-gray-400 truncate">· {item.college}</span>}
+                              </div>
+                            )}
+                            <span className="text-gray-500 truncate block">{item.email}</span>
+                          </div>
                           <button
                             onClick={() => {
                               setUploadPreview((prev) => ({
@@ -471,11 +516,11 @@ export default function BulkEmail() {
                                 validCount: prev.validCount - 1,
                               }));
                             }}
-                            className="hover:text-red-500 transition-colors"
+                            className="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors"
                           >
-                            <HiOutlineX className="w-3 h-3" />
+                            <HiOutlineX className="w-3.5 h-3.5" />
                           </button>
-                        </span>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -547,10 +592,46 @@ export default function BulkEmail() {
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                placeholder="Write your email message here..."
+                placeholder={
+                  (template === 'club' || template === 'marketing')
+                    ? 'Write your email message here...\n\n⚠️ Do NOT include a greeting — it is automatically added from your uploaded Excel data.'
+                    : 'Write your email message here...'
+                }
                 rows={8}
                 className="input-field resize-none"
               />
+              {template === 'club' && !uploadPreview && (
+                <div className="mt-2 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-400 rounded-lg p-2.5">
+                  <HiOutlineExclamation className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                  <p>
+                    <strong>⚠️ Upload Required!</strong> — The &quot;Club Invite&quot; template automatically adds the club name and college from your Excel file above each email. <strong>You must upload the Excel file first</strong> (in the left panel) for personalization to work. Without it, emails will have no club/college header.
+                  </p>
+                </div>
+              )}
+              {template === 'club' && uploadPreview && (
+                <div className="mt-2 flex items-start gap-2 text-xs text-green-800 bg-green-50 border border-green-300 rounded-lg p-2.5">
+                  <HiOutlineCheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-green-600" />
+                  <p>
+                    <strong>✅ Excel uploaded</strong> — Each email will begin with the recipient&apos;s club name and college, followed by your message body below.
+                  </p>
+                </div>
+              )}
+              {template === 'formal' && (
+                <div className="mt-2 flex items-start gap-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                  <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-500" />
+                  <p>
+                    <strong>Name personalization</strong> — Upload an Excel with a <code className="bg-blue-100 px-1 rounded">Name</code> column to send <em>"Dear {'{'}{'}'}Name{'{'}{'}'}, "</em> greetings. Without it, falls back to &quot;Respected Sir/Ma&apos;am&quot;.
+                  </p>
+                </div>
+              )}
+              {template === 'marketing' && (
+                <div className="mt-2 flex items-start gap-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                  <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-500" />
+                  <p>
+                    <strong>Salutation is auto-generated</strong> — &quot;Dear Head of Department&quot; + college is added from your Excel data. Do not write a greeting in the body.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
