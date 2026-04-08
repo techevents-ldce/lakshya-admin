@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlineSearch, HiOutlineBan, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineChevronUp, HiOutlineKey } from 'react-icons/hi';
@@ -7,6 +8,7 @@ import ConfirmWithPassword from '../components/ConfirmWithPassword';
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export default function Users() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -149,6 +151,9 @@ export default function Users() {
                           <DetailItem label="Assigned Events" value={u.assignedEvents?.length > 0 ? u.assignedEvents.map((ev) => typeof ev === 'object' ? ev.title : ev).join(', ') : 'None'} full />
                           <DetailItem label="Joined On" value={fmtDT(u.createdAt)} />
                           <DetailItem label="Last Updated" value={fmtDT(u.updatedAt)} />
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/users/${u._id}`); }} className="text-primary-600 hover:text-primary-800 text-sm font-medium">View Full Profile →</button>
                         </div>
                       </td>
                     </tr>

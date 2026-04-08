@@ -1,6 +1,7 @@
 const Ticket = require('../models/Ticket');
 const Registration = require('../models/Registration');
 const AppError = require('../middleware/AppError');
+const { writeAuditLog } = require('../middleware/auditLog');
 
 const verifyTicket = async (ticketId, eventId, scannedByUserId) => {
   const ticket = await Ticket.findOne({ ticketId })
@@ -67,4 +68,155 @@ const getTicketByUserId = async (userId, eventId) => {
   return Ticket.findOne(query).populate('eventId', 'title');
 };
 
-module.exports = { verifyTicket, getTicketsByEvent, getTicketByUserId };
+// ── New admin functions ──
+
+const getTickets = async (query = {}) => {
+  const { page = 1, limit = 20, eventId, status, search } = query;
+  const filter = {};
+  if (eventId) filter.eventId = eventId;
+  if (status) filter.status = status;
+
+  if (search) {
+    filter.$or = [
+      { ticketId: { $regex: search, $options: 'i' } },
+    ];
+    // Also search by user name/email
+    const User = require('../models/User');
+    const matchingUsers = await User.find({
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ],
+    }).select('_id').lean();
+    if (matchingUsers.length > 0) {
+      filter.$or.push({ userId: { $in: matchingUsers.map((u) => u._id) } });
+    }
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+  const [tickets, total] = await Promise.all([
+    Ticket.find(filter)
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name email phone')
+      .populate('eventId', 'title slug eventType')
+      .lean(),
+    Ticket.countDocuments(filter),
+  ]);
+
+  // Enrich with team info for team events
+  const Registration = require('../models/Registration');
+  const Team = require('../models/Team');
+
+  // Get all unique user+event combos to search registrations
+  const userEventPairs = tickets.map((t) => ({
+    userId: t.userId?._id || t.userId,
+    eventId: t.eventId?._id || t.eventId,
+  }));
+
+  if (userEventPairs.length > 0) {
+    const userIds = [...new Set(userEventPairs.map((p) => p.userId?.toString()).filter(Boolean))];
+    const eventIds = [...new Set(userEventPairs.map((p) => p.eventId?.toString()).filter(Boolean))];
+
+    const regs = await Registration.find({
+      userId: { $in: userIds },
+      eventId: { $in: eventIds },
+      teamId: { $ne: null },
+    }).select('userId eventId teamId').lean();
+
+    if (regs.length > 0) {
+      const teamIds = [...new Set(regs.map((r) => r.teamId))];
+      const teams = await Team.find({ _id: { $in: teamIds } })
+        .select('teamName leaderId')
+        .populate('leaderId', 'name email')
+        .lean();
+      const teamMap = {};
+      teams.forEach((t) => { teamMap[t._id.toString()] = t; });
+
+      const regMap = {};
+      regs.forEach((r) => {
+        const key = `${r.userId.toString()}_${r.eventId.toString()}`;
+        regMap[key] = r;
+      });
+
+      tickets.forEach((t) => {
+        const uid = (t.userId?._id || t.userId)?.toString();
+        const eid = (t.eventId?._id || t.eventId)?.toString();
+        const key = `${uid}_${eid}`;
+        const reg = regMap[key];
+        if (reg && reg.teamId) {
+          t.team = teamMap[reg.teamId.toString()] || null;
+        }
+      });
+    }
+  }
+
+  return { tickets, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
+};
+
+const markUsed = async (ticketId, adminId, reqMeta = {}) => {
+  const ticket = await Ticket.findById(ticketId);
+  if (!ticket) throw new AppError('Ticket not found', 404, 'TICKET_NOT_FOUND');
+  if (ticket.status === 'used') throw new AppError('Ticket already used', 400, 'TICKET_ALREADY_USED');
+  if (ticket.status === 'cancelled') throw new AppError('Ticket is cancelled', 400, 'TICKET_CANCELLED');
+
+  const before = ticket.toObject();
+  ticket.status = 'used';
+  ticket.scannedAt = new Date();
+  ticket.scannedBy = adminId;
+  await ticket.save();
+
+  // Also mark registration as checked in
+  await Registration.findOneAndUpdate(
+    { userId: ticket.userId, eventId: ticket.eventId },
+    { checkedIn: true, checkedInAt: new Date(), checkedInBy: adminId }
+  );
+
+  await writeAuditLog({
+    adminId,
+    action: 'MARK_TICKET_USED',
+    entityType: 'Ticket',
+    entityId: ticket._id,
+    before,
+    after: ticket.toObject(),
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return ticket;
+};
+
+const cancelTicket = async (ticketId, adminId, reqMeta = {}) => {
+  const ticket = await Ticket.findById(ticketId);
+  if (!ticket) throw new AppError('Ticket not found', 404, 'TICKET_NOT_FOUND');
+  if (ticket.status === 'cancelled') throw new AppError('Ticket already cancelled', 400, 'TICKET_ALREADY_CANCELLED');
+
+  const before = ticket.toObject();
+  ticket.status = 'cancelled';
+  await ticket.save();
+
+  await writeAuditLog({
+    adminId,
+    action: 'CANCEL_TICKET',
+    entityType: 'Ticket',
+    entityId: ticket._id,
+    before,
+    after: ticket.toObject(),
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return ticket;
+};
+
+const searchByTicketId = async (ticketIdStr) => {
+  const ticket = await Ticket.findOne({ ticketId: ticketIdStr })
+    .populate('userId', 'name email phone college')
+    .populate('eventId', 'title slug')
+    .lean();
+  return ticket;
+};
+
+module.exports = { verifyTicket, getTicketsByEvent, getTicketByUserId, getTickets, markUsed, cancelTicket, searchByTicketId };
+

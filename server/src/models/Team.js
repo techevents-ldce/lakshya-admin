@@ -11,7 +11,7 @@ const teamSchema = new mongoose.Schema(
       default: 'active',
     },
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 teamSchema.index({ eventId: 1 });

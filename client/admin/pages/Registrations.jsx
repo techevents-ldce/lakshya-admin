@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation, HiOutlineSearch, HiOutlineChevronDown, HiOutlineChevronUp } from 'react-icons/hi';
@@ -6,6 +7,7 @@ import { HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation, HiOutl
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export default function Registrations() {
+  const navigate = useNavigate();
   const [verified, setVerified] = useState(false);
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -226,6 +228,11 @@ export default function Registrations() {
                               )}
                             </div>
                           )}
+
+                          {/* Drill-down link */}
+                          <div className="pt-2 border-t border-gray-200">
+                            <button onClick={(e) => { e.stopPropagation(); navigate(`/registrations/${r._id}`); }} className="text-primary-600 hover:text-primary-800 text-sm font-medium">View Full Detail →</button>
+                          </div>
                         </div>
                       </td>
                     </tr>

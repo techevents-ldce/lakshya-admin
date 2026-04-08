@@ -20,3 +20,31 @@ exports.getMyTicket = asyncHandler(async (req, res) => {
   const ticket = await ticketService.getTicketByUserId(req.user.id, req.query.eventId);
   res.json({ success: true, data: ticket });
 });
+
+// ── Admin endpoints ──
+
+exports.getAll = asyncHandler(async (req, res) => {
+  const result = await ticketService.getTickets(req.query);
+  res.json({ success: true, ...result });
+});
+
+exports.markUsed = asyncHandler(async (req, res) => {
+  const ticket = await ticketService.markUsed(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, data: ticket });
+});
+
+exports.cancel = asyncHandler(async (req, res) => {
+  const ticket = await ticketService.cancelTicket(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, data: ticket });
+});
+
+exports.search = asyncHandler(async (req, res) => {
+  const ticket = await ticketService.searchByTicketId(req.params.ticketId);
+  res.json({ success: true, data: ticket });
+});

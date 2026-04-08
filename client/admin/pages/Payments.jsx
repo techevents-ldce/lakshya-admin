@@ -139,18 +139,22 @@ export default function Payments() {
 
       {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (
         <div className="card overflow-hidden p-0 overflow-x-auto">
-          <table className="w-full text-sm min-w-[450px]">
+          <table className="w-full text-sm min-w-[550px]">
             <thead><tr className="table-header">
-              <th className="px-5 py-3">Participant</th><th className="px-5 py-3 hidden sm:table-cell">Event</th><th className="px-5 py-3">Amount</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 hidden md:table-cell">Transaction ID</th><th className="px-5 py-3">Action</th>
+              <th className="px-5 py-3">Participant</th><th className="px-5 py-3">Event</th><th className="px-5 py-3">Amount</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 hidden md:table-cell">Transaction ID</th><th className="px-5 py-3 hidden sm:table-cell">Date</th><th className="px-5 py-3">Action</th>
             </tr></thead>
             <tbody>
               {payments.map((p) => (
                 <tr key={p._id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-medium">{p.userId?.name}</td>
-                  <td className="px-5 py-3 hidden sm:table-cell">{p.eventId?.title}</td>
+                  <td className="px-5 py-3">
+                    <div className="font-medium">{p.userId?.name || 'N/A'}</div>
+                    <div className="text-xs text-gray-500">{p.userId?.email || ''}</div>
+                  </td>
+                  <td className="px-5 py-3">{p.eventId?.title || 'N/A'}</td>
                   <td className="px-5 py-3 font-semibold">₹{p.amount}</td>
                   <td className="px-5 py-3"><span className={`badge ${statusColor[p.status]}`}>{p.status}</span></td>
                   <td className="px-5 py-3 text-gray-400 text-xs font-mono hidden md:table-cell">{p.transactionId || '—'}</td>
+                  <td className="px-5 py-3 text-gray-500 text-xs hidden sm:table-cell">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
                   <td className="px-5 py-3">
                     {p.status === 'pending' && (
                       <button onClick={() => handleVerify(p._id, p.userId?.name)} className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1 text-xs font-medium">
@@ -160,7 +164,7 @@ export default function Payments() {
                   </td>
                 </tr>
               ))}
-              {payments.length === 0 && <tr><td colSpan="6" className="text-center py-8 text-gray-400">No payments found</td></tr>}
+              {payments.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-gray-400">No payments found. If you use order-based checkout, check the <a href="/orders" className="text-primary-600 hover:underline">Orders</a> page.</td></tr>}
             </tbody>
           </table>
           {total > 1 && (

@@ -19,9 +19,13 @@ import Export from '@admin/pages/Export';
 import BulkEmail from '@admin/pages/BulkEmail';
 import BulkEmailJobs from '@admin/pages/BulkEmailJobs';
 import BulkEmailJobDetail from '@admin/pages/BulkEmailJobDetail';
-import Organizers from '@admin/pages/Organizers';
-import OrganizerForm from '@admin/pages/OrganizerForm';
 import Referrals from '@admin/pages/Referrals';
+import OrdersList from '@admin/pages/OrdersList';
+import OrderDetail from '@admin/pages/OrderDetail';
+import RegistrationDetail from '@admin/pages/RegistrationDetail';
+import TicketsList from '@admin/pages/TicketsList';
+import UserDetail from '@admin/pages/UserDetail';
+import TeamsList from '@admin/pages/TeamsList';
 
 // ── SES Campaign pages (separate from Resend bulk email) ──
 import Campaigns from '@admin/pages/Campaigns';
@@ -68,9 +72,6 @@ export default function App() {
           <Route path="events/:id/edit" element={<RoleRoute role="admin"><EventForm /></RoleRoute>} />
           <Route path="coordinators" element={<RoleRoute role="admin"><Coordinators /></RoleRoute>} />
           <Route path="coordinators/new" element={<RoleRoute role="admin"><CoordinatorForm /></RoleRoute>} />
-          <Route path="organizers" element={<RoleRoute role="admin"><Organizers /></RoleRoute>} />
-          <Route path="organizers/new" element={<RoleRoute role="admin"><OrganizerForm /></RoleRoute>} />
-          <Route path="organizers/:id/edit" element={<RoleRoute role="admin"><OrganizerForm /></RoleRoute>} />
           <Route path="users" element={<RoleRoute role="admin"><Users /></RoleRoute>} />
           <Route path="registrations" element={<RoleRoute role="admin"><Registrations /></RoleRoute>} />
           <Route path="payments" element={<RoleRoute role="admin"><Payments /></RoleRoute>} />
@@ -80,6 +81,12 @@ export default function App() {
           <Route path="bulk-email/jobs" element={<RoleRoute role="admin"><BulkEmailJobs /></RoleRoute>} />
           <Route path="bulk-email/jobs/:jobId" element={<RoleRoute role="admin"><BulkEmailJobDetail /></RoleRoute>} />
           <Route path="referrals" element={<RoleRoute role="admin"><Referrals /></RoleRoute>} />
+          <Route path="orders" element={<RoleRoute role="admin"><OrdersList /></RoleRoute>} />
+          <Route path="orders/:id" element={<RoleRoute role="admin"><OrderDetail /></RoleRoute>} />
+          <Route path="registrations/:id" element={<RoleRoute role="admin"><RegistrationDetail /></RoleRoute>} />
+          <Route path="tickets-list" element={<RoleRoute role="admin"><TicketsList /></RoleRoute>} />
+          <Route path="users/:id" element={<RoleRoute role="admin"><UserDetail /></RoleRoute>} />
+          <Route path="teams" element={<RoleRoute role="admin"><TeamsList /></RoleRoute>} />
 
           {/* ── SES Campaign routes (separate from Resend bulk-email routes above) ── */}
           <Route path="campaigns" element={<RoleRoute role="admin"><Campaigns /></RoleRoute>} />

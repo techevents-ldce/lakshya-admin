@@ -16,7 +16,7 @@ const paymentSchema = new mongoose.Schema(
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     notes: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 paymentSchema.index({ userId: 1 });

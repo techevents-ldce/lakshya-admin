@@ -86,6 +86,63 @@ const resetUserPassword = async (userId, newPassword) => {
   if (!user) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
 };
 
+const getUserDetail = async (id) => {
+  const user = await User.findById(id).populate('assignedEvents').lean();
+  if (!user) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+
+  const Registration = require('../models/Registration');
+  const Ticket = require('../models/Ticket');
+
+  const [registrations, tickets] = await Promise.all([
+    Registration.find({ userId: id })
+      .populate('eventId', 'title slug eventType')
+      .populate('teamId', 'teamName')
+      .sort({ createdAt: -1 })
+      .lean(),
+    Ticket.find({ userId: id })
+      .populate('eventId', 'title slug')
+      .sort({ createdAt: -1 })
+      .lean(),
+  ]);
+
+  // Try to load orders (collection may not exist yet)
+  let orders = [];
+  try {
+    const Order = require('../models/Order');
+    orders = await Order.find({ userId: id })
+      .sort({ createdAt: -1 })
+      .lean();
+  } catch {
+    // orders collection may not exist — that's fine
+  }
+
+  return { ...user, registrations, tickets, orders };
+};
+
+const { writeAuditLog } = require('../middleware/auditLog');
+
+const deactivateUser = async (userId, adminId, reqMeta = {}) => {
+  const user = await User.findById(userId);
+  if (!user) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+
+  const before = { isActive: user.isActive };
+  user.isActive = false;
+  await user.save();
+
+  await writeAuditLog({
+    adminId,
+    action: 'DEACTIVATE_USER',
+    entityType: 'User',
+    entityId: user._id,
+    before,
+    after: { isActive: false },
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return user;
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -95,4 +152,6 @@ module.exports = {
   unblockUser,
   assignEventsToCoordinator,
   resetUserPassword,
+  getUserDetail,
+  deactivateUser,
 };

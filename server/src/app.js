@@ -53,8 +53,17 @@ app.use('/api/events', require('./routes/events'));
 app.use('/api/registrations', require('./routes/registrations'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/teams', require('./routes/teams'));
 app.use('/api/analytics', require('./routes/analytics'));
-app.use('/api/export', require('./routes/export'));
+
+// Rate limit export endpoints
+const exportLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: { success: false, message: 'Too many export requests. Please try again later.', errorCode: 'RATE_LIMIT_EXCEEDED' },
+});
+app.use('/api/export', exportLimiter, require('./routes/export'));
 app.use('/api/audit-logs', require('./routes/auditLogs'));
 app.use('/api/organizers', require('./routes/organizers'));
 app.use('/api/attendance', require('./routes/attendance'));

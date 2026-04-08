@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     role: {
       type: String,
-      enum: ['participant', 'coordinator', 'admin'],
+      enum: ['participant', 'coordinator', 'admin', 'superadmin'],
       default: 'participant',
     },
     assignedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],

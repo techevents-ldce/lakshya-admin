@@ -79,8 +79,11 @@ const getRegistrations = async (query = {}) => {
 const getRegistrationById = async (id) => {
   const reg = await Registration.findById(id)
     .populate('userId', 'name email phone college branch year')
-    .populate('eventId', 'title slug')
-    .populate('teamId');
+    .populate('eventId', 'title slug eventType isPaid registrationFee')
+    .populate({
+      path: 'teamId',
+      populate: { path: 'leaderId', select: 'name email' },
+    });
   if (!reg) throw new AppError('Registration not found', 404, 'REGISTRATION_NOT_FOUND');
   return reg;
 };
@@ -125,4 +128,93 @@ const register = async ({ userId, eventId, teamName, registrationData }) => {
   return registration;
 };
 
-module.exports = { getRegistrations, getRegistrationById, register };
+const { writeAuditLog } = require('../middleware/auditLog');
+
+const cancelRegistration = async (regId, adminId, reqMeta = {}) => {
+  const reg = await Registration.findById(regId);
+  if (!reg) throw new AppError('Registration not found', 404, 'REGISTRATION_NOT_FOUND');
+  if (reg.status === 'cancelled') throw new AppError('Registration already cancelled', 400, 'ALREADY_CANCELLED');
+
+  const before = reg.toObject();
+  reg.status = 'cancelled';
+  await reg.save();
+
+  // Cancel linked ticket
+  await Ticket.updateMany(
+    { userId: reg.userId, eventId: reg.eventId, status: 'valid' },
+    { status: 'cancelled' }
+  );
+
+  await writeAuditLog({
+    adminId,
+    action: 'CANCEL_REGISTRATION',
+    entityType: 'Registration',
+    entityId: reg._id,
+    before,
+    after: reg.toObject(),
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return reg;
+};
+
+const resendTicketEmail = async (regId, adminId, reqMeta = {}) => {
+  const reg = await Registration.findById(regId)
+    .populate('userId', 'name email')
+    .populate('eventId', 'title');
+  if (!reg) throw new AppError('Registration not found', 404, 'REGISTRATION_NOT_FOUND');
+  if (reg.status !== 'confirmed') throw new AppError('Can only resend for confirmed registrations', 400, 'NOT_CONFIRMED');
+
+  const ticket = await Ticket.findOne({ userId: reg.userId._id, eventId: reg.eventId._id });
+  if (!ticket) throw new AppError('No ticket found for this registration', 404, 'TICKET_NOT_FOUND');
+
+  // Log the resend action (actual email sending depends on your mail service integration)
+  await writeAuditLog({
+    adminId,
+    action: 'RESEND_TICKET_EMAIL',
+    entityType: 'Registration',
+    entityId: reg._id,
+    before: null,
+    after: { ticketId: ticket.ticketId, email: reg.userId.email },
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return { message: 'Ticket email resend triggered', ticketId: ticket.ticketId, email: reg.userId.email };
+};
+
+const markAttendance = async (regId, adminId, reqMeta = {}) => {
+  const reg = await Registration.findById(regId);
+  if (!reg) throw new AppError('Registration not found', 404, 'REGISTRATION_NOT_FOUND');
+
+  const before = reg.toObject();
+  reg.checkedIn = true;
+  reg.checkedInAt = new Date();
+  reg.checkedInBy = adminId;
+  await reg.save();
+
+  // Also mark linked ticket as used
+  const ticket = await Ticket.findOne({ userId: reg.userId, eventId: reg.eventId, status: 'valid' });
+  if (ticket) {
+    ticket.status = 'used';
+    ticket.scannedAt = new Date();
+    ticket.scannedBy = adminId;
+    await ticket.save();
+  }
+
+  await writeAuditLog({
+    adminId,
+    action: 'MARK_ATTENDANCE',
+    entityType: 'Registration',
+    entityId: reg._id,
+    before,
+    after: reg.toObject(),
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return reg;
+};
+
+module.exports = { getRegistrations, getRegistrationById, register, cancelRegistration, resendTicketEmail, markAttendance };

@@ -23,4 +23,9 @@ router.post('/coordinators', protect, authorize('admin'), verifyAdminPassword, v
 router.patch('/:id/assign-events', protect, authorize('admin'), verifyAdminPassword, validate(assignEventsSchema), auditLog('ASSIGN_EVENTS', 'User'), userController.assignEvents);
 router.patch('/:id/reset-password', protect, authorize('admin'), verifyAdminPassword, validate(resetPasswordSchema), auditLog('RESET_PASSWORD', 'User'), userController.resetPassword);
 
+// Enriched detail (regs + tickets + orders)
+router.get('/:id/detail', protect, authorize('admin'), userController.getDetail);
+// Deactivate user
+router.patch('/:id/deactivate', protect, authorize('admin'), verifyAdminPassword, auditLog('DEACTIVATE_USER', 'User'), userController.deactivate);
+
 module.exports = router;

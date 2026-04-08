@@ -47,3 +47,18 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   await userService.resetUserPassword(req.params.id, newPassword);
   res.json({ success: true, message: 'Password reset successfully' });
 });
+
+// ── New admin endpoints ──
+
+exports.getDetail = asyncHandler(async (req, res) => {
+  const detail = await userService.getUserDetail(req.params.id);
+  res.json({ success: true, data: detail });
+});
+
+exports.deactivate = asyncHandler(async (req, res) => {
+  const user = await userService.deactivateUser(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, data: user });
+});
