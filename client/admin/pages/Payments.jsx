@@ -151,12 +151,12 @@ export default function Payments() {
                     <div className="text-xs text-gray-500">{p.userId?.email || ''}</div>
                   </td>
                   <td className="px-5 py-3">{p.eventId?.title || 'N/A'}</td>
-                  <td className="px-5 py-3 font-semibold">₹{p.amount}</td>
+                  <td className="px-5 py-3 font-semibold">₹{Number(p.amount || 0).toFixed(2)}</td>
                   <td className="px-5 py-3"><span className={`badge ${statusColor[p.status]}`}>{p.status}</span></td>
                   <td className="px-5 py-3 text-gray-400 text-xs font-mono hidden md:table-cell">{p.transactionId || '—'}</td>
                   <td className="px-5 py-3 text-gray-500 text-xs hidden sm:table-cell">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
                   <td className="px-5 py-3">
-                    {p.status === 'pending' && (
+                    {p.status === 'pending' && p.canVerify !== false && (
                       <button onClick={() => handleVerify(p._id, p.userId?.name)} className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1 text-xs font-medium">
                         <HiOutlineCheckCircle className="w-4 h-4" /> Verify
                       </button>

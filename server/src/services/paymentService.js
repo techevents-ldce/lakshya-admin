@@ -1,11 +1,19 @@
 const Payment = require('../models/Payment');
+const Transaction = require('../models/Transaction');
 const AppError = require('../middleware/AppError');
 
 const getPayments = async (query = {}) => {
   const { page = 1, limit = 20, eventId, status, search } = query;
   const filter = {};
-  if (eventId) filter.eventId = eventId;
-  if (status) filter.status = status;
+  if (eventId) filter.event_ids = eventId;
+  if (status) {
+    const statusMap = {
+      pending: 'PENDING',
+      completed: 'SUCCESS',
+      failed: 'FAILED',
+    };
+    filter.status = statusMap[String(status).toLowerCase()] || String(status).toUpperCase();
+  }
 
   // Search by participant name/email or transaction ID
   if (search) {
@@ -17,21 +25,44 @@ const getPayments = async (query = {}) => {
       ],
     }).select('_id');
     filter.$or = [
-      { userId: { $in: matchingUsers.map((u) => u._id) } },
-      { transactionId: { $regex: search, $options: 'i' } },
+      { user_id: { $in: matchingUsers.map((u) => u._id) } },
+      { transaction_id: { $regex: search, $options: 'i' } },
+      { razorpay_order_id: { $regex: search, $options: 'i' } },
+      { razorpay_payment_id: { $regex: search, $options: 'i' } },
     ];
   }
 
   const skip = (Number(page) - 1) * Number(limit);
-  const [payments, total] = await Promise.all([
-    Payment.find(filter)
+  const [transactions, total] = await Promise.all([
+    Transaction.find(filter)
       .skip(skip)
       .limit(Number(limit))
-      .sort({ createdAt: -1 })
-      .populate('userId', 'name email phone')
-      .populate('eventId', 'title registrationFee'),
-    Payment.countDocuments(filter),
+      .sort({ created_at: -1 })
+      .populate('user_id', 'name email phone')
+      .populate('event_ids', 'title registrationFee'),
+    Transaction.countDocuments(filter),
   ]);
+
+  const statusMap = {
+    PENDING: 'pending',
+    SUCCESS: 'completed',
+    FAILED: 'failed',
+  };
+
+  const payments = transactions.map((tx) => ({
+    _id: tx._id,
+    userId: tx.user_id || null,
+    eventId: Array.isArray(tx.event_ids) && tx.event_ids.length > 0 ? tx.event_ids[0] : null,
+    amount: Number(tx.amount || 0),
+    currency: tx.currency || 'INR',
+    status: statusMap[tx.status] || 'pending',
+    transactionId: tx.transaction_id,
+    razorpayOrderId: tx.razorpay_order_id || null,
+    razorpayPaymentId: tx.razorpay_payment_id || null,
+    createdAt: tx.created_at,
+    canVerify: false,
+  }));
+
   return { payments, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
 };
 
