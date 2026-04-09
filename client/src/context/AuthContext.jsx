@@ -29,11 +29,10 @@ export function AuthProvider({ children }) {
   const login = async (email, password, role) => {
     const { data } = await api.post('/auth/login', { email, password });
 
-    // Validate the user's actual role matches the selected portal
-    if (role === 'admin' && data.user.role !== 'admin') {
+    if (role === 'admin' && data.user.role !== 'admin' && data.user.role !== 'superadmin') {
       throw new Error('Access denied. Admin credentials required.');
     }
-    if (role === 'coordinator' && data.user.role !== 'coordinator' && data.user.role !== 'admin') {
+    if (role === 'coordinator' && data.user.role !== 'coordinator' && data.user.role !== 'admin' && data.user.role !== 'superadmin') {
       throw new Error('Access denied. Coordinator credentials required.');
     }
 
