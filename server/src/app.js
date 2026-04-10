@@ -12,8 +12,19 @@ const app = express();
 
 // Security
 app.use(helmet());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: (process.env.ALLOWED_ORIGINS || '').split(','),
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no origin header, e.g. Postman, cURL, health checks)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    callback(new Error(`CORS: Origin ${origin} is not allowed`));
+  },
   credentials: true,
 }));
 
