@@ -10,6 +10,7 @@ import {
   HiOutlineExclamation,
   HiOutlineClipboardList,
 } from 'react-icons/hi';
+import { useAuth } from '../context/AuthContext';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: HiOutlineChartBar },
@@ -28,6 +29,9 @@ const emptyForm = {
 };
 
 export default function Referrals() {
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
+  const visibleTabs = isSuperadmin ? TABS : [TABS[0]];
   const [tab, setTab] = useState('overview');
   const [summary, setSummary] = useState(null);
   const [codeAnalytics, setCodeAnalytics] = useState([]);
@@ -77,8 +81,12 @@ export default function Referrals() {
   }, [mapPage, mapSearch, includeInactive]);
 
   const refreshAnalytics = useCallback(async () => {
-    await Promise.all([fetchSummary(), fetchCodeAnalytics(), fetchLeaderboard(), fetchUnmapped()]);
-  }, [fetchSummary, fetchCodeAnalytics, fetchLeaderboard, fetchUnmapped]);
+    if (isSuperadmin) {
+      await Promise.all([fetchSummary(), fetchCodeAnalytics(), fetchLeaderboard(), fetchUnmapped()]);
+      return;
+    }
+    await Promise.all([fetchSummary(), fetchCodeAnalytics()]);
+  }, [isSuperadmin, fetchSummary, fetchCodeAnalytics, fetchLeaderboard, fetchUnmapped]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,8 +106,13 @@ export default function Referrals() {
   }, [refreshAnalytics]);
 
   useEffect(() => {
+    if (!isSuperadmin) return;
     fetchMappings().catch(() => {});
-  }, [mapPage, mapSearch, includeInactive, fetchMappings]);
+  }, [isSuperadmin, mapPage, mapSearch, includeInactive, fetchMappings]);
+
+  useEffect(() => {
+    if (!isSuperadmin) setTab('overview');
+  }, [isSuperadmin]);
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -155,10 +168,12 @@ export default function Referrals() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-lg sm:text-2xl font-bold">Referral codes &amp; CA mapping</h1>
-        <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2 self-start">
-          <HiOutlinePlus className="w-5 h-5" />
-          Add mapping
-        </button>
+        {isSuperadmin && (
+          <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2 self-start">
+            <HiOutlinePlus className="w-5 h-5" />
+            Add mapping
+          </button>
+        )}
       </div>
 
       <p className="text-sm text-gray-500 mb-6 max-w-3xl">
@@ -168,7 +183,7 @@ export default function Referrals() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-6">
-        {TABS.map(({ id, label, icon: Icon }) => (
+        {visibleTabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
@@ -291,9 +306,11 @@ export default function Referrals() {
                       <span className={`badge ${m.isActive ? 'badge-green' : 'badge-yellow'}`}>{m.isActive ? 'Active' : 'Inactive'}</span>
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <button type="button" onClick={() => openEdit(m)} className="text-primary-600 hover:text-primary-800 p-1" title="Edit">
-                        <HiOutlinePencil className="w-5 h-5" />
-                      </button>
+                      {isSuperadmin && (
+                        <button type="button" onClick={() => openEdit(m)} className="text-primary-600 hover:text-primary-800 p-1" title="Edit">
+                          <HiOutlinePencil className="w-5 h-5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -352,16 +369,18 @@ export default function Referrals() {
                     <td className="px-4 py-2.5 font-mono text-xs">{u.referralCodeDisplay}</td>
                     <td className="px-4 py-2.5 text-right font-medium">{u.count}</td>
                     <td className="px-4 py-2.5 text-right">
-                      <button
-                        type="button"
-                        className="text-sm text-primary-600 hover:underline"
-                        onClick={() => {
-                          setForm({ ...emptyForm, referralCode: u.referralCodeDisplay });
-                          setModal({ open: true, editing: null });
-                        }}
-                      >
-                        Map now
-                      </button>
+                      {isSuperadmin && (
+                        <button
+                          type="button"
+                          className="text-sm text-primary-600 hover:underline"
+                          onClick={() => {
+                            setForm({ ...emptyForm, referralCode: u.referralCodeDisplay });
+                            setModal({ open: true, editing: null });
+                          }}
+                        >
+                          Map now
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -422,7 +441,7 @@ export default function Referrals() {
       )}
 
       {/* Modal */}
-      {modal.open && (
+      {isSuperadmin && modal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={closeModal}>
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSave} className="p-6 space-y-4">

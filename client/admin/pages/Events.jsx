@@ -4,11 +4,14 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineSearch, HiOutlineChevronDown, HiOutlineChevronUp } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../context/AuthContext';
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export default function Events() {
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -76,7 +79,9 @@ export default function Events() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-lg sm:text-2xl font-bold">Event Management</h1>
-        <Link to="/events/new" className="btn-primary flex items-center gap-2 self-start sm:self-auto"><HiOutlinePlus className="w-5 h-5" /> Create Event</Link>
+        {isSuperadmin && (
+          <Link to="/events/new" className="btn-primary flex items-center gap-2 self-start sm:self-auto"><HiOutlinePlus className="w-5 h-5" /> Create Event</Link>
+        )}
       </div>
 
       {/* Search & Filters */}
@@ -116,13 +121,23 @@ export default function Events() {
                     <td className="px-5 py-3">{e.capacity}</td>
                     <td className="px-5 py-3">{e.isPaid ? `₹${e.registrationFee}` : 'Free'}</td>
                     <td className="px-5 py-3">
-                      <button onClick={(ev) => { ev.stopPropagation(); handleToggle(e._id, e.title, e.isRegistrationOpen); }} className={`badge cursor-pointer ${e.isRegistrationOpen ? 'badge-green' : 'badge-red'}`}>
-                        {e.isRegistrationOpen ? 'Open' : 'Closed'}
-                      </button>
+                      {isSuperadmin ? (
+                        <button onClick={(ev) => { ev.stopPropagation(); handleToggle(e._id, e.title, e.isRegistrationOpen); }} className={`badge cursor-pointer ${e.isRegistrationOpen ? 'badge-green' : 'badge-red'}`}>
+                          {e.isRegistrationOpen ? 'Open' : 'Closed'}
+                        </button>
+                      ) : (
+                        <span className={`badge ${e.isRegistrationOpen ? 'badge-green' : 'badge-red'}`}>
+                          {e.isRegistrationOpen ? 'Open' : 'Closed'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3 flex items-center gap-2" onClick={(ev) => ev.stopPropagation()}>
-                      <Link to={`/events/${e._id}/edit`} className="text-primary-600 hover:text-primary-800"><HiOutlinePencil className="w-4 h-4" /></Link>
-                      <button onClick={() => handleDelete(e._id, e.title)} className="text-red-500 hover:text-red-700"><HiOutlineTrash className="w-4 h-4" /></button>
+                      {isSuperadmin && (
+                        <>
+                          <Link to={`/events/${e._id}/edit`} className="text-primary-600 hover:text-primary-800"><HiOutlinePencil className="w-4 h-4" /></Link>
+                          <button onClick={() => handleDelete(e._id, e.title)} className="text-red-500 hover:text-red-700"><HiOutlineTrash className="w-4 h-4" /></button>
+                        </>
+                      )}
                     </td>
                   </tr>
                   {/* Expanded Detail Row */}

@@ -4,8 +4,8 @@ const authorize = require('../middleware/authorize');
 const verifyAdminPassword = require('../middleware/verifyAdminPassword');
 const mailController = require('../controllers/mailController');
 
-// All routes require authentication + admin role
-router.use(protect, authorize('admin'));
+// All routes require authentication + superadmin role
+router.use(protect, authorize('superadmin'));
 
 // ─── Recipients & Sender Identities ──────────────────────────────────────────
 router.get('/recipients', mailController.getRecipients);

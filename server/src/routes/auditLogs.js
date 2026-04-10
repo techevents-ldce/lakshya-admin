@@ -5,7 +5,7 @@ const protect = require('../middleware/auth');
 const authorize = require('../middleware/authorize');
 const asyncHandler = require('../utils/asyncHandler');
 
-router.get('/', protect, authorize('admin'), asyncHandler(async (req, res) => {
+router.get('/', protect, authorize('superadmin'), asyncHandler(async (req, res) => {
   const { page = 1, limit = 30, action, search } = req.query;
   const filter = {};
   if (action) filter.status = String(action).toUpperCase();
@@ -32,7 +32,7 @@ router.get('/', protect, authorize('admin'), asyncHandler(async (req, res) => {
 }));
 
 // Get distinct action types for filter dropdown
-router.get('/actions', protect, authorize('admin'), asyncHandler(async (req, res) => {
+router.get('/actions', protect, authorize('superadmin'), asyncHandler(async (req, res) => {
   const actions = await PaymentAuditLog.distinct('status');
   res.json({ success: true, data: actions });
 }));

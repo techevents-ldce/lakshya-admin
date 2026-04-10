@@ -3,6 +3,7 @@ const router = express.Router();
 const ticketController = require('../controllers/ticketController');
 const protect = require('../middleware/auth');
 const authorize = require('../middleware/authorize');
+const readOnlyAdmin = require('../middleware/readOnlyAdmin');
 const auditLog = require('../middleware/auditLog');
 
 // Admin paginated listing
@@ -18,7 +19,7 @@ router.get('/my', protect, ticketController.getMyTicket);
 router.get('/search/:ticketId', protect, authorize('admin', 'coordinator'), ticketController.search);
 
 // Admin actions
-router.patch('/:id/mark-used', protect, authorize('admin', 'coordinator'), auditLog('MARK_TICKET_USED', 'Ticket'), ticketController.markUsed);
-router.patch('/:id/cancel', protect, authorize('admin'), auditLog('CANCEL_TICKET', 'Ticket'), ticketController.cancel);
+router.patch('/:id/mark-used', protect, authorize('admin', 'coordinator'), readOnlyAdmin, auditLog('MARK_TICKET_USED', 'Ticket'), ticketController.markUsed);
+router.patch('/:id/cancel', protect, authorize('admin'), readOnlyAdmin, auditLog('CANCEL_TICKET', 'Ticket'), ticketController.cancel);
 
 module.exports = router;

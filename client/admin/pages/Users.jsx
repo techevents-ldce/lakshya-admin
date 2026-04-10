@@ -4,11 +4,14 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlineSearch, HiOutlineBan, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineChevronUp, HiOutlineKey } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../context/AuthContext';
 
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export default function Users() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -122,12 +125,12 @@ export default function Users() {
                     <td className="px-5 py-3"><span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>{u.isActive ? 'Active' : 'Blocked'}</span></td>
                     <td className="px-5 py-3" onClick={(ev) => ev.stopPropagation()}>
                       <div className="flex items-center gap-2">
-                        {u.role !== 'admin' && (
+                        {isSuperadmin && u.role !== 'admin' && (
                           <button onClick={() => toggleBlock(u._id, u.name, u.isActive)} className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800'}`}>
                             {u.isActive ? <><HiOutlineBan className="w-4 h-4" /> Block</> : <><HiOutlineCheckCircle className="w-4 h-4" /> Unblock</>}
                           </button>
                         )}
-                        {u.role !== 'admin' && (
+                        {isSuperadmin && u.role !== 'admin' && (
                           <button onClick={() => setResetModal(u)} className="text-primary-600 hover:text-primary-800" title="Reset Password">
                             <HiOutlineKey className="w-4 h-4" />
                           </button>
@@ -174,7 +177,7 @@ export default function Users() {
       )}
 
       {/* Reset Password Modal */}
-      {resetModal && (
+      {isSuperadmin && resetModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 w-full max-w-sm">
             <h3 className="text-lg font-bold mb-4">Reset Password for {resetModal.name}</h3>

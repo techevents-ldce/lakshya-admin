@@ -4,8 +4,11 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlineKey, HiOutlineSearch } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../context/AuthContext';
 
 export default function Coordinators() {
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const [coordinators, setCoordinators] = useState([]);
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState('');
@@ -79,7 +82,9 @@ export default function Coordinators() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-lg sm:text-2xl font-bold">Coordinator Management</h1>
-        <Link to="/coordinators/new" className="btn-primary flex items-center gap-2 self-start sm:self-auto"><HiOutlinePlus className="w-5 h-5" /> Add Coordinator</Link>
+        {isSuperadmin && (
+          <Link to="/coordinators/new" className="btn-primary flex items-center gap-2 self-start sm:self-auto"><HiOutlinePlus className="w-5 h-5" /> Add Coordinator</Link>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 flex-wrap">
@@ -108,8 +113,12 @@ export default function Coordinators() {
                   <td className="px-5 py-3"><span className={`badge ${c.isActive ? 'badge-green' : 'badge-red'}`}>{c.isActive ? 'Active' : 'Blocked'}</span></td>
                   <td className="px-5 py-3 text-gray-500">{c.assignedEvents?.length || 0} events</td>
                   <td className="px-5 py-3 flex items-center gap-2">
-                    <button onClick={() => openAssign(c)} className="btn-outline text-xs px-3 py-1">Assign</button>
-                    <button onClick={() => setResetModal(c)} className="text-primary-600 hover:text-primary-800"><HiOutlineKey className="w-4 h-4" /></button>
+                    {isSuperadmin && (
+                      <>
+                        <button onClick={() => openAssign(c)} className="btn-outline text-xs px-3 py-1">Assign</button>
+                        <button onClick={() => setResetModal(c)} className="text-primary-600 hover:text-primary-800"><HiOutlineKey className="w-4 h-4" /></button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -120,7 +129,7 @@ export default function Coordinators() {
       )}
 
       {/* Assign Events Modal */}
-      {assignModal && (
+      {isSuperadmin && assignModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-bold mb-4">Assign Events to {assignModal.name}</h3>
@@ -142,7 +151,7 @@ export default function Coordinators() {
       )}
 
       {/* Reset Password Modal */}
-      {resetModal && (
+      {isSuperadmin && resetModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 w-full max-w-sm">
             <h3 className="text-lg font-bold mb-4">Reset Password for {resetModal.name}</h3>
