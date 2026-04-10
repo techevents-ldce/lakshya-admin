@@ -201,7 +201,8 @@ export default function Dashboard() {
       {/* Row 4: Top Colleges */}
       {(stats?.topColleges?.length || 0) > 0 && (
         <div className="card mb-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Top Colleges</h3>
+          <h3 className="font-semibold text-gray-900 mb-1">Top Colleges</h3>
+          <p className="text-xs text-gray-500 mb-4">Similar spellings are merged for this chart only; stored data is unchanged.</p>
           <Bar data={topCollegesData} options={{ indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }} />
         </div>
       )}

@@ -26,6 +26,7 @@ import RegistrationDetail from '@admin/pages/RegistrationDetail';
 import TicketsList from '@admin/pages/TicketsList';
 import UserDetail from '@admin/pages/UserDetail';
 import TeamsList from '@admin/pages/TeamsList';
+import AlumniManagementPage from '@admin/pages/AlumniManagementPage';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="tickets-list" element={<RoleRoute role="admin"><TicketsList /></RoleRoute>} />
           <Route path="users/:id" element={<RoleRoute role="admin"><UserDetail /></RoleRoute>} />
           <Route path="teams" element={<RoleRoute role="admin"><TeamsList /></RoleRoute>} />
+          <Route path="alumni" element={<RoleRoute role="admin"><AlumniManagementPage /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />

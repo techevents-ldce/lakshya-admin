@@ -68,16 +68,9 @@ app.use('/api/audit-logs', require('./routes/auditLogs'));
 app.use('/api/organizers', require('./routes/organizers'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/referrals', require('./routes/referrals'));
+app.use('/api/admin/alumni', require('./routes/alumni.routes'));
 app.use('/uploads', express.static(require('path').join(__dirname, '..', 'uploads')));
 app.use('/api/mail', require('./routes/mail'));
-
-// ── SES Bulk Campaign routes (separate from Resend /api/mail routes) ──
-app.use('/api/campaigns',      require('./routes/campaigns'));
-app.use('/api/email-templates', require('./routes/emailTemplates'));
-app.use('/api/suppressions',   require('./routes/suppressions'));
-
-// Public unsubscribe endpoint (no auth — required for CAN-SPAM compliance)
-app.get('/api/unsubscribe', require('./controllers/suppressionController').unsubscribeHandler);
 
 // ─── 404 catch ─────────────────────────────────────────────────────────────────
 app.use((req, res) => {

@@ -6,6 +6,7 @@ const Ticket = require('../models/Ticket');
 const Team = require('../models/Team');
 const AppError = require('../middleware/AppError');
 const logger = require('../utils/logger');
+const { mergeCollegeStatsForDisplay } = require('../utils/collegeDisplayGroup');
 
 const getDashboardStats = async (filters = {}) => {
   try {
@@ -75,7 +76,7 @@ const getDashboardStats = async (filters = {}) => {
       ticketsUsed,
       uniqueUsersRegistered,
       teamVsIndividual,
-      topColleges,
+      topCollegesRaw,
       topBranches,
       topYears,
     ] = await Promise.all([
@@ -161,12 +162,12 @@ const getDashboardStats = async (filters = {}) => {
           },
         },
       ]),
-      // Top colleges
+      // Top colleges (raw strings; merged for display in JS — see mergeCollegeStatsForDisplay)
       User.aggregate([
         { $match: { college: { $ne: null, $ne: '' } } },
         { $group: { _id: '$college', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-        { $limit: 10 },
+        { $limit: 500 },
       ]),
       // Top branches
       User.aggregate([
@@ -182,6 +183,8 @@ const getDashboardStats = async (filters = {}) => {
         { $sort: { count: -1 } },
       ]),
     ]);
+
+    const topColleges = mergeCollegeStatsForDisplay(topCollegesRaw, 10);
 
     return {
       totalUsers,

@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineTicket, HiOutlineCreditCard, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX, HiOutlineTag, HiOutlineInboxIn, HiOutlineReceiptTax, HiOutlineClipboardCheck } from 'react-icons/hi';
+import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineTicket, HiOutlineCreditCard, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX, HiOutlineTag, HiOutlineInboxIn, HiOutlineReceiptTax, HiOutlineClipboardCheck, HiOutlineSparkles } from 'react-icons/hi';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: HiOutlineChartBar },
@@ -13,6 +13,7 @@ const links = [
   { to: '/orders', label: 'Orders', icon: HiOutlineReceiptTax },
   { to: '/tickets-list', label: 'Tickets', icon: HiOutlineClipboardCheck },
   { to: '/teams', label: 'Teams', icon: HiOutlineUserGroup },
+  { to: '/alumni', label: 'Alumni', icon: HiOutlineSparkles },
   { to: '/audit-logs', label: 'Audit Logs', icon: HiOutlineShieldCheck, superadminOnly: true },
   { to: '/export', label: 'Export', icon: HiOutlineDocumentDownload },
   { to: '/bulk-email', label: 'Bulk Email', icon: HiOutlineMail, superadminOnly: true },

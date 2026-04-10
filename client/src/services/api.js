@@ -14,15 +14,37 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function shouldSkipRefreshRetry(config) {
+  const url = config?.url || '';
+  // These401s are not "access token expired" — do not call /auth/refresh.
+  return (
+    url.includes('/auth/login')
+    || url.includes('/auth/register')
+    || url.includes('/auth/refresh')
+  );
+}
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401
+      && !originalRequest._retry
+      && !shouldSkipRefreshRetry(originalRequest)
+    ) {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (typeof refreshToken !== 'string' || !refreshToken.trim()) {
+        localStorage.clear();
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(new Error('Session expired. Please log in again.'));
+      }
+
       originalRequest._retry = true;
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
         const { data } = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken });
         localStorage.setItem('accessToken', data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
