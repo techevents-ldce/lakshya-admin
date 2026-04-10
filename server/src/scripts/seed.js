@@ -26,7 +26,6 @@ const Registration = require('../models/Registration');
 const Payment = require('../models/Payment');
 const Ticket = require('../models/Ticket');
 const EventField = require('../models/EventField');
-const Organizer = require('../models/Organizer');
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -88,19 +87,6 @@ const TEAM_NAMES = [
   'Hash Mappers', 'Async Avengers', 'Debug Demons', 'Compile Crew',
 ];
 
-const ORGANIZERS = [
-  { fullName: 'Dr. Amit Patel',    email: 'amit.patel@ldce.ac.in',    team: 'Faculty Advisor',   linkedinUrl: 'https://linkedin.com/in/amitpatel', order: 1 },
-  { fullName: 'Prof. Nisha Shah',   email: 'nisha.shah@ldce.ac.in',    team: 'Faculty Advisor',   linkedinUrl: 'https://linkedin.com/in/nishashah',  order: 2 },
-  { fullName: 'Ravi Desai',         email: 'ravi.desai@ldce.ac.in',    team: 'Core Committee',    linkedinUrl: 'https://linkedin.com/in/ravidesai',  githubUrl: 'https://github.com/ravidesai', order: 3 },
-  { fullName: 'Priya Mehta',        email: 'priya.mehta@ldce.ac.in',   team: 'Core Committee',    linkedinUrl: 'https://linkedin.com/in/priyamehta', githubUrl: 'https://github.com/priyamehta', instagramUrl: 'https://instagram.com/priyamehta', order: 4 },
-  { fullName: 'Karan Joshi',        email: 'karan.joshi@ldce.ac.in',   team: 'Technical',         linkedinUrl: 'https://linkedin.com/in/karanjoshi', githubUrl: 'https://github.com/karanjoshi', order: 5 },
-  { fullName: 'Sneha Trivedi',      email: 'sneha.trivedi@ldce.ac.in', team: 'Technical',         linkedinUrl: 'https://linkedin.com/in/snehatrivedi', githubUrl: 'https://github.com/snehatrivedi', order: 6 },
-  { fullName: 'Harsh Chauhan',      email: 'harsh.chauhan@ldce.ac.in', team: 'Design & Media',    linkedinUrl: 'https://linkedin.com/in/harshchauhan', instagramUrl: 'https://instagram.com/harshchauhan', order: 7 },
-  { fullName: 'Tanvi Solanki',      email: 'tanvi.solanki@ldce.ac.in', team: 'Design & Media',    instagramUrl: 'https://instagram.com/tanvisolanki', order: 8 },
-  { fullName: 'Yash Parmar',        email: 'yash.parmar@ldce.ac.in',   team: 'Sponsorship',       linkedinUrl: 'https://linkedin.com/in/yashparmar', order: 9 },
-  { fullName: 'Simran Raval',       email: 'simran.raval@ldce.ac.in',  team: 'Logistics',         linkedinUrl: 'https://linkedin.com/in/simranraval', order: 10 },
-];
-
 const PAY_METHODS = ['UPI', 'Card', 'Net Banking', 'UPI', 'UPI', 'Cash'];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -121,7 +107,6 @@ const seed = async () => {
     Payment.deleteMany({}),
     Ticket.deleteMany({}),
     EventField.deleteMany({}),
-    Organizer.deleteMany({}),
   ]);
   log('🗑️', 'All collections cleared');
 
@@ -407,13 +392,6 @@ const seed = async () => {
   }
   log('✅', `${checkedInCount} registrations marked as checked-in`);
 
-  // ╔═══════════════════════════════════════════════════════════════════════╗
-  // ║  7. ORGANIZERS                                                      ║
-  // ╚═══════════════════════════════════════════════════════════════════════╝
-  section('7. CREATING ORGANIZERS');
-
-  await Organizer.insertMany(ORGANIZERS.map((o) => ({ ...o, isActive: true })));
-  log('🎪', `${ORGANIZERS.length} organizers created`);
 
   // ╔═══════════════════════════════════════════════════════════════════════╗
   // ║  8. EVENT FIELDS (custom registration forms)                        ║
@@ -444,7 +422,7 @@ const seed = async () => {
   // ╚═══════════════════════════════════════════════════════════════════════╝
   section('SEED SUMMARY');
 
-  const [uCount, eCount, tCount, tmCount, rCount, pCount, ticketCount, orgCount] = await Promise.all([
+  const [uCount, eCount, tCount, tmCount, rCount, pCount, ticketCount] = await Promise.all([
     User.countDocuments(),
     Event.countDocuments(),
     Team.countDocuments(),
@@ -452,7 +430,6 @@ const seed = async () => {
     Registration.countDocuments(),
     Payment.countDocuments(),
     Ticket.countDocuments(),
-    Organizer.countDocuments(),
   ]);
 
   const validTickets = await Ticket.countDocuments({ status: 'valid' });
@@ -469,7 +446,6 @@ const seed = async () => {
   console.log(`  │  Registrations   ${String(rCount).padStart(5)}                │`);
   console.log(`  │  Payments        ${String(pCount).padStart(5)}                │`);
   console.log(`  │  Tickets         ${String(ticketCount).padStart(5)}                │`);
-  console.log(`  │  Organizers      ${String(orgCount).padStart(5)}                │`);
   console.log('  ├────────────────────────────────────────┤');
   console.log(`  │  🟢 Valid Tickets   ${String(validTickets).padStart(4)}               │`);
   console.log(`  │  🔵 Used / Scanned  ${String(usedTicketCount).padStart(4)}               │`);

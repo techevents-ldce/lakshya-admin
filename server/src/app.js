@@ -65,7 +65,6 @@ const exportLimiter = rateLimit({
 });
 app.use('/api/export', exportLimiter, require('./routes/export'));
 app.use('/api/audit-logs', require('./routes/auditLogs'));
-app.use('/api/organizers', require('./routes/organizers'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/admin/alumni', require('./routes/alumni.routes'));
