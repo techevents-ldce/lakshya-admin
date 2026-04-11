@@ -44,6 +44,14 @@ exports.cancel = asyncHandler(async (req, res) => {
   res.json({ success: true, data: ticket });
 });
 
+exports.deleteTicket = asyncHandler(async (req, res) => {
+  await ticketService.deleteTicket(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, message: 'Ticket deleted successfully' });
+});
+
 exports.search = asyncHandler(async (req, res) => {
   const ticket = await ticketService.searchByTicketId(req.params.ticketId);
   res.json({ success: true, data: ticket });

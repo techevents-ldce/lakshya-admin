@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineSearch, HiOutlineCheckCircle, HiOutlineBan, HiOutlineClipboardCopy, HiOutlineUserGroup, HiOutlineViewList, HiOutlineViewBoards } from 'react-icons/hi';
+import { useAuth } from '../context/AuthContext';
+import { HiOutlineSearch, HiOutlineCheckCircle, HiOutlineBan, HiOutlineClipboardCopy, HiOutlineUserGroup, HiOutlineViewList, HiOutlineViewBoards, HiOutlineTrash } from 'react-icons/hi';
 
 const STATUS_LABELS = { valid: 'Active', used: 'Used', cancelled: 'Cancelled' };
 const STATUS_COLORS = { valid: 'badge-green', used: 'badge-blue', cancelled: 'badge-red' };
 
 export default function TicketsList() {
+  const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
@@ -53,6 +55,15 @@ export default function TicketsList() {
       toast.success('Ticket cancelled');
       fetchTickets();
     } catch (err) { toast.error(err.userMessage || 'Failed'); }
+  };
+  
+  const handleDelete = async (ticketDbId) => {
+    if (!window.confirm('Are you sure you want to PERMANENTLY DELETE this ticket? This will also reset check-in status if it was used.')) return;
+    try {
+      await api.delete(`/tickets/${ticketDbId}`);
+      toast.success('Ticket deleted permanently');
+      fetchTickets();
+    } catch (err) { toast.error(err.userMessage || 'Failed to delete ticket'); }
   };
 
   const copyToClipboard = (text) => { navigator.clipboard.writeText(text); toast.success('Copied'); };
@@ -166,6 +177,9 @@ export default function TicketsList() {
                           <button onClick={() => handleCancel(t._id)} className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-0.5"><HiOutlineBan className="w-3.5 h-3.5" /> Cancel</button>
                         </>
                       )}
+                      {user?.role === 'superadmin' && (
+                        <button onClick={() => handleDelete(t._id)} className="ml-auto text-gray-400 hover:text-red-600 transition-colors" title="Delete Ticket Permanently"><HiOutlineTrash className="w-4 h-4" /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -228,6 +242,9 @@ export default function TicketsList() {
                               <div className="flex items-center gap-2">
                                 <button onClick={() => handleMarkUsed(t._id)} className="text-emerald-600 hover:text-emerald-800 text-xs font-medium">Use</button>
                                 <button onClick={() => handleCancel(t._id)} className="text-red-600 hover:text-red-800 text-xs font-medium">Cancel</button>
+                                {user?.role === 'superadmin' && (
+                                  <button onClick={() => handleDelete(t._id)} className="ml-2 text-gray-400 hover:text-red-600 transition-colors" title="Delete Ticket Permanently"><HiOutlineTrash className="w-4 h-4" /></button>
+                                )}
                               </div>
                             )}
                           </td>
@@ -275,6 +292,9 @@ export default function TicketsList() {
                               <button onClick={() => handleMarkUsed(t._id)} className="text-emerald-600 hover:text-emerald-800 text-xs font-medium">Use</button>
                               <button onClick={() => handleCancel(t._id)} className="text-red-600 hover:text-red-800 text-xs font-medium">Cancel</button>
                             </div>
+                          )}
+                          {user?.role === 'superadmin' && (
+                            <button onClick={() => handleDelete(t._id)} className="mt-1 text-gray-400 hover:text-red-600 transition-colors" title="Delete Ticket Permanently"><HiOutlineTrash className="w-4 h-4" /></button>
                           )}
                         </td>
                       </tr>

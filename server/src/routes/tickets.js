@@ -21,5 +21,6 @@ router.get('/search/:ticketId', protect, authorize('admin', 'coordinator'), tick
 // Admin actions
 router.patch('/:id/mark-used', protect, authorize('admin', 'coordinator'), readOnlyAdmin, auditLog('MARK_TICKET_USED', 'Ticket'), ticketController.markUsed);
 router.patch('/:id/cancel', protect, authorize('admin'), readOnlyAdmin, auditLog('CANCEL_TICKET', 'Ticket'), ticketController.cancel);
+router.delete('/:id', protect, authorize('superadmin'), readOnlyAdmin, auditLog('DELETE_TICKET', 'Ticket'), ticketController.deleteTicket);
 
 module.exports = router;

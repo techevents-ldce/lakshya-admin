@@ -210,6 +210,36 @@ const cancelTicket = async (ticketId, adminId, reqMeta = {}) => {
   return ticket;
 };
 
+const deleteTicket = async (ticketId, adminId, reqMeta = {}) => {
+  const ticket = await Ticket.findById(ticketId);
+  if (!ticket) throw new AppError('Ticket not found', 404, 'TICKET_NOT_FOUND');
+
+  const before = ticket.toObject();
+
+  // If ticket was used, reset registration checked-in status
+  if (ticket.status === 'used') {
+    await Registration.findOneAndUpdate(
+      { userId: ticket.userId, eventId: ticket.eventId },
+      { checkedIn: false, checkedInAt: null, checkedInBy: null }
+    );
+  }
+
+  await Ticket.findByIdAndDelete(ticketId);
+
+  await writeAuditLog({
+    adminId,
+    action: 'DELETE_TICKET',
+    entityType: 'Ticket',
+    entityId: ticket._id,
+    before,
+    after: null, // Deleted
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return { success: true };
+};
+
 const searchByTicketId = async (ticketIdStr) => {
   const ticket = await Ticket.findOne({ ticketId: ticketIdStr })
     .populate('userId', 'name email phone college')
@@ -218,5 +248,5 @@ const searchByTicketId = async (ticketIdStr) => {
   return ticket;
 };
 
-module.exports = { verifyTicket, getTicketsByEvent, getTicketByUserId, getTickets, markUsed, cancelTicket, searchByTicketId };
+module.exports = { verifyTicket, getTicketsByEvent, getTicketByUserId, getTickets, markUsed, cancelTicket, deleteTicket, searchByTicketId };
 
