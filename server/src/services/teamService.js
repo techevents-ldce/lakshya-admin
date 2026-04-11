@@ -32,13 +32,32 @@ const getTeams = async (query = {}) => {
   // Fetch member counts for each team
   if (teams.length > 0) {
     const teamIds = teams.map((t) => t._id);
+
+    // Count from TeamMember collection (registered users only)
     const memberCounts = await TeamMember.aggregate([
       { $match: { teamId: { $in: teamIds } } },
       { $group: { _id: '$teamId', count: { $sum: 1 } } },
     ]);
     const countMap = {};
     memberCounts.forEach((mc) => { countMap[mc._id.toString()] = mc.count; });
-    teams.forEach((t) => { t.memberCount = countMap[t._id.toString()] || 0; });
+
+    // For hackathon teams, non-leader members don't have User accounts so no TeamMember docs.
+    // Registration.memberCount stores the true full team size set during import.
+    // Use max(TeamMember count, registration.memberCount).
+    const registrations = await Registration.find(
+      { teamId: { $in: teamIds }, memberCount: { $gt: 1 } },
+      { teamId: 1, memberCount: 1 }
+    ).lean();
+    const regCountMap = {};
+    registrations.forEach((r) => {
+      if (r.teamId) regCountMap[r.teamId.toString()] = r.memberCount;
+    });
+
+    teams.forEach((t) => {
+      const tmCount  = countMap[t._id.toString()]    || 0;
+      const regCount = regCountMap[t._id.toString()] || 0;
+      t.memberCount  = Math.max(tmCount, regCount);
+    });
   }
 
   return { teams, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };

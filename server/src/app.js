@@ -79,6 +79,7 @@ app.use('/api/audit-logs', require('./routes/auditLogs'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/admin/alumni', require('./routes/alumni.routes'));
+app.use('/api/hackathon',   require('./routes/hackathon'));
 app.use('/uploads', express.static(require('path').join(__dirname, '..', 'uploads')));
 app.use('/api/mail', require('./routes/mail'));
 

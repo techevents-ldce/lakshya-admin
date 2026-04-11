@@ -7,17 +7,17 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0f172a]">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Mobile top-bar with hamburger */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+      <div className="lg:hidden sticky top-0 z-30 bg-slate-900 border-b border-slate-700/60 shadow-sm">
         <div className="flex items-center h-14 px-4">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-900 mr-3">
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-slate-200 mr-3">
             <HiOutlineMenuAlt2 className="w-6 h-6" />
           </button>
-          <span className="text-lg font-extrabold text-primary-600 tracking-tight">Lakshya</span>
-          <span className="ml-1 text-[10px] uppercase tracking-wider text-gray-400 font-semibold mt-0.5">Admin</span>
+          <span className="text-lg font-extrabold text-primary-400 tracking-tight">Lakshya</span>
+          <span className="ml-1 text-[10px] uppercase tracking-wider text-slate-500 font-semibold mt-0.5">Admin</span>
         </div>
       </div>
 
