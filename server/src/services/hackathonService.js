@@ -11,8 +11,7 @@
  *   All other rows are members.
  *
  *   For the LEADER row, all fields are used to create/update the User record.
- *   For MEMBER rows, all fields are stored in HackathonTeam.members (raw data).
- *   Member User accounts are NOT created — only the leader gets a login account.
+ *   For MEMBER rows, User accounts and TeamMember entries are created to link them to the team.
  *
  * DB SAFETY:
  *   selected   -> Registration.status = 'pending'    (portal allows payment)
@@ -295,10 +294,38 @@ const importTeams = async (filePath, eventId, defaultStatus, adminId) => {
       let team = await Team.findOne({ eventId: event._id, leaderId: leaderUser._id });
       if (!team) {
         team = await Team.create({ eventId: event._id, leaderId: leaderUser._id, teamName, status: 'active' });
-        // Only add TeamMember for newly created teams
-        const existingMember = await TeamMember.findOne({ teamId: team._id, userId: leaderUser._id });
-        if (!existingMember) {
-          await TeamMember.create({ teamId: team._id, userId: leaderUser._id, status: 'accepted' });
+      }
+      // Always ensure leader is in TeamMember
+      const existingLeaderMember = await TeamMember.findOne({ teamId: team._id, userId: leaderUser._id });
+      if (!existingLeaderMember) {
+        await TeamMember.create({ teamId: team._id, userId: leaderUser._id, status: 'accepted' });
+      }
+
+      // ── Find-or-create Users & TeamMembers for ALL members ──────────────────
+      for (const mRow of allMembers) {
+        const mEmail = (mRow.email || '').toLowerCase().trim();
+        const mName  = (mRow.name  || '').trim();
+        if (!mEmail) continue;
+
+        let mUser = await User.findOne({ email: mEmail });
+        if (!mUser) {
+          const mYearNum = parseInt(mRow.year, 10);
+          mUser = await User.create({
+            name:         mName || mEmail.split('@')[0],
+            email:        mEmail,
+            phone:        mRow.phone || '',
+            college:      mRow.collegeName || grp.collegeName || '',
+            branch:       mRow.department || '',
+            year:         !isNaN(mYearNum) && mYearNum >= 1 && mYearNum <= 6 ? mYearNum : undefined,
+            passwordHash,
+            role:         'participant',
+            isActive:     true,
+          });
+        }
+
+        const existingTM = await TeamMember.findOne({ teamId: team._id, userId: mUser._id });
+        if (!existingTM) {
+          await TeamMember.create({ teamId: team._id, userId: mUser._id, status: 'accepted' });
         }
       }
 
@@ -544,8 +571,20 @@ const deleteTeam = async (hackathonTeamId, adminId, reqMeta = {}) => {
 
   // 2. Delete TeamMember entries + Team
   if (ht.teamId) {
+    const members = await TeamMember.find({ teamId: ht.teamId }).lean();
+    const memberUserIds = members.map((m) => m.userId);
+
     await TeamMember.deleteMany({ teamId: ht.teamId });
     await Team.findByIdAndDelete(ht.teamId);
+
+    // 2.1 Delete member Users ONLY if they have zero remaining registrations
+    for (const mUserId of memberUserIds) {
+      if (!mUserId) continue;
+      const remainingRegs = await Registration.countDocuments({ userId: mUserId });
+      if (remainingRegs === 0) {
+        await User.findByIdAndDelete(mUserId);
+      }
+    }
   }
 
   // 3. Delete leader User ONLY if they have zero remaining registrations
