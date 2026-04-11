@@ -24,6 +24,14 @@ exports.cancel = asyncHandler(async (req, res) => {
   res.json({ success: true, data: reg });
 });
 
+exports.delete = asyncHandler(async (req, res) => {
+  const result = await registrationService.deleteRegistration(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, ...result });
+});
+
 exports.resendEmail = asyncHandler(async (req, res) => {
   const result = await registrationService.resendTicketEmail(req.params.id, req.user.id, {
     ip: req.ip,

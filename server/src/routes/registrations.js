@@ -13,6 +13,7 @@ router.post('/', protect, registrationController.register);
 
 // Admin actions
 router.patch('/:id/cancel', protect, authorize('admin'), readOnlyAdmin, verifyAdminPassword, auditLog('CANCEL_REGISTRATION', 'Registration'), registrationController.cancel);
+router.delete('/:id', protect, authorize('superadmin'), readOnlyAdmin, verifyAdminPassword, auditLog('DELETE_REGISTRATION', 'Registration'), registrationController.delete);
 router.post('/:id/resend-email', protect, authorize('admin'), readOnlyAdmin, auditLog('RESEND_TICKET_EMAIL', 'Registration'), registrationController.resendEmail);
 router.patch('/:id/mark-attendance', protect, authorize('admin', 'coordinator'), readOnlyAdmin, auditLog('MARK_ATTENDANCE', 'Registration'), registrationController.markAttendance);
 

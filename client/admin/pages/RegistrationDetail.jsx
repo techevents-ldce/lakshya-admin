@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineArrowLeft, HiOutlineBan, HiOutlineMail, HiOutlineCheckCircle } from 'react-icons/hi';
+import { HiOutlineArrowLeft, HiOutlineBan, HiOutlineTrash, HiOutlineMail, HiOutlineCheckCircle } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function RegistrationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [reg, setReg] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
@@ -31,6 +33,18 @@ export default function RegistrationDetail() {
         await api.patch(`/registrations/${id}/cancel`, { adminPassword: pw });
         toast.success('Registration cancelled');
         fetchReg();
+      },
+    });
+  };
+
+  const handleDelete = () => {
+    setConfirmModal({
+      open: true, title: 'Delete Registration', confirmLabel: 'Delete Permanently', variant: 'danger',
+      message: 'CRITICAL: This will permanently delete this registration and all related records (tickets, teams, etc.). This action CANNOT be undone.',
+      action: async (pw) => {
+        await api.delete(`/registrations/${id}`, { data: { adminPassword: pw } });
+        toast.success('Registration deleted permanently');
+        navigate('/registrations');
       },
     });
   };
@@ -64,6 +78,11 @@ export default function RegistrationDetail() {
         <div className="flex flex-wrap gap-2">
           {reg.status !== 'cancelled' && (
             <button onClick={handleCancel} className="btn-danger text-sm flex items-center gap-1.5"><HiOutlineBan className="w-4 h-4" /> Cancel</button>
+          )}
+          {user?.role === 'superadmin' && (
+            <button onClick={handleDelete} className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors">
+              <HiOutlineTrash className="w-4 h-4" /> Delete
+            </button>
           )}
           {reg.status === 'confirmed' && (
             <button onClick={handleResendEmail} className="btn-outline text-sm flex items-center gap-1.5"><HiOutlineMail className="w-4 h-4" /> Resend Email</button>

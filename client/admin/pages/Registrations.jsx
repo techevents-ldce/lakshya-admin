@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation, HiOutlineSearch, HiOutlineChevronDown, HiOutlineChevronUp } from 'react-icons/hi';
+import { HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineExclamation, HiOutlineSearch, HiOutlineChevronDown, HiOutlineChevronUp, HiOutlineTrash } from 'react-icons/hi';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../../src/context/AuthContext';
 
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export default function Registrations() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [verified, setVerified] = useState(false);
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -23,6 +26,7 @@ export default function Registrations() {
   const [referralFilter, setReferralFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
 
   const handleVerifyPassword = async () => {
     if (!password.trim()) { setVerifyError('Password is required'); return; }
@@ -62,6 +66,18 @@ export default function Registrations() {
   const statusColor = { confirmed: 'badge-green', pending: 'badge-yellow', cancelled: 'badge-red', waitlisted: 'badge-blue' };
 
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
+
+  const handleDelete = (regId) => {
+    setConfirmModal({
+      open: true, title: 'Delete Registration', confirmLabel: 'Delete Permanently', variant: 'danger',
+      message: 'CRITICAL: This will permanently delete this registration and all related records (tickets, teams, etc.). This action CANNOT be undone.',
+      action: async (pw) => {
+        await api.delete(`/registrations/${regId}`, { data: { adminPassword: pw } });
+        toast.success('Registration deleted permanently');
+        fetchRegs();
+      },
+    });
+  };
 
   // --- Password Gate ---
   if (!verified) {
@@ -230,8 +246,16 @@ export default function Registrations() {
                           )}
 
                           {/* Drill-down link */}
-                          <div className="pt-2 border-t border-gray-200">
+                          <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
                             <button onClick={(e) => { e.stopPropagation(); navigate(`/registrations/${r._id}`); }} className="text-primary-600 hover:text-primary-800 text-sm font-medium">View Full Detail →</button>
+                            {user?.role === 'superadmin' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDelete(r._id); }}
+                                className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1.5 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+                              >
+                                <HiOutlineTrash className="w-4 h-4" /> Delete Permanently
+                              </button>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -251,6 +275,16 @@ export default function Registrations() {
           )}
         </div>
       )}
+
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+      />
     </div>
   );
 }

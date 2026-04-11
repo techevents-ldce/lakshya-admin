@@ -159,6 +159,49 @@ const cancelRegistration = async (regId, adminId, reqMeta = {}) => {
   return reg;
 };
 
+const deleteRegistration = async (regId, adminId, reqMeta = {}) => {
+  const reg = await Registration.findById(regId);
+  if (!reg) throw new AppError('Registration not found', 404, 'REGISTRATION_NOT_FOUND');
+
+  const snap = reg.toObject();
+
+  // 1. Delete associated Ticket
+  await Ticket.deleteMany({ userId: reg.userId, eventId: reg.eventId });
+
+  // 2. Handle Team-related records
+  if (reg.teamId) {
+    const team = await Team.findById(reg.teamId);
+    // If this user is the leader, delete the whole team
+    if (team && team.leaderId.toString() === reg.userId.toString()) {
+      await TeamMember.deleteMany({ teamId: team._id });
+      await Team.findByIdAndDelete(team._id);
+    } else {
+      // Otherwise just remove this user from the team
+      await TeamMember.deleteOne({ teamId: reg.teamId, userId: reg.userId });
+    }
+  }
+
+  // 3. Handle HackathonTeam records if any
+  const HackathonTeam = require('../models/HackathonTeam');
+  await HackathonTeam.deleteMany({ registrationId: reg._id });
+
+  // 4. Delete the registration record
+  await Registration.findByIdAndDelete(regId);
+
+  await writeAuditLog({
+    adminId,
+    action: 'DELETE_REGISTRATION',
+    entityType: 'Registration',
+    entityId: regId,
+    before: snap,
+    after: null,
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  return { success: true };
+};
+
 const resendTicketEmail = async (regId, adminId, reqMeta = {}) => {
   const reg = await Registration.findById(regId)
     .populate('userId', 'name email')
@@ -217,4 +260,4 @@ const markAttendance = async (regId, adminId, reqMeta = {}) => {
   return reg;
 };
 
-module.exports = { getRegistrations, getRegistrationById, register, cancelRegistration, resendTicketEmail, markAttendance };
+module.exports = { getRegistrations, getRegistrationById, register, cancelRegistration, deleteRegistration, resendTicketEmail, markAttendance };
