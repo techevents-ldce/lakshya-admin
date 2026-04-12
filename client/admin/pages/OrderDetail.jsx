@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import {
   HiOutlineChevronLeft,
@@ -17,33 +17,43 @@ import {
   HiOutlineLightningBolt,
   HiOutlineHashtag,
   HiOutlineCalendar,
+  HiOutlineExclamation,
 } from 'react-icons/hi';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../context/AuthContext';
 
 const STATUS_CONFIG = {
   success: { label: 'Paid', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', icon: HiOutlineCheckCircle },
   failed: { label: 'Failed', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: HiOutlineXCircle },
   pending: { label: 'Pending', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/30', icon: HiOutlineClock },
   created: { label: 'Created', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: HiOutlineLightningBolt },
+  payment_initiated: { label: 'Initiated', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: HiOutlineRefresh },
+  fulfilling: { label: 'Processing', color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/30', icon: HiOutlineRefresh },
+  refunded: { label: 'Refunded', color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/30', icon: HiOutlineRefresh },
 };
 
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'danger', action: null });
+
+  const fetchOrder = async () => {
+    try {
+      const { data } = await api.get(`/orders/${id}`);
+      setOrder(data.data);
+    } catch {
+      toast.error('Failed to load order details');
+      navigate('/orders');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const { data } = await api.get(`/orders/${id}`);
-        setOrder(data.data);
-      } catch {
-        toast.error('Failed to load order details');
-        navigate('/orders');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrder();
   }, [id, navigate]);
 
@@ -51,7 +61,7 @@ export default function OrderDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
         <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
-        <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Order Details...</p>
+        <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Order Details...</p>
       </div>
     );
   }
@@ -69,6 +79,21 @@ export default function OrderDetail() {
     }).toUpperCase();
   };
 
+  const handleForceFulfill = () => {
+    setConfirmModal({
+      open: true,
+      title: 'Force Fulfill Order',
+      message: 'Are you sure you want to FORCE fulfill this order? This will manually create all registrations and tickets without waiting for Razorpay callback. USE ONLY IF PAYMENT IS VERIFIED IN RAZORPAY.',
+      confirmLabel: 'Force Fulfill',
+      variant: 'warning',
+      action: async (password) => {
+        await api.post(`/orders/${id}/force-fulfill`, { adminPassword: password });
+        toast.success('Order fulfilled successfully');
+        fetchOrder();
+      },
+    });
+  };
+
   return (
     <div className="animate-fade-in space-y-10 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/[0.05] pb-10">
@@ -82,12 +107,12 @@ export default function OrderDetail() {
           <div>
             <div className="flex items-center gap-3 mb-2">
                <HiOutlineHashtag className="w-4 h-4 text-primary-500" />
-               <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">Order Details</h1>
+               <h1 className="text-3xl font-bold text-white uppercase tracking-tight leading-none">Order Details</h1>
             </div>
             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.3em]">Razorpay Order ID: <span className="text-slate-400">{order.razorpayOrderId || 'System Generated'}</span></p>
           </div>
         </div>
-        <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] border shadow-2xl ${cfg.bg} ${cfg.color}`}>
+        <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] border shadow-2xl ${cfg.bg} ${cfg.color}`}>
           <StatusIcon className="w-5 h-5" />
           {cfg.label}
         </div>
@@ -104,42 +129,42 @@ export default function OrderDetail() {
                       <HiOutlineCurrencyRupee className="w-10 h-10" />
                    </div>
                    <div>
-                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2 font-mono">Amount Paid</p>
-                      <p className="text-5xl font-black text-white tracking-tighter tabular-nums">₹{Number(order.totalAmount || order.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-2 font-mono">Amount Paid</p>
+                      <p className="text-5xl font-bold text-white tracking-tight tabular-nums">₹{Number(order.totalAmount || order.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                    </div>
                 </div>
                 {order.status === 'success' && (
                   <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-[2rem] text-right group">
-                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] mb-2 leading-none">PAYMENT SUCCESSFUL</p>
-                     <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest font-mono group-hover:text-white transition-colors">{formatDate(order.paidAt)}</p>
+                     <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.4em] mb-2 leading-none">PAYMENT SUCCESSFUL</p>
+                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider font-mono group-hover:text-white transition-colors">{formatDate(order.paidAt)}</p>
                   </div>
                 )}
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-10 border-t border-white/[0.05]">
                 <div className="space-y-6">
-                   <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
+                   <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
                      <HiOutlineUser className="w-5 h-5 text-primary-500" /> User Profile
                    </h3>
                    <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/[0.05] hover:border-primary-500/40 hover:bg-white/[0.04] transition-all cursor-pointer group shadow-xl" onClick={() => navigate(`/users/${order.userId?._id}`)}>
-                      <p className="text-xl font-black text-white uppercase tracking-tighter group-hover:text-primary-400 transition-colors mb-2">{order.userId?.name || 'Unknown User'}</p>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest border-b border-white/[0.05] pb-3 mb-4">{order.userId?.email || 'No Email'}</p>
+                      <p className="text-xl font-bold text-white uppercase tracking-tight group-hover:text-primary-400 transition-colors mb-2">{order.userId?.name || 'Unknown User'}</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider border-b border-white/[0.05] pb-3 mb-4">{order.userId?.email || 'No Email'}</p>
                       <div className="flex items-center gap-3">
                          <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-primary-500 transition-colors"></div>
-                         <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest leading-none">{order.userId?.college || 'No College'}</p>
+                         <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider leading-none">{order.userId?.college || 'No College'}</p>
                       </div>
                    </div>
                 </div>
 
                 <div className="space-y-6">
-                   <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
+                   <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
                      <HiOutlineTicket className="w-5 h-5 text-violet-500" /> Registrations
                    </h3>
                    <div className="space-y-4">
                       {order.registrationIds?.map((reg, idx) => (
                         <div key={idx} className="p-6 rounded-[1.5rem] bg-white/[0.02] border border-white/[0.05] flex items-center justify-between hover:border-violet-500/40 hover:bg-white/[0.04] transition-all cursor-pointer group shadow-xl" onClick={() => navigate(`/registrations/${reg._id}`)}>
                            <div>
-                              <p className="text-xs font-black text-white uppercase tracking-widest group-hover:text-violet-400 transition-colors mb-1.5">{reg.eventId?.title || 'Unknown Event'}</p>
+                              <p className="text-xs font-bold text-white uppercase tracking-wider group-hover:text-violet-400 transition-colors mb-1.5">{reg.eventId?.title || 'Unknown Event'}</p>
                               <div className="flex items-center gap-2">
                                  <span className="w-1 h-1 rounded-full bg-slate-700"></span>
                                  <p className="text-[10px] text-slate-600 font-bold uppercase tracking-tight">{reg.teamName || 'Solo Participation'}</p>
@@ -150,7 +175,7 @@ export default function OrderDetail() {
                       ))}
                       {!order.registrationIds?.length && (
                         <div className="p-6 rounded-2xl border border-dashed border-slate-800 text-center">
-                           <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">No Linked Registrations</p>
+                           <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">No Linked Registrations</p>
                         </div>
                       )}
                    </div>
@@ -159,16 +184,16 @@ export default function OrderDetail() {
           </div>
 
           <div className="card space-y-8 border-slate-700/30 p-8 rounded-[2.5rem] bg-slate-900/40 backdrop-blur-xl">
-             <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-4">
+             <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.3em] flex items-center gap-4">
                <HiOutlineShieldCheck className="w-5 h-5 text-emerald-500" /> Transaction Support Info
              </h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-950/50 border border-slate-800 group hover:border-slate-700 transition-all">
-                   <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.3em] border-b border-white/[0.02] pb-2">System ID</p>
+                   <p className="text-[9px] font-bold text-slate-700 uppercase tracking-[0.3em] border-b border-white/[0.02] pb-2">System ID</p>
                    <p className="text-[11px] font-mono text-slate-400 font-bold group-hover:text-white transition-colors">{order._id}</p>
                 </div>
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-950/50 border border-slate-800 group hover:border-slate-700 transition-all">
-                   <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.3em] border-b border-white/[0.02] pb-2">Razorpay Payment ID</p>
+                   <p className="text-[9px] font-bold text-slate-700 uppercase tracking-[0.3em] border-b border-white/[0.02] pb-2">Razorpay Payment ID</p>
                    <p className="text-[11px] font-mono text-slate-400 font-bold group-hover:text-white transition-colors">{order.razorpayPaymentId || 'Pending'}</p>
                 </div>
              </div>
@@ -177,24 +202,24 @@ export default function OrderDetail() {
 
         <div className="space-y-8">
            <div className="card space-y-8 border-slate-700/30 p-8 rounded-[2.5rem] bg-slate-900/40 backdrop-blur-xl shadow-2xl">
-              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
+              <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
                  <HiOutlineCalendar className="w-5 h-5 text-amber-500" /> Order History
               </h3>
               <div className="space-y-6">
                  <div className="space-y-3 p-6 rounded-[1.5rem] bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-all">
-                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-2">Order Created</span>
-                    <span className="text-[11px] font-black text-white uppercase tracking-widest font-mono">{formatDate(order.createdAt)}</span>
+                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block mb-2">Order Created</span>
+                    <span className="text-[11px] font-bold text-white uppercase tracking-wider font-mono">{formatDate(order.createdAt)}</span>
                  </div>
                  <div className="space-y-3 p-6 rounded-[1.5rem] bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-all">
-                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-2">Last Updated</span>
-                    <span className="text-[11px] font-black text-white uppercase tracking-widest font-mono">{formatDate(order.updatedAt)}</span>
+                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block mb-2">Last Updated</span>
+                    <span className="text-[11px] font-bold text-white uppercase tracking-wider font-mono">{formatDate(order.updatedAt)}</span>
                  </div>
               </div>
            </div>
 
            <div className="p-8 rounded-[2.5rem] bg-primary-500/[0.03] border border-primary-500/20 space-y-6 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-32 h-32 bg-primary-500/10 blur-3xl pointer-events-none"></div>
-              <h4 className="text-[12px] font-black text-primary-400 uppercase tracking-[0.4em] flex items-center gap-3 pb-4 border-b border-primary-500/20">
+              <h4 className="text-[12px] font-bold text-primary-400 uppercase tracking-[0.4em] flex items-center gap-3 pb-4 border-b border-primary-500/20">
                 <HiOutlineInformationCircle className="w-5 h-5 animate-pulse" /> Help & Support
               </h4>
               <p className="text-[10px] text-slate-500 font-bold leading-relaxed uppercase tracking-[0.1em] group-hover:text-slate-300 transition-colors">
@@ -204,8 +229,36 @@ export default function OrderDetail() {
                  <HiOutlineRefresh className="w-5 h-5 text-primary-500" />
               </div>
            </div>
+
+           {isSuperadmin && order.status !== 'success' && order.status !== 'refunded' && (
+              <div className="p-8 rounded-[2.5rem] bg-amber-500/[0.03] border border-amber-500/20 space-y-6 relative overflow-hidden group shadow-xl">
+                 <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/10 blur-3xl pointer-events-none"></div>
+                 <h4 className="text-[12px] font-bold text-amber-500 uppercase tracking-[0.4em] flex items-center gap-3 pb-4 border-b border-amber-500/20">
+                    <HiOutlineExclamation className="w-5 h-5 animate-pulse" /> Administrative Actions
+                 </h4>
+                 <p className="text-[10px] text-slate-500 font-bold leading-relaxed uppercase tracking-[0.1em] group-hover:text-slate-300 transition-colors">
+                    If this order is successful in Razorpay but stuck as "{order.status}" here, you can force fulfillment.
+                 </p>
+                 <button 
+                   onClick={handleForceFulfill}
+                   className="w-full py-4 rounded-2xl bg-amber-600 text-white text-[11px] font-bold uppercase tracking-widest hover:bg-amber-500 transition-all active:scale-95 shadow-lg shadow-amber-900/20"
+                 >
+                    Force Fulfill Order
+                 </button>
+              </div>
+            )}
         </div>
       </div>
+
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+      />
     </div>
   );
 }

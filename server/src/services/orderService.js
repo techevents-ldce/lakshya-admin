@@ -2,8 +2,13 @@ const Order = require('../models/Order');
 const Registration = require('../models/Registration');
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
+const Team = require('../models/Team');
+const TeamMember = require('../models/TeamMember');
+const Event = require('../models/Event');
 const AppError = require('../middleware/AppError');
 const { writeAuditLog } = require('../middleware/auditLog');
+const { v4: uuidv4 } = require('uuid');
+const QRCode = require('qrcode');
 
 const getOrders = async (query = {}) => {
   const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, sortBy = 'createdAt', sortOrder = 'desc' } = query;
@@ -150,4 +155,106 @@ const markRefunded = async (orderId, adminId, reqMeta = {}) => {
   return order;
 };
 
-module.exports = { getOrders, getOrderById, retryFulfillment, markRefunded };
+const forceFulfillOrder = async (orderId, adminId, reqMeta = {}) => {
+  const order = await Order.findById(orderId).populate('userId');
+  if (!order) throw new AppError('Order not found', 404, 'ORDER_NOT_FOUND');
+  if (order.status === 'success') throw new AppError('Order is already successful', 400, 'ORDER_ALREADY_SUCCESS');
+
+  const before = order.toObject();
+
+  // 1. Mark as fulfilling to prevent race conditions
+  order.status = 'fulfilling';
+  order.fulfillmentStartedAt = new Date();
+  await order.save();
+
+  const registrationIds = [];
+
+  try {
+    // 2. Iterate through items snapshot and create registrations
+    for (const item of order.itemsSnapshot) {
+      const eventId = item.eventId;
+      const userId = order.userId._id;
+
+      // Check for existing registration to avoid duplicates
+      let reg = await Registration.findOne({ userId, eventId, orderId: order._id });
+      
+      if (!reg) {
+        let teamId = null;
+        if (item.registrationMode === 'team') {
+          const team = await Team.create({
+            eventId,
+            leaderId: userId,
+            teamName: (item.teamName || `Team-${userId}`).trim()
+          });
+          teamId = team._id;
+          await TeamMember.create({ teamId: team._id, userId, status: 'accepted' });
+
+          // Register members if any
+          if (item.members && Array.isArray(item.members)) {
+            for (const memberId of item.members) {
+              await TeamMember.create({ teamId: team._id, userId: memberId, status: 'accepted' });
+              const mReg = await Registration.create({
+                userId: memberId,
+                eventId,
+                teamId: team._id,
+                registrationMode: 'team',
+                orderId: order._id,
+                status: 'confirmed'
+              });
+              registrationIds.push(mReg._id);
+              
+              // Issue ticket for member
+              const ticketId = uuidv4();
+              const qrData = await QRCode.toDataURL(ticketId);
+              await Ticket.create({ ticketId, userId: memberId, eventId, registrationId: mReg._id, teamId, qrData, status: 'active' });
+            }
+          }
+        }
+
+        reg = await Registration.create({
+          userId,
+          eventId,
+          teamId,
+          registrationMode: item.registrationMode,
+          orderId: order._id,
+          registrationData: item.extraFields || {},
+          status: 'confirmed',
+          pricingSnapshot: item
+        });
+        
+        // Issue ticket for leader/solo
+        const ticketId = uuidv4();
+        const qrData = await QRCode.toDataURL(ticketId);
+        await Ticket.create({ ticketId, userId, eventId, registrationId: reg._id, teamId, qrData, status: 'active' });
+      }
+      
+      registrationIds.push(reg._id);
+    }
+
+    // 3. Finalize order
+    order.status = 'success';
+    order.registrationIds = registrationIds;
+    order.fulfilledAt = new Date();
+    await order.save();
+
+    await writeAuditLog({
+      adminId,
+      action: 'FORCE_FULFILL_ORDER',
+      entityType: 'Order',
+      entityId: order._id,
+      before,
+      after: order.toObject(),
+      ip: reqMeta.ip,
+      userAgent: reqMeta.userAgent,
+    });
+
+    return order;
+  } catch (err) {
+    order.status = 'failed';
+    order.fulfillmentError = err.message;
+    await order.save();
+    throw err;
+  }
+};
+
+module.exports = { getOrders, getOrderById, retryFulfillment, forceFulfillOrder, markRefunded };

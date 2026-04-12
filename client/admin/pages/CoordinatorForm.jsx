@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import { HiOutlineUserAdd, HiOutlineMail, HiOutlineLockClosed, HiOutlinePhone, HiOutlineAcademicCap, HiOutlineOfficeBuilding } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
@@ -30,7 +30,7 @@ export default function CoordinatorForm() {
   return (
     <div className="animate-fade-in space-y-8">
       <div>
-        <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none mb-2">Add Coordinator</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Add Coordinator</h1>
         <p className="text-slate-500 font-medium">Create a new coordinator account for event management</p>
       </div>
 
@@ -41,20 +41,20 @@ export default function CoordinatorForm() {
           <div className="space-y-6 relative z-10">
             <div className="flex items-center gap-3 border-l-2 border-primary-500 pl-4 py-1">
                <HiOutlineUserAdd className="w-5 h-5 text-primary-500" />
-               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Account Details</h3>
+               <h3 className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">Account Details</h3>
             </div>
 
             <div className="space-y-4">
               <div className="group">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 mb-2 block">Full Name *</label>
+                <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider ml-1 mb-2 block">Full Name *</label>
                 <input className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50 focus:border-primary-500/50" value={form.name} onChange={onChange('name')} required placeholder="e.g. John Doe" />
               </div>
               <div className="group">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 mb-2 block flex items-center gap-2"><HiOutlineMail className="w-3 h-3" /> Email Address *</label>
+                <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider ml-1 mb-2 block flex items-center gap-2"><HiOutlineMail className="w-3 h-3" /> Email Address *</label>
                 <input type="email" className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50 transition-all" value={form.email} onChange={onChange('email')} required placeholder="coordinator@example.com" />
               </div>
               <div className="group">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 mb-2 block flex items-center gap-2"><HiOutlineLockClosed className="w-3 h-3" /> Password *</label>
+                <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider ml-1 mb-2 block flex items-center gap-2"><HiOutlineLockClosed className="w-3 h-3" /> Password *</label>
                 <input type="password" className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50" value={form.password} onChange={onChange('password')} required minLength={8} placeholder="Min. 8 characters" />
               </div>
             </div>
@@ -63,30 +63,30 @@ export default function CoordinatorForm() {
           <div className="space-y-6 relative z-10">
             <div className="flex items-center gap-3 border-l-2 border-primary-500 pl-4 py-1">
                <HiOutlineOfficeBuilding className="w-5 h-5 text-primary-500" />
-               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Personal Information</h3>
+               <h3 className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">Personal Information</h3>
             </div>
 
             <div className="space-y-4">
               <div className="group">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 mb-2 block flex items-center gap-2"><HiOutlinePhone className="w-3 h-3" /> Phone Number</label>
+                <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider ml-1 mb-2 block flex items-center gap-2"><HiOutlinePhone className="w-3 h-3" /> Phone Number</label>
                 <input className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50" value={form.phone} onChange={onChange('phone')} placeholder="+91 XXXXX XXXXX" />
               </div>
               <div className="group">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 mb-2 block flex items-center gap-2"><HiOutlineAcademicCap className="w-3 h-3" /> College</label>
-                <input className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50 uppercase tracking-widest" value={form.college} onChange={onChange('college')} placeholder="e.g. LDCE" />
+                <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider ml-1 mb-2 block flex items-center gap-2"><HiOutlineAcademicCap className="w-3 h-3" /> College</label>
+                <input className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50 uppercase tracking-wider" value={form.college} onChange={onChange('college')} placeholder="e.g. LDCE" />
               </div>
               <div className="group">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 mb-2 block">Branch</label>
-                <input className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50 uppercase tracking-widest" value={form.branch} onChange={onChange('branch')} placeholder="e.g. Information Technology" />
+                <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider ml-1 mb-2 block">Branch</label>
+                <input className="input-field py-3 text-sm font-bold bg-slate-900/50 border-slate-700/50 uppercase tracking-wider" value={form.branch} onChange={onChange('branch')} placeholder="e.g. Information Technology" />
               </div>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-slate-800">
-            <button type="submit" disabled={loading} className="btn-primary flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-50 transition-all">
+            <button type="submit" disabled={loading} className="btn-primary flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-50 transition-all">
               {loading ? 'Adding...' : 'ADD COORDINATOR'}
             </button>
-            <button type="button" onClick={() => navigate('/coordinators')} className="btn-outline flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all">
+            <button type="button" onClick={() => navigate('/coordinators')} className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] active:scale-95 transition-all">
               CANCEL
             </button>
           </div>

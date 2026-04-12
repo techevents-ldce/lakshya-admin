@@ -64,20 +64,20 @@ export default function BulkEmailJobs() {
     <div className="animate-fade-in space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white uppercase tracking-tight flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary-500/10 border border-primary-500/20">
               <HiOutlineClipboardList className="w-6 h-6 text-primary-400" />
             </div>
             Transmission Log
           </h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1 ml-11">Nodal Communication History</p>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-1 ml-11">Nodal Communication History</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => fetchJobs(page)} className="btn-outline flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2.5">
+          <button onClick={() => fetchJobs(page)} className="btn-outline flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-4 py-2.5">
             <HiOutlineRefresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          <button onClick={() => navigate('/bulk-email')} className="btn-primary flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-6 py-2.5 shadow-lg shadow-primary-900/20">
+          <button onClick={() => navigate('/bulk-email')} className="btn-primary flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-6 py-2.5 shadow-lg shadow-primary-900/20">
             <HiOutlinePlus className="w-4 h-4" />
             New Transmission
           </button>
@@ -89,14 +89,14 @@ export default function BulkEmailJobs() {
           <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4">
             <HiOutlineRefresh className="w-6 h-6 text-primary-500 animate-spin" />
           </div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Synchronizing nodes...</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Synchronizing nodes...</p>
         </div>
       ) : jobs.length === 0 ? (
         <div className="card py-24 flex flex-col items-center justify-center border-slate-700/30">
           <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4">
             <HiOutlineMail className="w-8 h-8 text-slate-700" />
           </div>
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">No transmissions identified</p>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">No transmissions identified</p>
           <p className="text-[9px] text-slate-600 font-bold uppercase mt-2 tracking-tight">Initiate your first broadcast to populate the log.</p>
         </div>
       ) : (
@@ -106,11 +106,11 @@ export default function BulkEmailJobs() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/[0.05] bg-white/[0.02]">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Identity / Subject</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status Matrix</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Payload</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nodal Origin</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Timestamp</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Identity / Subject</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status Matrix</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Payload</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nodal Origin</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Timestamp</th>
                     <th className="px-6 py-4"></th>
                   </tr>
                 </thead>
@@ -126,14 +126,14 @@ export default function BulkEmailJobs() {
                       >
                         <td className="px-6 py-4">
                           <div className="min-w-0">
-                            <p className="text-[11px] font-black text-white uppercase truncate tracking-tight group-hover:text-primary-400 transition-colors">
+                            <p className="text-[11px] font-bold text-white uppercase truncate tracking-tight group-hover:text-primary-400 transition-colors">
                               {job.subject}
                             </p>
                             <p className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 opacity-60">ID: {job._id.slice(-8)}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${cfg.bg} ${cfg.color}`}>
+                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border ${cfg.bg} ${cfg.color}`}>
                             <StatusIcon className={`w-3.5 h-3.5 ${job.status === 'processing' ? 'animate-spin' : ''}`} />
                             {cfg.label}
                           </span>
@@ -141,31 +141,31 @@ export default function BulkEmailJobs() {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-4">
                             <div className="text-center">
-                              <p className="text-xs font-black text-white">{job.totalRecipients}</p>
-                              <p className="text-[8px] text-slate-600 font-black uppercase tracking-tighter">TOTAL</p>
+                              <p className="text-xs font-bold text-white">{job.totalRecipients}</p>
+                              <p className="text-[8px] text-slate-600 font-bold uppercase tracking-tight">TOTAL</p>
                             </div>
                             <div className="w-px h-6 bg-white/[0.05]"></div>
                             <div className="text-center">
-                              <p className="text-xs font-black text-emerald-400">{job.completedCount}</p>
-                              <p className="text-[8px] text-emerald-900 font-black uppercase tracking-tighter">SENT</p>
+                              <p className="text-xs font-bold text-emerald-400">{job.completedCount}</p>
+                              <p className="text-[8px] text-emerald-900 font-bold uppercase tracking-tight">SENT</p>
                             </div>
                             {job.failedCount > 0 && (
                               <>
                                 <div className="w-px h-6 bg-white/[0.05]"></div>
                                 <div className="text-center">
-                                  <p className="text-xs font-black text-red-400">{job.failedCount}</p>
-                                  <p className="text-[8px] text-red-900 font-black uppercase tracking-tighter">FAIL</p>
+                                  <p className="text-xs font-bold text-red-400">{job.failedCount}</p>
+                                  <p className="text-[8px] text-red-900 font-bold uppercase tracking-tight">FAIL</p>
                                 </div>
                               </>
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{job.createdBy?.name || 'SYSTEM'}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{job.createdBy?.name || 'SYSTEM'}</p>
                           <p className="text-[9px] text-slate-600 font-bold uppercase mt-0.5">Primary Admin</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-tight">{formatDate(job.createdAt)}</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{formatDate(job.createdAt)}</p>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 group-hover:text-primary-400 group-hover:border-primary-500/20 group-hover:bg-primary-500/10 transition-all opacity-0 group-hover:opacity-100">
@@ -190,7 +190,7 @@ export default function BulkEmailJobs() {
               >
                 <HiOutlineChevronRight className="w-5 h-5 rotate-180" />
               </button>
-              <div className="px-6 py-2 rounded-xl bg-slate-900/50 border border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+              <div className="px-6 py-2 rounded-xl bg-slate-900/50 border border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                 Matrix Page <span className="text-white mx-1">{page}</span> of <span className="text-white mx-1">{totalPages}</span>
               </div>
               <button

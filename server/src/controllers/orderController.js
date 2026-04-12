@@ -19,6 +19,14 @@ exports.retryFulfillment = asyncHandler(async (req, res) => {
   res.json({ success: true, data: order });
 });
 
+exports.forceFulfill = asyncHandler(async (req, res) => {
+  const order = await orderService.forceFulfillOrder(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, data: order });
+});
+
 exports.markRefunded = asyncHandler(async (req, res) => {
   const order = await orderService.markRefunded(req.params.id, req.user.id, {
     ip: req.ip,

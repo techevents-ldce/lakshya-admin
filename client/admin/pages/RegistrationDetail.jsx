@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import { 
   HiOutlineUser, 
@@ -92,7 +92,7 @@ export default function RegistrationDetail() {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-40 gap-6">
       <div className="w-16 h-16 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin"></div>
-      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Loading Details...</p>
+      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em] animate-pulse">Loading Details...</p>
     </div>
   );
 
@@ -107,7 +107,7 @@ export default function RegistrationDetail() {
           <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:bg-slate-800 transition-all">
             <HiOutlineArrowLeft className="w-5 h-5" />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest">Back to Registry</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">Back to Registry</span>
         </button>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -116,7 +116,7 @@ export default function RegistrationDetail() {
               key={status}
               onClick={() => handleUpdateStatus(status)}
               disabled={reg.status === status}
-              className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none ${cfg.bg} ${cfg.color} hover:shadow-lg`}
+              className={`px-6 py-2.5 rounded-xl text-[9px] font-bold uppercase tracking-wider border transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none ${cfg.bg} ${cfg.color} hover:shadow-lg`}
             >
               Set {cfg.label}
             </button>
@@ -137,13 +137,13 @@ export default function RegistrationDetail() {
              <div className="relative z-10 flex flex-col md:flex-row gap-10">
                 <div className="flex flex-col items-center gap-6">
                    <div className="w-32 h-32 rounded-[3.5rem] bg-gradient-to-br from-primary-500 to-primary-700 p-1 shadow-2xl shadow-primary-900/40 transform rotate-6 rotate-hover transition-transform duration-500">
-                      <div className="w-full h-full rounded-[3.4rem] bg-slate-950 flex items-center justify-center text-4xl font-black text-white uppercase tracking-tighter">
+                      <div className="w-full h-full rounded-[3.4rem] bg-slate-950 flex items-center justify-center text-4xl font-bold text-white uppercase tracking-tight">
                          {reg.userId?.name?.[0]}
                       </div>
                    </div>
                    <div className="text-center">
-                      <p className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em] mb-1">Status</p>
-                      <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${currentCfg.bg} ${currentCfg.color}`}>
+                      <p className="text-[10px] font-bold text-primary-500 uppercase tracking-[0.3em] mb-1">Status</p>
+                      <span className={`px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${currentCfg.bg} ${currentCfg.color}`}>
                          {currentCfg.label}
                       </span>
                    </div>
@@ -151,8 +151,8 @@ export default function RegistrationDetail() {
 
                 <div className="flex-1 space-y-10">
                    <div>
-                      <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-4">{reg.userId?.name}</h2>
-                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-2">
+                      <h2 className="text-4xl font-bold text-white uppercase tracking-tight leading-none mb-4">{reg.userId?.name}</h2>
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.4em] flex items-center gap-2">
                          <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
                          Registration ID: {reg._id}
                       </p>
@@ -170,41 +170,41 @@ export default function RegistrationDetail() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
              <div className="card border-slate-700/30 space-y-6">
-                <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-white/[0.05] pb-4">
+                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-white/[0.05] pb-4">
                    <HiOutlineCalendar className="w-5 h-5 text-primary-500" /> Event Details
                 </h3>
                 <div className="space-y-6">
                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Event Name</p>
-                      <p className="text-sm font-black text-white hover:text-primary-400 cursor-pointer transition-colors uppercase tracking-tight">{reg.eventId?.title}</p>
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Event Name</p>
+                      <p className="text-sm font-bold text-white hover:text-primary-400 cursor-pointer transition-colors uppercase tracking-tight">{reg.eventId?.title}</p>
                    </div>
                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Created At</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{fmtDT(reg.createdAt)}</p>
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Created At</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{fmtDT(reg.createdAt)}</p>
                    </div>
                 </div>
              </div>
 
              <div className="card border-slate-700/30 space-y-6">
-                <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-white/[0.05] pb-4">
+                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-white/[0.05] pb-4">
                    <HiOutlineCurrencyRupee className="w-5 h-5 text-emerald-500" /> Payment Info
                 </h3>
                 <div className="space-y-6 text-center py-4">
                    {reg.orderId ? (
                       <div className="space-y-6">
                          <div className="flex items-center justify-between px-2">
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Order Amount</span>
-                            <span className="text-2xl font-black text-white tabular-nums">₹{Number(reg.eventId?.registrationFee || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Order Amount</span>
+                            <span className="text-2xl font-bold text-white tabular-nums">₹{Number(reg.eventId?.registrationFee || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                          </div>
                          <div className={`p-4 rounded-2xl border transition-all ${reg.status === 'confirmed' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-50">Transaction Status</p>
-                            <p className="text-xs font-black uppercase tracking-widest">{reg.status === 'confirmed' ? 'PAID & CONFIRMED' : 'PAYMENT PENDING'}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1 opacity-50">Transaction Status</p>
+                            <p className="text-xs font-bold uppercase tracking-wider">{reg.status === 'confirmed' ? 'PAID & CONFIRMED' : 'PAYMENT PENDING'}</p>
                          </div>
                       </div>
                    ) : (
                       <div className="text-center py-6 opacity-30 grayscale filter">
                          <HiOutlineCurrencyRupee className="w-12 h-12 mx-auto mb-4" />
-                         <p className="text-[10px] font-black uppercase tracking-widest">No transaction detected</p>
+                         <p className="text-[10px] font-bold uppercase tracking-wider">No transaction detected</p>
                       </div>
                    )}
                 </div>
@@ -222,8 +222,8 @@ export default function RegistrationDetail() {
                          <HiOutlineUserGroup className="w-6 h-6" />
                       </div>
                       <div>
-                         <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">TEAM NAME</p>
-                         <h4 className="text-xl font-black text-white uppercase tracking-tighter hover:text-blue-400 cursor-pointer transition-colors" onClick={() => navigate(`/teams?search=${reg.teamId.teamName}`)}>{reg.teamId.teamName}</h4>
+                         <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-1">TEAM NAME</p>
+                         <h4 className="text-xl font-bold text-white uppercase tracking-tight hover:text-blue-400 cursor-pointer transition-colors" onClick={() => navigate(`/teams?search=${reg.teamId.teamName}`)}>{reg.teamId.teamName}</h4>
                       </div>
                    </div>
                 </div>
@@ -232,9 +232,9 @@ export default function RegistrationDetail() {
                    {reg.teamMembers?.map((m) => (
                       <div key={m._id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl hover:bg-white/[0.05] transition-all">
                          <div className="flex items-center gap-3">
-                            <span className="text-[11px] font-black text-white uppercase tracking-tight">{m.userId?.name}</span>
+                            <span className="text-[11px] font-bold text-white uppercase tracking-tight">{m.userId?.name}</span>
                             {reg.teamId?.leaderId?._id === m.userId?._id && (
-                               <span className="px-2 py-0.5 rounded-lg bg-primary-500 text-white text-[8px] font-black uppercase tracking-widest">LEADER</span>
+                               <span className="px-2 py-0.5 rounded-lg bg-primary-500 text-white text-[8px] font-bold uppercase tracking-wider">LEADER</span>
                             )}
                          </div>
                          <div className={`w-2 h-2 rounded-full ${m.status === 'accepted' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}></div>
@@ -245,7 +245,7 @@ export default function RegistrationDetail() {
            )}
 
            <div className="card border-slate-700/30 space-y-6">
-              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+              <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
                  <HiOutlineInformationCircle className="w-4 h-4 text-primary-500" /> Admin Advisory
               </h4>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight leading-relaxed">
@@ -273,9 +273,9 @@ function DetailBlock({ icon: Icon, label, value }) {
     <div className="space-y-3 p-4 rounded-2xl bg-white/[0.01] border border-white/[0.05] hover:border-white/[0.1] transition-all">
        <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-primary-500" />
-          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{label}</span>
        </div>
-       <p className="text-sm font-black text-slate-300 uppercase tracking-tight break-words">{value}</p>
+       <p className="text-sm font-bold text-slate-300 uppercase tracking-tight break-words">{value}</p>
     </div>
   );
 }

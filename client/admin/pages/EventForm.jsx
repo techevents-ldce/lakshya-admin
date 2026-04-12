@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../services/api';
+import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import { HiOutlineCalendar, HiOutlineLocationMarker, HiOutlineUserGroup, HiOutlineCurrencyRupee, HiOutlineInformationCircle, HiOutlineServer } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
@@ -65,24 +65,24 @@ export default function EventForm() {
         <section className="space-y-6 relative z-10">
           <div className="flex items-center gap-3 border-l-2 border-primary-500 pl-4 py-1">
              <HiOutlineInformationCircle className="w-5 h-5 text-primary-500" />
-             <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Basic Information</h3>
+             <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Basic Information</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Event Title *</label>
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Event Title *</label>
               <input className="input-field py-4 text-base font-bold tracking-tight bg-slate-950 border-slate-800" value={form.title} onChange={onChange('title')} required placeholder="Enter event name..." />
             </div>
             <div className="md:col-span-2">
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Description</label>
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Description</label>
               <textarea className="input-field py-4 text-sm font-semibold bg-slate-950 border-slate-800" rows="4" value={form.description} onChange={onChange('description')} placeholder="Detail event scope and requirements..." />
             </div>
             <div>
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Category</label>
-              <input className="input-field py-3 text-sm font-semibold bg-slate-950 border-slate-800 uppercase tracking-widest" value={form.category} onChange={onChange('category')} placeholder="e.g. TECHNICAL, CULTURAL" />
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Category</label>
+              <input className="input-field py-3 text-sm font-semibold bg-slate-950 border-slate-800 uppercase tracking-wider" value={form.category} onChange={onChange('category')} placeholder="e.g. TECHNICAL, CULTURAL" />
             </div>
             <div>
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Event Type</label>
-              <select className="input-field py-3 text-[10px] font-bold uppercase tracking-widest bg-slate-950 border-slate-800" value={form.eventType} onChange={onChange('eventType')}>
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Event Type</label>
+              <select className="input-field py-3 text-[10px] font-bold uppercase tracking-wider bg-slate-950 border-slate-800" value={form.eventType} onChange={onChange('eventType')}>
                 <option value="solo" className="bg-slate-950 font-bold">SOLO EVENT</option>
                 <option value="team" className="bg-slate-950 font-bold">TEAM EVENT</option>
               </select>
@@ -94,28 +94,28 @@ export default function EventForm() {
         <section className="space-y-6 relative z-10">
           <div className="flex items-center gap-3 border-l-2 border-primary-500 pl-4 py-1">
              <HiOutlineUserGroup className="w-5 h-5 text-primary-500" />
-             <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Capacity & Logistics</h3>
+             <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Capacity & Logistics</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className={form.eventType === 'team' ? 'md:col-span-1' : 'md:col-span-3'}>
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block flex items-center gap-2"><HiOutlineServer className="w-3 h-3" /> Maximum Capacity</label>
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block flex items-center gap-2"><HiOutlineServer className="w-3 h-3" /> Maximum Capacity</label>
               <input type="number" className="input-field py-3 font-bold bg-slate-950 border-slate-800" value={form.capacity} onChange={onChange('capacity')} min="1" />
             </div>
             {form.eventType === 'team' && (
               <>
                 <div>
-                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Min Team Size</label>
+                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Min Team Size</label>
                   <input type="number" className="input-field py-3 font-bold bg-slate-950 border-slate-800" value={form.teamSizeMin} onChange={onChange('teamSizeMin')} min="1" />
                 </div>
                 <div>
-                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Max Team Size</label>
+                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Max Team Size</label>
                   <input type="number" className="input-field py-3 font-bold bg-slate-950 border-slate-800" value={form.teamSizeMax} onChange={onChange('teamSizeMax')} min="1" />
                 </div>
               </>
             )}
             <div className="md:col-span-3">
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block flex items-center gap-2"><HiOutlineLocationMarker className="w-3 h-3" /> Venue / Location</label>
-              <input className="input-field py-3 font-bold bg-slate-950 border-slate-800 uppercase tracking-widest" value={form.venue} onChange={onChange('venue')} placeholder="e.g. MAIN AUDITORIUM, LAB-4" />
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block flex items-center gap-2"><HiOutlineLocationMarker className="w-3 h-3" /> Venue / Location</label>
+              <input className="input-field py-3 font-bold bg-slate-950 border-slate-800 uppercase tracking-wider" value={form.venue} onChange={onChange('venue')} placeholder="e.g. MAIN AUDITORIUM, LAB-4" />
             </div>
           </div>
         </section>
@@ -124,15 +124,15 @@ export default function EventForm() {
         <section className="space-y-6 relative z-10">
           <div className="flex items-center gap-3 border-l-2 border-primary-500 pl-4 py-1">
              <HiOutlineCalendar className="w-5 h-5 text-primary-500" />
-             <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Schedule & Deadlines</h3>
+             <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Schedule & Deadlines</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Registration Deadline</label>
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Registration Deadline</label>
               <input type="datetime-local" className="input-field py-3 font-bold bg-slate-950 border-slate-800" value={form.registrationDeadline} onChange={onChange('registrationDeadline')} />
             </div>
             <div>
-              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Event Date & Time</label>
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Event Date & Time</label>
               <input type="datetime-local" className="input-field py-3 font-bold bg-slate-950 border-slate-800" value={form.eventDate} onChange={onChange('eventDate')} />
             </div>
           </div>
@@ -142,16 +142,16 @@ export default function EventForm() {
         <section className="space-y-6 relative z-10">
           <div className="flex items-center gap-3 border-l-2 border-primary-500 pl-4 py-1">
              <HiOutlineCurrencyRupee className="w-5 h-5 text-primary-500" />
-             <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Pricing & Fees</h3>
+             <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Pricing & Fees</h3>
           </div>
           <div className="p-6 rounded-3xl bg-slate-950 border border-slate-900 space-y-6">
             <div className="flex items-center gap-4">
               <input type="checkbox" id="isPaid" checked={form.isPaid} onChange={onChange('isPaid')} className="w-5 h-5 rounded border-slate-800 bg-slate-900 text-primary-600 focus:ring-primary-500/20 transition-all cursor-pointer" />
-              <label htmlFor="isPaid" className="text-xs font-bold text-slate-300 uppercase tracking-widest cursor-pointer select-none">Paid Event (Requires Payment)</label>
+              <label htmlFor="isPaid" className="text-xs font-bold text-slate-300 uppercase tracking-wider cursor-pointer select-none">Paid Event (Requires Payment)</label>
             </div>
             {form.isPaid && (
               <div className="animate-fade-in">
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Registration Fee (₹)</label>
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider ml-1 mb-2 block">Registration Fee (₹)</label>
                 <div className="relative">
                    <HiOutlineCurrencyRupee className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-500 w-5 h-5" />
                    <input type="number" className="input-field pl-12 py-4 text-lg font-bold bg-slate-900/50 border-slate-800 focus:border-primary-500" value={form.registrationFee} onChange={onChange('registrationFee')} min="0" />
@@ -162,10 +162,10 @@ export default function EventForm() {
         </section>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 pt-8 border-t border-slate-900">
-          <button type="submit" disabled={loading} className="btn-primary flex-1 py-4 text-[10px] font-bold uppercase tracking-widest">
+          <button type="submit" disabled={loading} className="btn-primary flex-1 py-4 text-[10px] font-bold uppercase tracking-wider">
             {loading ? 'SAVING...' : (isEdit ? 'UPDATE EVENT' : 'CREATE EVENT')}
           </button>
-          <button type="button" onClick={() => navigate('/events')} className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-widest">
+          <button type="button" onClick={() => navigate('/events')} className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-wider">
             CANCEL
           </button>
         </div>

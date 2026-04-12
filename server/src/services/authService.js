@@ -4,7 +4,8 @@ const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../ut
 const AppError = require('../middleware/AppError');
 
 const login = async (email, password) => {
-  const user = await User.findOne({ email }).select('+passwordHash');
+  const normalizedEmail = String(email || '').toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
   if (!user) throw new AppError('Invalid email or password', 401, 'AUTH_INVALID_CREDENTIALS');
   if (!user.isActive) throw new AppError('Your account has been suspended. Please contact the administrator.', 403, 'AUTH_ACCOUNT_SUSPENDED');
 
@@ -33,11 +34,12 @@ const refresh = async (refreshToken) => {
 };
 
 const register = async (data) => {
-  const existing = await User.findOne({ email: data.email });
+  const normalizedEmail = String(data.email || '').toLowerCase().trim();
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) throw new AppError('This email address is already registered', 409, 'AUTH_EMAIL_EXISTS');
 
   const passwordHash = await hashPassword(data.password);
-  const user = await User.create({ ...data, passwordHash });
+  const user = await User.create({ ...data, email: normalizedEmail, passwordHash });
   return { id: user._id, name: user.name, email: user.email, role: user.role };
 };
 

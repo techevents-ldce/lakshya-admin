@@ -24,7 +24,7 @@ import {
   HiOutlineDotsHorizontal,
   HiOutlinePhone,
 } from 'react-icons/hi';
-import api from '../services/api';
+import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
 import { useAuth } from '../context/AuthContext';
@@ -280,20 +280,20 @@ export default function HackathonImport() {
     <div className="animate-fade-in space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none mb-2">Hackathon Management</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Hackathon Management</h1>
           <p className="text-slate-500 font-medium">Manage team selections and import participant data</p>
         </div>
 
         <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-2xl border border-slate-700/30 backdrop-blur-xl">
            <button 
              onClick={() => setViewMode('manage')}
-             className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'manage' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+             className={`px-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'manage' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
            >
              Manage Teams
            </button>
            <button 
              onClick={() => setViewMode('import')}
-             className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'import' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+             className={`px-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'import' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
            >
              Import Data
            </button>
@@ -318,7 +318,7 @@ export default function HackathonImport() {
                 <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
                 <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
                    <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
-                   <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer">
+                   <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer">
                      <option value="" className="bg-slate-900">All Status</option>
                      {Object.entries(SELECTION_STATUS_CONFIG).map(([key, cfg]) => (
                        <option key={key} value={key} className="bg-slate-900">{cfg.label}</option>
@@ -329,7 +329,7 @@ export default function HackathonImport() {
                 <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
                 <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
                    <HiOutlineFolderOpen className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
-                   <select value={batchFilter} onChange={(e) => { setBatchFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer max-w-[150px]">
+                   <select value={batchFilter} onChange={(e) => { setBatchFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer max-w-[150px]">
                      <option value="" className="bg-slate-900">All Batches</option>
                      {batches.map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
                    </select>
@@ -340,7 +340,7 @@ export default function HackathonImport() {
            {loadingTeams ? (
              <div className="flex flex-col items-center justify-center py-32 gap-6">
                 <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
-                <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Hackathon Data...</p>
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Hackathon Data...</p>
              </div>
            ) : (
              <div className="card !p-0 border-slate-700/30 overflow-hidden shadow-2xl bg-slate-900/20 backdrop-blur-xl">
@@ -348,11 +348,11 @@ export default function HackathonImport() {
                  <table className="w-full text-left">
                    <thead>
                      <tr className="bg-white/[0.01]">
-                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Team Information</th>
-                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Members</th>
-                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Status</th>
-                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Batch</th>
-                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest text-right">Actions</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Information</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Members</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Batch</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-white/[0.02]">
@@ -361,11 +361,11 @@ export default function HackathonImport() {
                          <tr className={`group hover:bg-white/[0.02] transition-all cursor-pointer ${expandedTeam === t._id ? 'bg-primary-500/[0.03] border-l-2 border-l-primary-500' : ''}`} onClick={() => setExpandedTeam(expandedTeam === t._id ? null : t._id)}>
                           <td className="px-6 py-6">
                             <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-black text-slate-500 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-xl">
+                               <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-xl">
                                  {t.teamName?.[0]?.toUpperCase()}
                                </div>
                                <div>
-                                 <p className="text-sm font-black text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{t.teamName}</p>
+                                 <p className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{t.teamName}</p>
                                  <p className="text-[10px] text-slate-600 font-bold uppercase tracking-tight line-clamp-1">{t.leaderId?.name || 'Unknown Leader'}</p>
                                </div>
                             </div>
@@ -378,12 +378,12 @@ export default function HackathonImport() {
                              </div>
                           </td>
                           <td className="px-6 py-6">
-                             <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.bg} ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.color}`}>
+                             <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.bg} ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.color}`}>
                                 {SELECTION_STATUS_CONFIG[t.selectionStatus]?.label || t.selectionStatus}
                              </span>
                           </td>
                           <td className="px-6 py-6">
-                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[100px]">{t.importBatch || 'Direct'}</p>
+                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate max-w-[100px]">{t.importBatch || 'Direct'}</p>
                           </td>
                           <td className="px-6 py-6 text-right" onClick={(ev) => ev.stopPropagation()}>
                             <div className="flex items-center justify-end gap-2">
@@ -420,11 +420,11 @@ export default function HackathonImport() {
                                 {t.members?.map((m, idx) => (
                                   <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-3 hover:border-primary-500/30 transition-all group">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{m.teamRole || 'Member'}</span>
-                                      {m.teamRole === 'leader' && <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest">LEADER</span>}
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{m.teamRole || 'Member'}</span>
+                                      {m.teamRole === 'leader' && <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[8px] font-bold uppercase tracking-wider">LEADER</span>}
                                     </div>
                                     <div className="space-y-1">
-                                      <p className="text-sm font-black text-white uppercase tracking-tight truncate">{m.name}</p>
+                                      <p className="text-sm font-bold text-white uppercase tracking-tight truncate">{m.name}</p>
                                       <p className="text-[10px] text-slate-500 font-bold lowercase tracking-tight truncate">{m.email}</p>
                                     </div>
                                     {m.phone && (
@@ -437,10 +437,10 @@ export default function HackathonImport() {
                                 ))}
                               </div>
                               <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
-                                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Team ID: {t._id}</p>
+                                 <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.4em]">Team ID: {t._id}</p>
                                  <div className="flex gap-4">
-                                    {t.unstopTeamId && <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">UNSTOP ID: {t.unstopTeamId}</span>}
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">TOTAL MEMBERS: {t.members?.length || 0}</span>
+                                    {t.unstopTeamId && <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">UNSTOP ID: {t.unstopTeamId}</span>}
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">TOTAL MEMBERS: {t.members?.length || 0}</span>
                                  </div>
                               </div>
                             </td>
@@ -452,7 +452,7 @@ export default function HackathonImport() {
                        <tr>
                          <td colSpan="5" className="text-center py-40">
                            <HiOutlineSearch className="w-16 h-16 text-slate-800 mx-auto mb-6" />
-                           <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em]">No hackathon teams found</p>
+                           <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em]">No hackathon teams found</p>
                          </td>
                        </tr>
                      )}
@@ -475,8 +475,8 @@ export default function HackathonImport() {
                     {isDone ? <HiOutlineCheckCircle className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <div>
-                    <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Phase 0{i+1}</p>
-                    <p className={`text-[11px] font-black uppercase tracking-tight ${isActive ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
+                    <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">Phase 0{i+1}</p>
+                    <p className={`text-[11px] font-bold uppercase tracking-tight ${isActive ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
                   </div>
                   {i < STEPS.length - 1 && (
                     <div className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2 z-10">
@@ -504,9 +504,9 @@ export default function HackathonImport() {
                   <div className="w-20 h-20 rounded-3xl bg-slate-950 border border-slate-700 flex items-center justify-center text-slate-600 mb-6 group-hover:text-primary-400 group-hover:border-primary-500/50 group-hover:bg-primary-500/10 transition-all duration-500 shadow-2xl">
                     {parsing ? <HiOutlineRefresh className="w-10 h-10 animate-spin text-primary-500" /> : <HiOutlineUpload className="w-10 h-10" />}
                   </div>
-                  <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">{parsing ? 'PARSING FILE...' : 'UPLOAD CSV / XLSX'}</h2>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest max-w-sm">Select a file containing participant and team data</p>
-                  {!parsing && <span className="mt-8 px-8 py-3 rounded-full bg-white/[0.05] border border-white/[0.1] text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 group-hover:bg-primary-500 group-hover:text-white group-hover:border-transparent transition-all">Select File</span>}
+                  <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">{parsing ? 'PARSING FILE...' : 'UPLOAD CSV / XLSX'}</h2>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-wider max-w-sm">Select a file containing participant and team data</p>
+                  {!parsing && <span className="mt-8 px-8 py-3 rounded-full bg-white/[0.05] border border-white/[0.1] text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 group-hover:bg-primary-500 group-hover:text-white group-hover:border-transparent transition-all">Select File</span>}
                 </label>
               </div>
             )}
@@ -518,7 +518,7 @@ export default function HackathonImport() {
                   <div className="bg-primary-500/5 border border-primary-500/20 rounded-2xl p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <h4 className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-widest">
+                        <h4 className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-wider">
                           <HiOutlineExclamationCircle className="w-4 h-4" /> Required Mapping
                         </h4>
                         <p className="text-[10px] text-slate-400 leading-relaxed font-medium uppercase tracking-tight">
@@ -526,14 +526,14 @@ export default function HackathonImport() {
                         </p>
                       </div>
                       <div className="space-y-2 md:border-l md:border-white/10 md:pl-6">
-                        <h4 className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-widest">
+                        <h4 className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider">
                           <HiOutlineShieldCheck className="w-4 h-4" /> Default Password
                         </h4>
                         <div className="flex items-center gap-3">
                           <code className="bg-blue-500/10 px-3 py-1.5 rounded-lg text-white font-mono text-xs border border-blue-500/30">
                             Lakshya@2025
                           </code>
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tight">
                             For new accounts
                           </span>
                         </div>
@@ -543,7 +543,7 @@ export default function HackathonImport() {
 
                   <div className="card space-y-6 border-slate-700/30">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                         <HiOutlineChip className="w-4 h-4 text-primary-400" /> Column Mapping
                       </h3>
                     </div>
@@ -551,11 +551,11 @@ export default function HackathonImport() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {headers.map(header => (
                         <div key={header} className="p-4 rounded-2xl bg-slate-950/50 border border-white/[0.05] flex flex-col gap-3 group hover:border-primary-500/30 transition-all">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{header}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{header}</span>
                           <select
                             value={mappings[header] || 'unmapped'}
                             onChange={(e) => handleMapChange(header, e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-white appearance-none cursor-pointer focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-white appearance-none cursor-pointer focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
                           >
                             <option value="unmapped">Unmapped</option>
                             {COLUMN_OPTIONS.map(opt => (
@@ -570,13 +570,13 @@ export default function HackathonImport() {
                   </div>
 
                   <div className="card border-slate-700/30">
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Preview (Top 5 rows)</h3>
+                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Preview (Top 5 rows)</h3>
                     <div className="overflow-x-auto rounded-2xl border border-white/[0.05]">
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-white/[0.02] border-b border-white/[0.05]">
                             {headers.map(h => (
-                              <th key={h} className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                              <th key={h} className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
                         </thead>
@@ -596,12 +596,12 @@ export default function HackathonImport() {
 
                 <div className="space-y-6">
                   <div className="card mb-6 border-slate-700/30 space-y-6">
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                       <HiOutlineInformationCircle className="w-4 h-4 text-primary-400" /> Import Rules
                     </h3>
                     <div className="space-y-4">
                        <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
-                          <p className="text-[10px] font-black text-orange-200 uppercase tracking-widest mb-1">Mapping Guide:</p>
+                          <p className="text-[10px] font-bold text-orange-200 uppercase tracking-wider mb-1">Mapping Guide:</p>
                           <ul className="text-[9px] text-orange-300 font-bold uppercase tracking-tight space-y-2 list-disc pl-4">
                             <li>Groups rows by Team Name</li>
                             <li>leader role initiates registration</li>
@@ -611,7 +611,7 @@ export default function HackathonImport() {
                     </div>
                     <button
                       onClick={runValidation}
-                      className="btn-primary w-full py-4 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 transition-all flex items-center justify-center gap-3"
+                      className="btn-primary w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 transition-all flex items-center justify-center gap-3"
                     >
                       <HiOutlineShieldCheck className="w-5 h-5" /> VERIFY DATA
                     </button>
@@ -625,38 +625,38 @@ export default function HackathonImport() {
                 <div className="lg:col-span-2 space-y-8">
                    <div className="grid grid-cols-3 gap-6">
                       <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
-                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">VALID RECORDS</p>
-                         <p className="text-4xl font-black text-emerald-400 tracking-tighter">{validationResults.validCount}</p>
+                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">VALID RECORDS</p>
+                         <p className="text-4xl font-bold text-emerald-400 tracking-tight">{validationResults.validCount}</p>
                       </div>
                       <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
-                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">INVALID</p>
-                         <p className="text-4xl font-black text-red-400 tracking-tighter">{validationResults.invalidCount}</p>
+                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">INVALID</p>
+                         <p className="text-4xl font-bold text-red-400 tracking-tight">{validationResults.invalidCount}</p>
                       </div>
                       <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
-                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">DUPLICATES</p>
-                         <p className="text-4xl font-black text-amber-400 tracking-tighter">{validationResults.duplicateCount}</p>
+                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">DUPLICATES</p>
+                         <p className="text-4xl font-bold text-amber-400 tracking-tight">{validationResults.duplicateCount}</p>
                       </div>
                    </div>
 
                    <div className="card border-slate-700/30">
-                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <HiOutlineDatabase className="w-4 h-4 text-primary-400" /> VALID RECORDS PREVIEW
                       </h3>
                       <div className="overflow-x-auto rounded-2xl border border-white/[0.05]">
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="bg-white/[0.02] border-b border-white/[0.05]">
-                               <th className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Name</th>
-                               <th className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Team</th>
-                               <th className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Email</th>
+                               <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Name</th>
+                               <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team</th>
+                               <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Email</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.02]">
                             {validationResults.validNodesPreview.map((node, i) => (
                               <tr key={i} className="hover:bg-white/[0.01] transition-all">
-                                <td className="px-5 py-4 text-[11px] font-black text-white uppercase tracking-tight">{node.name}</td>
+                                <td className="px-5 py-4 text-[11px] font-bold text-white uppercase tracking-tight">{node.name}</td>
                                 <td className="px-5 py-4">
-                                  <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest p-2 bg-primary-500/5 border border-primary-500/10 rounded-lg">{node.teamName}</span>
+                                  <span className="text-[10px] font-bold text-primary-400 uppercase tracking-wider p-2 bg-primary-500/5 border border-primary-500/10 rounded-lg">{node.teamName}</span>
                                 </td>
                                 <td className="px-5 py-4 text-[10px] text-slate-500 font-bold lowercase tracking-tight">{node.email}</td>
                               </tr>
@@ -669,13 +669,13 @@ export default function HackathonImport() {
 
                 <div className="space-y-6">
                    <div className="card border-slate-700/30 space-y-6">
-                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                        <HiOutlineShieldCheck className="w-4 h-4 text-primary-400" /> Ingestion Summary
                      </h3>
                      <div className="space-y-4">
                         <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">File:</span>
-                           <span className="text-[10px] font-black text-white uppercase tracking-tight truncate max-w-[100px]">{file.name}</span>
+                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">File:</span>
+                           <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate max-w-[100px]">{file.name}</span>
                         </div>
                      </div>
                      
@@ -687,11 +687,11 @@ export default function HackathonImport() {
                         <button
                           onClick={() => setShowConfirm(true)}
                           disabled={validationResults.validCount === 0}
-                          className="btn-primary w-full py-4 text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-3"
+                          className="btn-primary w-full py-4 text-[11px] font-bold uppercase tracking-[0.3em] shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-3"
                         >
                           <HiOutlineDatabase className="w-5 h-5" /> START IMPORT
                         </button>
-                        <button onClick={resetImportState} className="btn-outline w-full py-4 text-[11px] font-black uppercase tracking-[0.2em]">Reset</button>
+                        <button onClick={resetImportState} className="btn-outline w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em]">Reset</button>
                      </div>
                    </div>
                 </div>

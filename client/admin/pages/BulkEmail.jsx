@@ -23,13 +23,13 @@ import {
 
 
 const TEMPLATE_OPTIONS = [
-  { id: 'raw', label: 'Raw', icon: HiOutlineDocumentText, desc: 'Plain text email' },
-  { id: 'success', label: 'Success', icon: HiOutlineCheckCircle, desc: 'Green success theme' },
-  { id: 'congratulations', label: 'Congrats', icon: HiOutlineStar, desc: 'Celebratory theme' },
-  { id: 'important', label: 'Important', icon: HiOutlineExclamation, desc: 'Warning/alert theme' },
-  { id: 'formal', label: 'Formal', icon: HiOutlineShieldCheck, desc: 'Professional dark theme' },
-  { id: 'marketing', label: 'HOD Invite', icon: HiOutlineSpeakerphone, desc: 'Marketing theme for HODs' },
-  { id: 'club', label: 'Club Invite', icon: HiOutlineUserGroup, desc: 'Dark theme for Clubs' },
+  { id: 'raw', label: 'Raw Alpha', icon: HiOutlineDocumentText, desc: 'Unformatted plaintext dispatch' },
+  { id: 'success', label: 'Verified', icon: HiOutlineCheckCircle, desc: 'Positive verification theme' },
+  { id: 'congratulations', label: 'Commendation', icon: HiOutlineStar, desc: 'Achievement recognition theme' },
+  { id: 'important', label: 'Priority', icon: HiOutlineExclamation, desc: 'Critical alert/notice theme' },
+  { id: 'formal', label: 'Institutional', icon: HiOutlineShieldCheck, desc: 'Professional administrative theme' },
+  { id: 'marketing', label: 'External Lead', icon: HiOutlineSpeakerphone, desc: 'Institutional outreach theme' },
+  { id: 'club', label: 'Entity Invite', icon: HiOutlineUserGroup, desc: 'Professional cluster theme' },
 ];
 
 
@@ -158,7 +158,7 @@ export default function BulkEmail() {
       /https?:\/\/[^\s<>"']+/gi,
       (url) => {
         const label = getSmartLabel(url);
-        return `</span><a href="${url}" target="_blank" style="display:inline-block;padding:8px 20px;background:#2563eb;color:#ffffff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:4px 0;">${label} →</a><span>`;
+        return `</span><a href="${url}" target="_blank" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#ffffff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:8px 0;">${label} →</a><span>`;
       }
     );
     html = html.replace(/Lakshya 2\.0/gi, 'Lakshya&nbsp;2.0');
@@ -319,16 +319,16 @@ export default function BulkEmail() {
 
   return (
     <div className="animate-fade-in space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pb-10 border-b border-white/[0.05]">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none mb-2">Bulk Email</h1>
-          <p className="text-slate-500 font-medium">Send mass emails to coordinators, participants, or uploaded lists</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Communication Dispatch</h1>
+          <p className="text-slate-500 font-medium text-sm">Broadcast institutional directives to coordinators, participants, and stakeholders</p>
         </div>
         <button
           onClick={() => navigate('/bulk-email/jobs')}
-          className="btn-outline flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] self-start"
+          className="btn-outline flex items-center gap-3 px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-all"
         >
-          <HiOutlineClipboardList className="w-5 h-5 text-primary-400" /> Job History
+          <HiOutlineClipboardList className="w-5 h-5 text-indigo-400" /> Delivery Archive
         </button>
       </div>
 
@@ -336,54 +336,54 @@ export default function BulkEmail() {
         {/* ── LEFT: Target Filters ──────────────────────────────────────────── */}
         <div className="space-y-6">
           {/* Roles */}
-          <div className="card border-slate-700/30">
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-               Target Roles
+          <div className="card border-white/[0.05] bg-slate-900 shadow-xl">
+            <h2 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-6 flex items-center gap-3">
+               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/20"></div>
+               Personnel Clusters
             </h2>
             <div className="space-y-3">
               {ROLE_OPTIONS.map(({ value, label }) => (
-                <label key={value} className="flex items-center gap-4 cursor-pointer group p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-primary-500/20 transition-all">
+                <label key={value} className="flex items-center gap-4 cursor-pointer group p-4 rounded-xl bg-slate-950 border border-white/[0.05] hover:border-indigo-500/30 transition-all shadow-sm">
                   <input
                     type="checkbox"
                     checked={selectedRoles.includes(value)}
                     onChange={() => toggleRole(value)}
-                    className="w-5 h-5 rounded-lg border-slate-700 bg-slate-950 text-primary-600 focus:ring-primary-500/20"
+                    className="w-4.5 h-4.5 rounded border-white/[0.1] bg-slate-900 text-indigo-600 focus:ring-indigo-500/20"
                   />
-                  <span className="text-[11px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest transition-colors">{label} Layer</span>
+                  <span className="text-xs font-bold text-slate-500 group-hover:text-white transition-colors uppercase tracking-tight">{label} Scope</span>
                 </label>
               ))}
             </div>
           </div>
 
           {/* Individual Users */}
-          <div className="card border-slate-700/30">
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-               Selected Users
+          <div className="card border-slate-800/40">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
+               Specific Recipients
             </h2>
             <div className="relative mb-4">
-              <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-4 h-4" />
+              <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder="Search users by name..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                className="input-field pl-10 py-3 text-[10px] font-bold uppercase tracking-widest bg-slate-900/50 border-slate-700/50"
+                className="input-field pl-10 py-2.5 text-xs font-semibold"
               />
               {userResults.length > 0 && (
-                <div className="absolute z-20 top-full mt-2 w-full bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-h-56 overflow-hidden overflow-y-auto backdrop-blur-xl divide-y divide-slate-800">
+                <div className="absolute z-20 top-full mt-2 w-full bg-slate-900 border border-slate-800 rounded-lg shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-800">
                   {userResults.map((u) => (
                     <button
                       key={u._id}
                       onClick={() => addUser(u)}
-                      className="w-full text-left px-4 py-3 hover:bg-white/[0.05] transition-all flex items-center justify-between"
+                      className="w-full text-left px-4 py-3 hover:bg-indigo-500/5 transition-all flex items-center justify-between"
                     >
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black text-white uppercase truncate">{u.name}</p>
-                        <p className="text-[9px] text-slate-500 font-bold truncate tracking-tight">{u.email}</p>
+                        <p className="text-xs font-bold text-white truncate">{u.name}</p>
+                        <p className="text-[10px] text-slate-500 font-medium truncate">{u.email}</p>
                       </div>
-                      <span className="text-[8px] font-black text-primary-400 bg-primary-500/10 px-2 py-0.5 rounded uppercase tracking-widest">{u.role}</span>
+                      <span className="badge badge-blue">{u.role}</span>
                     </button>
                   ))}
                 </div>
@@ -392,7 +392,7 @@ export default function BulkEmail() {
             {selectedUsers.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
                 {selectedUsers.map((u) => (
-                  <span key={u._id} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-500/10 border border-primary-500/20 text-primary-400 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                  <span key={u._id} className="inline-flex items-center gap-2 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-md text-[10px] font-bold uppercase tracking-wide">
                     {u.name || u.email.split('@')[0]}
                     <button onClick={() => removeUser(u._id)} className="hover:text-white transition-colors">
                       <HiOutlineX className="w-3 h-3" />
@@ -404,35 +404,33 @@ export default function BulkEmail() {
           </div>
 
           {/* Manual Emails */}
-          <div className="card border-slate-700/30">
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-               Manual Email List
+          <div className="card border-slate-800/40">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
+               Manual Entry
             </h2>
             <textarea
               value={manualEmails}
               onChange={(e) => setManualEmails(e.target.value)}
-              placeholder="user1@example.com, user2@example.com..."
+              placeholder="email1@example.com, email2@example.com..."
               rows={3}
-              className="input-field py-3 text-[10px] font-bold bg-slate-900/50 border-slate-700/50 resize-none h-24"
+              className="input-field py-3 text-xs font-medium bg-slate-900/50 border-slate-700/50 resize-none h-24"
             />
             {manualCount > 0 && (
-              <p className="text-[9px] text-slate-500 mt-2 font-black uppercase tracking-widest">{manualCount} emails added</p>
+              <p className="text-[10px] text-slate-500 mt-2 font-semibold uppercase tracking-wider">{manualCount} address(es) added</p>
             )}
           </div>
 
-          {/* File Upload */}
-          <div className="card border-slate-700/30 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-24 h-24 bg-primary-500/5 blur-[40px] pointer-events-none"></div>
+          <div className="card border-slate-800/40 relative overflow-hidden">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                 Upload Recipient List
+              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
+                 Import From List
               </h2>
               <div className="group relative">
                 <HiOutlineInformationCircle className="w-4 h-4 text-slate-600 cursor-help" />
                 <div className="absolute right-0 bottom-full mb-3 w-72 p-4 bg-slate-900 border border-slate-700 text-white text-[10px] font-bold rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 backdrop-blur-xl">
-                  <p className="text-primary-400 font-black uppercase tracking-widest mb-3 border-b border-slate-800 pb-2">Instructions:</p>
+                  <p className="text-primary-400 font-bold uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">Instructions:</p>
                   <ul className="list-disc pl-4 space-y-2 uppercase tracking-tight text-slate-400">
                     <li>Required headers: <span className="text-white">Email</span></li>
                     <li>Optional columns: <span className="text-white">Name, College, Dept, Club</span></li>
@@ -443,7 +441,7 @@ export default function BulkEmail() {
               </div>
             </div>
             {!uploadPreview ? (
-              <div className="animate-fade-in">
+              <div className="animate-fade-in text-center">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -454,24 +452,24 @@ export default function BulkEmail() {
                 />
                 <label
                   htmlFor="file-upload"
-                  className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 ${
-                    uploading ? 'border-primary-500/50 bg-primary-500/5' : 'border-slate-800 hover:border-primary-500/30 hover:bg-white/[0.02]'
+                  className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${
+                    uploading ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-slate-800 hover:border-indigo-500/40 hover:bg-slate-800/20'
                   }`}
                 >
-                  <div className={`w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-slate-600 mb-3 group-hover:text-primary-400 group-hover:bg-primary-500/10 transition-all ${uploading ? 'animate-pulse text-primary-500 bg-primary-500/10' : ''}`}>
+                  <div className={`w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-slate-600 mb-3 group-hover:text-indigo-400 group-hover:bg-indigo-500/10 transition-all ${uploading ? 'animate-pulse text-indigo-500 bg-indigo-500/10' : ''}`}>
                     <HiOutlineUpload className="w-6 h-6" />
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    {uploading ? 'PROCESSING...' : 'Upload List File'}
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    {uploading ? 'Analyzing Data...' : 'Drop spreadsheet here'}
                   </span>
-                  <span className="text-[9px] text-slate-600 mt-2 font-bold uppercase tracking-tight">XLSX / CSV / XLS</span>
+                  <span className="text-[10px] text-slate-600 mt-2 font-semibold uppercase">Supports CSV, XLSX, XLS</span>
                 </label>
               </div>
             ) : (
               <div className="space-y-4 animate-scale-in">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-slate-800">
                   <div className="min-w-0 flex-1">
-                     <p className="text-[10px] font-black text-white uppercase truncate tracking-tight">{uploadedFile?.name}</p>
+                     <p className="text-[10px] font-bold text-white uppercase truncate tracking-tight">{uploadedFile?.name}</p>
                      <p className="text-[8px] text-slate-600 font-bold uppercase mt-0.5">File Processed</p>
                   </div>
                   <button onClick={clearUpload} className="w-8 h-8 rounded-lg bg-slate-800 text-slate-500 hover:text-white transition-all flex items-center justify-center">
@@ -480,29 +478,29 @@ export default function BulkEmail() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
-                    <p className="text-lg font-black text-emerald-400">{uploadPreview.validCount}</p>
-                    <p className="text-[8px] text-emerald-600 font-black uppercase tracking-widest mt-1">Valid</p>
+                    <p className="text-lg font-bold text-emerald-400">{uploadPreview.validCount}</p>
+                    <p className="text-[8px] text-emerald-600 font-bold uppercase tracking-wider mt-1">Valid</p>
                   </div>
                   <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-center">
-                    <p className="text-lg font-black text-red-400">{uploadPreview.invalidCount}</p>
-                    <p className="text-[8px] text-red-600 font-black uppercase tracking-widest mt-1">Faulty</p>
+                    <p className="text-lg font-bold text-red-400">{uploadPreview.invalidCount}</p>
+                    <p className="text-[8px] text-red-600 font-bold uppercase tracking-wider mt-1">Faulty</p>
                   </div>
                   <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-center">
-                    <p className="text-lg font-black text-amber-400">{uploadPreview.duplicateCount}</p>
-                    <p className="text-[8px] text-amber-600 font-black uppercase tracking-widest mt-1">Duplicates</p>
+                    <p className="text-lg font-bold text-amber-400">{uploadPreview.duplicateCount}</p>
+                    <p className="text-[8px] text-amber-600 font-bold uppercase tracking-wider mt-1">Duplicates</p>
                   </div>
                 </div>
                 {uploadPreview.validEmails?.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] ml-1">Processed Emails ({uploadPreview.validEmails.length})</p>
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em] ml-1">Processed Emails ({uploadPreview.validEmails.length})</p>
                     <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                       {uploadPreview.validEmails.map((item) => (
                         <div key={item.email} className="flex items-center justify-between gap-3 px-3 py-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl group hover:border-primary-500/20 transition-all">
                           <div className="min-w-0">
                             {(item.name || item.clubName || item.college) && (
                               <div className="flex items-center gap-1.5 mb-0.5">
-                                {item.name && <span className="text-[9px] font-black text-white uppercase truncate">{item.name}</span>}
-                                {item.clubName && <span className="text-[8px] font-black text-primary-400 uppercase truncate">· {item.clubName}</span>}
+                                {item.name && <span className="text-[9px] font-bold text-white uppercase truncate">{item.name}</span>}
+                                {item.clubName && <span className="text-[8px] font-bold text-primary-400 uppercase truncate">· {item.clubName}</span>}
                                 {item.college && <span className="text-[7px] text-slate-600 font-bold uppercase truncate">@ {item.college}</span>}
                               </div>
                             )}
@@ -533,71 +531,68 @@ export default function BulkEmail() {
         {/* ── RIGHT: Compose Area ───────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-6">
           {/* Sender Details */}
-          <div className="card border-slate-700/30">
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-               Sender Details
+          <div className="card border-slate-800/40">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
+               Outgoing Identity
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {SENDER_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setSenderIdentity(opt.value)}
-                  className={`flex flex-col items-start p-4 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden group ${
+                  className={`flex flex-col items-start p-4 rounded-xl border transition-all duration-200 relative overflow-hidden ${
                     senderIdentity === opt.value
-                      ? 'border-primary-500 bg-primary-50/5 text-white'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-white'
                       : 'border-slate-800 bg-slate-900/50 text-slate-500 hover:border-slate-700 hover:text-slate-300'
                   }`}
                 >
-                  {senderIdentity === opt.value && (
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-primary-500/10 blur-xl"></div>
-                  )}
-                  <span className="font-black text-[11px] mb-1.5 uppercase tracking-widest">{opt.label}</span>
-                  <span className="text-[9px] font-bold opacity-60 tracking-tight lowercase">{opt.email}</span>
+                  <span className="font-bold text-xs mb-1 uppercase tracking-wide">{opt.label}</span>
+                  <span className="text-[10px] font-medium opacity-60 lowercase">{opt.email}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Email Template */}
-          <div className="card border-slate-700/30">
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-               Email Template
+          <div className="card border-slate-800/40">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
+               Communication Template
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
               {TEMPLATE_OPTIONS.map(({ id, label, icon: Icon, desc }) => (
                 <button
                   key={id}
                   onClick={() => setTemplate(id)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-300 text-center group ${
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 text-center ${
                     template === id
-                      ? 'border-primary-500 bg-primary-50/5 text-white'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-500 hover:border-slate-700 hover:text-slate-300'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-white'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-500 hover:border-slate-700 hover:text-slate-400'
                   }`}
                   title={desc}
                 >
-                  <Icon className={`w-6 h-6 transition-all ${template === id ? 'text-primary-400' : 'text-slate-600 group-hover:text-slate-400'}`} />
-                  <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+                  <Icon className={`w-5 h-5 transition-all ${template === id ? 'text-indigo-400' : 'text-slate-600'}`} />
+                  <span className="text-[10px] font-bold uppercase tracking-tight">{label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Subject & Body */}
-          <div className="card border-slate-700/30 space-y-6">
+          <div className="card border-slate-800/40 space-y-6">
             <div className="space-y-2">
-              <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 block">Email Subject</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-0.5 block">Subject Line</label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Enter email subject..."
-                className="input-field py-4 text-base font-black tracking-tight bg-slate-900/50 border-slate-700/50 focus:border-primary-500/50"
+                placeholder="Enter email subject"
+                className="input-field py-3 text-base font-bold tracking-tight bg-slate-900/50 border-slate-800"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 block">Email Body</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-0.5 block">Message Content</label>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -606,32 +601,32 @@ export default function BulkEmail() {
                     ? 'Write your message... (Salutation handled automatically)'
                     : 'Write your message...'
                 }
-                rows={12}
-                className="input-field py-4 text-sm font-bold bg-slate-900/50 border-slate-700/50 resize-none custom-scrollbar"
+                rows={10}
+                className="input-field py-4 text-sm font-medium bg-slate-900/50 border-slate-800 resize-none custom-scrollbar"
               />
               
-              <div className="animate-fade-in pt-2">
+              <div className="animate-fade-in pt-1">
                 {template === 'club' && !uploadPreview && (
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 animate-pulse">
-                    <HiOutlineExclamation className="w-5 h-5 flex-shrink-0 text-amber-500" />
-                    <p className="text-[10px] font-bold text-amber-200 uppercase tracking-tight leading-relaxed">
-                      <strong>Note:</strong> Upload list first to enable automatic personalization for clubs/colleges.
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <HiOutlineExclamation className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
+                    <p className="text-[11px] font-medium text-amber-200 tracking-wide leading-relaxed">
+                      <strong>Personalization required:</strong> Import a recipient list to automatically address specific clubs and colleges.
                     </p>
                   </div>
                 )}
                 {template === 'club' && uploadPreview && (
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
-                    <HiOutlineCheckCircle className="w-5 h-5 flex-shrink-0 text-emerald-500" />
-                    <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-tight leading-relaxed">
-                      <strong>Personalization Active</strong> — Names and club titles will be automatically inserted into each email.
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                    <HiOutlineCheckCircle className="w-4 h-4 flex-shrink-0 text-emerald-500 mt-0.5" />
+                    <p className="text-[11px] font-medium text-emerald-200 tracking-wide leading-relaxed">
+                      Addressing active — system will automatically personalize headers based on your imported data.
                     </p>
                   </div>
                 )}
                 {template === 'formal' && (
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-primary-500/5 border border-primary-500/20">
-                    <HiOutlineInformationCircle className="w-5 h-5 flex-shrink-0 text-primary-400" />
-                    <p className="text-[10px] font-bold text-primary-200 uppercase tracking-tight leading-relaxed">
-                      <strong>Automatic Salutations</strong> — Uses names if available, otherwise defaults to &quot;Respected Sir/Ma&apos;am&quot;.
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
+                    <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0 text-indigo-400 mt-0.5" />
+                    <p className="text-[11px] font-medium text-indigo-200 tracking-wide leading-relaxed">
+                      Uses recipient names for salutations correctly; defaults to &quot;Respected Sir/Ma&apos;am&quot; if unknown.
                     </p>
                   </div>
                 )}
@@ -644,31 +639,31 @@ export default function BulkEmail() {
             <button
               onClick={() => setPreviewOpen(true)}
               disabled={!body.trim()}
-              className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-widest active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
+              className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-widest disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
-              <HiOutlineEye className="w-5 h-5" /> Preview Email
+              <HiOutlineEye className="w-5 h-5" /> Dispatch Preview
             </button>
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={!canSend || sending}
-              className="btn-primary flex-[2] py-4 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
+              className="btn-primary flex-[2] py-4 text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/10 disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
               <HiOutlinePaperAirplane className="w-5 h-5" /> 
-              {sending ? 'SENDING...' : 'SEND BULK MAIL'}
+              {sending ? 'COMMENCING DISPATCH...' : 'INITIALIZE BULK DISPATCH'}
             </button>
             {hasRecipients && (
-              <div className="px-5 py-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-[9px] font-black text-slate-500 uppercase tracking-widest hidden lg:block">
-                {individualCount > 0 && `${individualCount} RECIPIENT${individualCount !== 1 ? 'S' : ''} SELECTED`}
-                {selectedRoles.length > 0 && ` ${individualCount > 0 ? '& ' : ''}ALL ${selectedRoles.join(', ')} ROLES`}
+              <div className="px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden lg:block">
+                {individualCount > 0 && `${individualCount} Target${individualCount !== 1 ? 's' : ''}`}
+                {selectedRoles.length > 0 && ` + ${selectedRoles.join(', ')}`}
               </div>
             )}
           </div>
 
           {/* Security notice */}
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/50">
-            <HiOutlineShieldCheck className="w-5 h-5 flex-shrink-0 text-primary-500" />
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight leading-relaxed">
-              This action requires admin password confirmation. You can track the progress of this job in the Job History section.
+          <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-950 border border-white/[0.05] shadow-inner">
+            <HiOutlineShieldCheck className="w-6 h-6 flex-shrink-0 text-indigo-500" />
+            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest leading-relaxed">
+              This operation requires administrative authorization. Dispatch progression will be recorded in the system audit logs and can be monitored via the archival interface.
             </p>
           </div>
         </div>
@@ -685,8 +680,8 @@ export default function BulkEmail() {
             
             <div className="sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 px-6 py-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tighter">Email Preview</h3>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">How the recipient will see it</p>
+                <h3 className="text-lg font-bold text-white uppercase tracking-tight">Email Preview</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">How the recipient will see it</p>
               </div>
               <button 
                 onClick={() => setPreviewOpen(false)} 
@@ -703,7 +698,7 @@ export default function BulkEmail() {
             </div>
             
             <div className="p-4 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800 text-center">
-               <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Isolating Preview Layout</span>
+               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Isolating Preview Layout</span>
             </div>
           </div>
         </div>

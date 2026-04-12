@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api from '../../src/services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -19,9 +19,9 @@ import {
 } from 'react-icons/hi';
 
 const STATUS_CONFIG = {
-  valid: { label: 'Valid', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30' },
-  used: { label: 'Used', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30' },
-  cancelled: { label: 'Cancelled', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30' },
+  valid: { label: 'Valid', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  used: { label: 'Used', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+  cancelled: { label: 'Cancelled', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
 };
 
 export default function TicketsList() {
@@ -119,34 +119,36 @@ export default function TicketsList() {
   return (
     <div className="animate-fade-in space-y-8">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">Tickets</h1>
-          <p className="text-slate-500 font-medium">{total.toLocaleString()} total tickets found</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Gate Control</h1>
+          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} active access tokens verified</p>
         </div>
-        <div className="flex items-center gap-2 bg-slate-900/40 p-1.5 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
+        <div className="flex items-center gap-1.5 bg-slate-900 border border-white/[0.05] p-1 rounded-xl shadow-lg">
           <button 
             onClick={() => setViewMode('flat')} 
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${viewMode === 'flat' ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/40' : 'text-slate-500 hover:text-slate-200'}`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${viewMode === 'flat' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40' : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'}`}
           >
-            <HiOutlineViewList className="w-4 h-4" /> List View
+            <HiOutlineViewList className="w-4 h-4" /> 
+            <span>List Mode</span>
           </button>
           <button 
             onClick={() => setViewMode('team')} 
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${viewMode === 'team' ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/40' : 'text-slate-500 hover:text-slate-200'}`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${viewMode === 'team' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40' : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'}`}
           >
-            <HiOutlineViewBoards className="w-4 h-4" /> Team View
+            <HiOutlineViewBoards className="w-4 h-4" /> 
+            <span>Team Clusters</span>
           </button>
         </div>
       </div>
 
       {/* Control Panel */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl">
-        <div className="relative w-full lg:max-w-xs group">
-          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-5 h-5 transition-colors" />
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900 border border-white/[0.05] p-3 rounded-xl shadow-lg">
+        <div className="relative w-full lg:max-w-sm group">
+          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search by Ticket ID or Name..." 
+            placeholder="Auditing search (ID, name, email)..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
             className="input-field pl-12" 
@@ -155,12 +157,12 @@ export default function TicketsList() {
         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto px-2">
           <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
           
-          <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
-             <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+          <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+             <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
              <select 
                value={eventFilter} 
                onChange={(e) => { setEventFilter(e.target.value); setPage(1); }} 
-               className="bg-transparent text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer"
+               className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer"
              >
                <option value="" className="bg-slate-900">All Events</option>
                {events.map((ev) => <option key={ev._id} value={ev._id} className="bg-slate-900">{ev.title}</option>)}
@@ -169,12 +171,12 @@ export default function TicketsList() {
 
           <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
 
-          <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
-             <HiOutlineShieldCheck className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+          <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+             <HiOutlineShieldCheck className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
              <select 
                value={statusFilter} 
                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} 
-               className="bg-transparent text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer"
+               className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer"
              >
                <option value="" className="bg-slate-900">All Status</option>
                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
@@ -188,7 +190,7 @@ export default function TicketsList() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <HiOutlineRefresh className="w-10 h-10 text-primary-500 animate-spin" />
-          <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] animate-pulse">Loading Tickets...</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] animate-pulse">Loading Tickets...</p>
         </div>
       ) : viewMode === 'flat' ? (
         <div className="card !p-0 overflow-hidden border-slate-700/30">
@@ -196,70 +198,70 @@ export default function TicketsList() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-white/[0.01]">
-                  <th className="px-6 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest">Ticket ID</th>
-                  <th className="px-6 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest">User</th>
-                  <th className="px-6 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest">Event</th>
-                  <th className="px-6 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest">Team</th>
-                  <th className="px-6 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest text-center">Status</th>
-                  <th className="px-6 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Verification ID</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Bearer Information</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Event Attribution</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Affiliation</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-center">Security Status</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Administrative Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.02]">
                 {tickets.map((t) => {
                   const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.valid;
                   return (
-                    <tr key={t._id} className="group hover:bg-white/[0.02] transition-all cursor-default text-xs">
-                      <td className="px-6 py-5">
+                    <tr key={t._id} className="group hover:bg-white/[0.02] transition-all cursor-default">
+                      <td className="px-6 py-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-primary-400 group-hover:border-primary-500/30 transition-all shadow-lg">
-                            <HiOutlineTicket className="w-4 h-4" />
+                          <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-indigo-400 group-hover:border-indigo-500 transition-all shadow-lg shadow-indigo-500/5">
+                            <HiOutlineTicket className="w-4.5 h-4.5" />
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-[9px] font-black text-slate-400 uppercase tracking-tight">{(t.ticketId || t._id)?.slice(0, 14)}</span>
-                            <button onClick={() => copyToClipboard(t.ticketId)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/[0.05] transition-all text-slate-600 hover:text-white">
-                              <HiOutlineClipboardCopy className="w-3.5 h-3.5" />
+                            <span className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">{(t.ticketId || t._id)?.slice(0, 14)}</span>
+                            <button onClick={() => copyToClipboard(t.ticketId)} className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-white/[0.05] transition-all text-slate-600 hover:text-white">
+                               <HiOutlineClipboardCopy className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
-                        <p className="text-xs font-black text-white uppercase tracking-tight group-hover:text-primary-400 transition-colors leading-none">{t.userId?.name || 'Unknown User'}</p>
-                        <p className="text-[9px] text-slate-500 font-bold tracking-tight mt-1.5 uppercase">{t.userId?.email || 'No Email'}</p>
+                      <td className="px-6 py-6">
+                        <p className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors tracking-tight leading-none mb-1.5">{t.userId?.name || 'Institutional Guest'}</p>
+                        <p className="text-[10px] text-slate-500/70 font-medium uppercase tracking-widest">{t.userId?.email || 'N/A'}</p>
                       </td>
-                      <td className="px-6 py-5">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate max-w-[120px]">{t.eventId?.title || 'No Event'}</p>
+                      <td className="px-6 py-6">
+                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[120px] leading-none">{t.eventId?.title || 'System Core'}</p>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-6 py-6 font-medium">
                         {t.team ? (
                           <div className="flex items-center gap-2.5">
-                            <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                            <div className="p-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                                <HiOutlineUserGroup className="w-3 h-3" />
                             </div>
-                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-tighter truncate max-w-[100px] group-hover:text-white transition-colors">{t.team.teamName}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[100px]">{t.team.teamName}</span>
                           </div>
-                        ) : <span className="text-slate-700 text-[9px] font-black uppercase tracking-[0.2em] opacity-40 italic">Solo</span>}
+                        ) : <span className="text-slate-700 text-[10px] font-bold uppercase tracking-widest opacity-30 italic leading-none">Solo Entry</span>}
                       </td>
-                      <td className="px-6 py-5 text-center">
-                         <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${cfg.bg} ${cfg.color} inline-flex items-center gap-1.5`}>
-                            {t.status === 'used' ? <HiOutlineCheckCircle className="w-3 h-3" /> : <HiOutlineShieldCheck className="w-3 h-3" />}
+                      <td className="px-6 py-6 text-center">
+                         <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${cfg.bg} ${cfg.color} inline-flex items-center gap-1.5 leading-none`}>
+                            {t.status === 'used' ? <HiOutlineCheckCircle className="w-3.5 h-3.5" /> : <HiOutlineShieldCheck className="w-3.5 h-3.5" />}
                             {cfg.label}
                          </span>
                       </td>
-                      <td className="px-6 py-5 text-right">
+                      <td className="px-6 py-6 text-right">
                         <div className="flex items-center justify-end gap-2.5">
                           {t.status === 'valid' && (
                             <>
-                              <button onClick={() => handleMarkUsed(t._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all shadow-xl active:scale-95" title="MARK AS USED">
+                              <button onClick={() => handleMarkUsed(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/40 transition-all shadow-lg active:scale-95" title="Mark as Validated">
                                 <HiOutlineQrcode className="w-5 h-5" />
                               </button>
-                              <button onClick={() => handleCancel(t._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-800 text-slate-500 hover:text-red-400 hover:border-red-500/30 transition-all shadow-xl active:scale-95" title="CANCEL TICKET">
+                              <button onClick={() => handleCancel(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 text-slate-500 hover:text-red-400 hover:border-red-500/40 transition-all shadow-lg active:scale-95" title="Revoke Authorization">
                                 <HiOutlineBan className="w-5 h-5" />
                               </button>
                             </>
                           )}
                           {user?.role === 'superadmin' && (
-                            <button onClick={() => handleDelete(t._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-800 text-slate-500 hover:text-white hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-xl active:scale-95" title="DELETE PERMANENTLY">
-                              <HiOutlineTrash className="w-5 h-5" />
+                            <button onClick={() => handleDelete(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-600/10 border border-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-lg active:scale-95" title="Purge Record">
+                              <HiOutlineTrash className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -271,14 +273,14 @@ export default function TicketsList() {
             </table>
           </div>
           {pages > 1 && (
-            <div className="flex items-center justify-center gap-4 py-8 bg-white/[0.01] border-t border-white/[0.05]">
+            <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
               {[...Array(pages)].map((_, i) => (
                 <button 
                   key={i} 
                   onClick={() => setPage(i + 1)} 
-                  className={`w-10 h-10 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${page === i + 1 ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/40 scale-110 z-10' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
+                  className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
                 >
-                  {i + 1}
+                  {(i + 1).toString().padStart(2, '0')}
                 </button>
               ))}
             </div>
@@ -290,21 +292,21 @@ export default function TicketsList() {
           {teamTickets.length > 0 && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {teamTickets.map((group) => (
-                  <div key={group.team._id} className="card !p-0 overflow-hidden border-slate-700/30 bg-slate-900/40 backdrop-blur-xl relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-[50px] pointer-events-none"></div>
+                  <div key={group.team._id} className="card !p-0 overflow-hidden border-white/[0.05] bg-slate-900 shadow-xl relative group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] pointer-events-none"></div>
                     <div className="flex items-center justify-between px-8 py-6 bg-white/[0.02] border-b border-white/[0.05]">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center shadow-xl shadow-blue-900/30 transform rotate-3 group-hover:rotate-0 transition-all duration-500">
+                        <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-900/30 transition-all duration-500">
                           <HiOutlineUserGroup className="w-6 h-6" />
                         </div>
                         <div>
-                          <p className="text-lg font-black text-white uppercase tracking-tighter leading-none">{group.team.teamName}</p>
-                          <p className="text-[9px] text-blue-400 font-black uppercase tracking-widest mt-2">{group.event?.title || 'No Event'}</p>
+                          <p className="text-lg font-bold text-white tracking-tight leading-none mb-1.5 uppercase">{group.team.teamName}</p>
+                          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{group.event?.title || 'General Intake'}</p>
                         </div>
                       </div>
                       <div className="text-right flex flex-col items-end gap-1.5">
-                         <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">{group.tickets.length} TICKETS</span>
-                         {group.team.leaderId && <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></span> TEAM LEADER: {group.team.leaderId.name}</p>}
+                         <span className="px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/[0.05] text-[10px] font-bold text-slate-400 uppercase tracking-widest">{group.tickets.length} Tokens</span>
+                         {group.team.leaderId && <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5 leading-none mt-1 opacity-70">LDR: {group.team.leaderId.name}</p>}
                       </div>
                     </div>
                     <div className="overflow-x-auto">
@@ -314,26 +316,26 @@ export default function TicketsList() {
                             const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.valid;
                             return (
                               <tr key={t._id} className="group/row hover:bg-white/[0.01] transition-all">
-                                <td className="px-8 py-4 w-[160px]">
+                                <td className="px-8 py-5 w-[160px]">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-mono text-[9px] font-black text-slate-600 uppercase tracking-tight">{(t.ticketId || t._id).slice(0, 12)}</span>
-                                    <button onClick={() => copyToClipboard(t.ticketId)} className="opacity-0 group-hover/row:opacity-100 text-slate-700 hover:text-primary-400 transition-all"><HiOutlineClipboardCopy className="w-3.5 h-3.5" /></button>
+                                    <span className="font-mono text-[10px] font-bold text-slate-600 uppercase tracking-widest">{(t.ticketId || t._id).slice(0, 12)}</span>
+                                    <button onClick={() => copyToClipboard(t.ticketId)} className="opacity-0 group-hover/row:opacity-100 text-slate-700 hover:text-indigo-400 transition-all"><HiOutlineClipboardCopy className="w-3.5 h-3.5" /></button>
                                   </div>
                                 </td>
-                                <td className="px-8 py-4">
-                                  <p className="text-xs font-black text-slate-300 group-hover/row:text-white transition-colors leading-none">{t.userId?.name || '---'}</p>
+                                <td className="px-8 py-5">
+                                  <p className="text-xs font-bold text-slate-400 group-hover/row:text-white transition-colors leading-none mb-1">{t.userId?.name || '---'}</p>
                                   {t.userId?._id?.toString() === group.team.leaderId?._id?.toString() && (
-                                    <span className="inline-block mt-1 text-[7px] px-1.5 py-0.5 bg-primary-500 text-white font-black rounded-lg uppercase tracking-widest">TEAM LEADER</span>
+                                    <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest opacity-60">Lead Architect</span>
                                   )}
                                 </td>
-                                <td className="px-8 py-4 text-center">
-                                   <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/[0.05] ${cfg.color}`}>{cfg.label}</span>
+                                <td className="px-8 py-5 text-center">
+                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-transparent ${cfg.color}`}>{cfg.label}</span>
                                 </td>
-                                <td className="px-8 py-4 text-right">
+                                <td className="px-8 py-5 text-right">
                                    {t.status === 'valid' && (
-                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                      <button onClick={() => handleMarkUsed(t._id)} title="Mark Used" className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg"><HiOutlineCheckCircle className="w-4 h-4" /></button>
-                                      <button onClick={() => handleCancel(t._id)} title="Cancel" className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg"><HiOutlineBan className="w-4 h-4" /></button>
+                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover/row:opacity-100 transition-all duration-200">
+                                      <button onClick={() => handleMarkUsed(t._id)} title="Mark Used" className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md"><HiOutlineCheckCircle className="w-4 h-4" /></button>
+                                      <button onClick={() => handleCancel(t._id)} title="Cancel" className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-md"><HiOutlineBan className="w-4 h-4" /></button>
                                     </div>
                                    )}
                                 </td>
@@ -351,7 +353,7 @@ export default function TicketsList() {
           {soloTickets.length > 0 && (
             <div className="card !p-0 overflow-hidden border-slate-700/30">
                <div className="px-8 py-6 bg-white/[0.02] border-b border-white/[0.05]">
-                  <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                  <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
                      <HiOutlineTicket className="w-5 h-5 text-emerald-500" /> Individual Tickets ({soloTickets.length})
                   </h3>
                </div>
@@ -359,9 +361,9 @@ export default function TicketsList() {
                  <table className="w-full text-left">
                    <thead>
                      <tr className="bg-white/[0.01]">
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest">Ticket ID</th>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest">User</th>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-600 uppercase tracking-widest text-right">Actions</th>
+                       <th className="px-8 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Ticket ID</th>
+                       <th className="px-8 py-5 text-[9px] font-bold text-slate-500 uppercase tracking-widest">Bearer Spec</th>
+                       <th className="px-8 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-widest text-right">Actions</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-white/[0.02]">
@@ -369,21 +371,21 @@ export default function TicketsList() {
                        <tr key={t._id} className="group hover:bg-white/[0.02] transition-all">
                          <td className="px-8 py-5">
                             <div className="flex items-center gap-3">
-                              <span className="font-mono text-[9px] font-black text-slate-500 uppercase tracking-tight">{(t.ticketId || t._id).slice(0, 16)}</span>
+                              <span className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-tight">{(t.ticketId || t._id).slice(0, 16)}</span>
                               <button onClick={() => copyToClipboard(t.ticketId)} className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-primary-400 transition-all"><HiOutlineClipboardCopy className="w-4 h-4" /></button>
                             </div>
                          </td>
                          <td className="px-8 py-5">
-                            <p className="text-xs font-black text-white uppercase tracking-tight group-hover:text-primary-400 transition-all leading-none">{t.userId?.name || 'Unknown User'}</p>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{t.eventId?.title || 'No Event'}</p>
+                            <p className="text-xs font-bold text-white uppercase group-hover:text-indigo-400 transition-colors leading-none mb-1">{t.userId?.name || '---'}</p>
+                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tight">{t.eventId?.title || 'GENERAL_INTAKE'}</p>
                          </td>
                          <td className="px-8 py-5 text-right">
-                            {t.status === 'valid' && (
-                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                                <button onClick={() => handleMarkUsed(t._id)} className="px-6 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-xl">Mark Used</button>
-                                <button onClick={() => handleCancel(t._id)} className="px-6 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-xl">Cancel Ticket</button>
-                              </div>
-                            )}
+                             {t.status === 'valid' && (
+                               <div className="flex justify-end gap-2.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                 <button onClick={() => handleMarkUsed(t._id)} className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all"><HiOutlineCheckCircle className="w-4 h-4" /></button>
+                                 <button onClick={() => handleCancel(t._id)} className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><HiOutlineBan className="w-4 h-4" /></button>
+                               </div>
+                             )}
                          </td>
                        </tr>
                      ))}
