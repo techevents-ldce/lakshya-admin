@@ -14,6 +14,7 @@ import {
   HiOutlineIdentification,
   HiOutlineRefresh,
   HiOutlineFilter,
+  HiOutlineTrash,
 } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
 import { useAuth } from '../context/AuthContext';
@@ -207,13 +208,16 @@ export default function Users() {
                       </td>
                       <td className="px-6 py-6 text-right" onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center justify-end gap-3">
-                          {isSuperadmin && u.role !== 'admin' && (
+                          {isSuperadmin && u._id !== user?._id && (
                             <>
-                              <button onClick={() => toggleBlock(u._id, u.name, u.isActive)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all shadow-xl active:scale-95 ${u.isActive ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/20'}`} title={u.isActive ? 'Block User' : 'Unblock User'}>
+                              <button onClick={() => toggleBlock(u._id, u.name, u.isActive)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all shadow-xl active:scale-95 ${u.isActive ? 'bg-red-500/10 text-red-500 hover:bg-red-50 hover:text-white border border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/20'}`} title={u.isActive ? 'Block User' : 'Unblock User'}>
                                 {u.isActive ? <HiOutlineBan className="w-5 h-5" /> : <HiOutlineCheckCircle className="w-5 h-5" />}
                               </button>
                               <button onClick={() => setResetModal(u)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-primary-500/10 text-primary-400 hover:bg-primary-500 hover:text-white border border-primary-500/20 transition-all shadow-xl active:scale-95" title="Reset Password">
                                 <HiOutlineKey className="w-5 h-5" />
+                              </button>
+                              <button onClick={() => handleDelete(u._id, u.name)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-600/20 transition-all shadow-xl active:scale-95" title="Delete User">
+                                <HiOutlineTrash className="w-5 h-5" />
                               </button>
                             </>
                           )}

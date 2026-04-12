@@ -12,6 +12,7 @@ import {
   HiOutlineFilter,
   HiOutlineRefresh,
   HiOutlineUserGroup,
+  HiOutlineTrash,
 } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
 import { useAuth } from '../context/AuthContext';
@@ -207,6 +208,13 @@ export default function Coordinators() {
                             title="Reset Password"
                           >
                             <HiOutlineKey className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(c._id, c.name)} 
+                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-600/10 border border-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-xl active:scale-95"
+                            title="Delete Coordinator"
+                          >
+                            <HiOutlineTrash className="w-5 h-5" />
                           </button>
                         </div>
                       )}

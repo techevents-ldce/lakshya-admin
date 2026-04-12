@@ -18,13 +18,20 @@ import {
   HiOutlineInformationCircle,
   HiOutlineChevronRight,
   HiOutlineAcademicCap,
+  HiOutlineTrash,
 } from 'react-icons/hi';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../context/AuthContext';
 
 export default function UserDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const isSuperadmin = currentUser?.role === 'superadmin';
+
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -51,19 +58,11 @@ export default function UserDetail() {
     }).toUpperCase();
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-40 gap-6">
-        <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
-        <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Synchronizing User Profile...</p>
-      </div>
-    );
-  }
   const handleDelete = () => {
     setConfirmModal({
       open: true,
       title: 'Delete User Permanently',
-      message: `Are you sure you want to PERMANENTLY DELETE "${user.name}"? This will also remove their registrations, tickets, and team memberships. THIS ACTION CANNOT BE UNDONE.`,
+      message: `Are you sure you want to PERMANENTLY DELETE "${userData.name}"? This will also remove their registrations, tickets, and team memberships. THIS ACTION CANNOT BE UNDONE.`,
       confirmLabel: 'Permanently Delete',
       variant: 'danger',
       action: async (pw) => {
@@ -74,10 +73,22 @@ export default function UserDetail() {
     });
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div></div>;
-  if (!user) return <div className="text-center py-12 text-gray-400">User not found</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 gap-6">
+        <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
+        <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Synchronizing User Profile...</p>
+      </div>
+    );
+  }
 
-  if (!userData) return null;
+  if (!userData) return (
+    <div className="flex flex-col items-center justify-center py-40 gap-4">
+      <HiOutlineInformationCircle className="w-12 h-12 text-slate-800" />
+      <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em]">User Profile Not Found</p>
+      <button onClick={() => navigate('/users')} className="text-primary-500 text-[10px] font-black uppercase tracking-widest mt-4">Return to Users</button>
+    </div>
+  );
 
   const { registrations = [], orders = [] } = userData;
 
@@ -96,8 +107,18 @@ export default function UserDetail() {
             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.3em]">Protocol Reference: <span className="text-slate-400 font-mono">{userData._id}</span></p>
           </div>
         </div>
-        <div className="px-6 py-3 rounded-2xl bg-primary-500/10 border border-primary-500/30 text-[11px] font-black text-primary-400 uppercase tracking-[0.2em] shadow-xl">
-           {userData.role} ACCESS LEVEL
+        <div className="flex items-center gap-4">
+          {isSuperadmin && userData._id !== currentUser?._id && (
+            <button 
+              onClick={handleDelete}
+              className="px-6 py-3 rounded-2xl bg-red-600/10 border border-red-500/30 text-[11px] font-black text-red-500 uppercase tracking-[0.2em] shadow-xl hover:bg-red-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+            >
+              <HiOutlineTrash className="w-4 h-4" /> Permanently Delete
+            </button>
+          )}
+          <div className="px-6 py-3 rounded-2xl bg-primary-500/10 border border-primary-500/30 text-[11px] font-black text-primary-400 uppercase tracking-[0.2em] shadow-xl">
+             {userData.role} ACCESS LEVEL
+          </div>
         </div>
       </div>
 
@@ -236,6 +257,15 @@ export default function UserDetail() {
            </div>
         </div>
       </div>
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+      />
     </div>
   );
 }
