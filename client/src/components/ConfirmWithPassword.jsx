@@ -96,7 +96,7 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
   return (
     <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/50 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-in"
+        className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -110,7 +110,7 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
               <HiOutlineShieldCheck className="w-8 h-8 text-primary-400" />
             </div>
           )}
-          <h3 className="text-xl font-black text-white tracking-tight">{step === 1 ? title : 'Identity Verification'}</h3>
+          <h3 className="text-xl font-bold text-white tracking-tight">{step === 1 ? title : 'Identity Verification'}</h3>
         </div>
 
         {/* Body */}
@@ -120,7 +120,7 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
               <p className="text-slate-400 text-sm text-center leading-relaxed font-medium">{message}</p>
               {user?.role !== 'superadmin' && (
                 <div className="mt-6 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30 text-center">
-                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.1em]">Security Note</p>
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Security Note</p>
                   <p className="text-slate-400 text-[11px] mt-1">Authentication required in the next step.</p>
                 </div>
               )}
@@ -133,7 +133,7 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
                 <input
                   ref={passwordRef}
                   type="password"
-                  placeholder="Master Password"
+                  placeholder="Admin Password"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   onKeyDown={handleKeyDown}

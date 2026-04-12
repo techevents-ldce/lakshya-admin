@@ -153,7 +153,7 @@ export default function Registrations() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">Registrations</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight uppercase mb-1">Registrations</h1>
           <p className="text-slate-500 font-medium">Monitor and manage all event registrations and participants</p>
         </div>
       </div>
@@ -235,23 +235,23 @@ export default function Registrations() {
                   <React.Fragment key={r._id}>
                     <tr className={`group hover:bg-white/[0.02] transition-all cursor-pointer ${expanded === r._id ? 'bg-primary-500/[0.03] border-l-2 border-l-primary-500' : ''}`} onClick={() => toggleExpand(r._id)}>
                       <td className="px-6 py-5 text-center">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expanded === r._id ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/40' : 'bg-slate-900 text-slate-600 group-hover:text-white'}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expanded === r._id ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/20' : 'bg-slate-900 text-slate-500 group-hover:text-white'}`}>
                           {expanded === r._id ? <HiOutlineChevronUp className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
                         </div>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-black text-slate-500 group-hover:bg-primary-500 group-hover:text-white group-hover:border-primary-500/30 transition-all shadow-xl">
+                          <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:bg-primary-500 group-hover:text-white group-hover:border-primary-500/30 transition-all shadow-xl">
                             {r.userId?.name?.[0]?.toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-sm font-black text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none">{r.userId?.name}</p>
-                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-1.5">{r.userId?.email}</p>
+                            <p className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none">{r.userId?.name}</p>
+                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{r.userId?.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-5 hidden sm:table-cell">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest line-clamp-1">{r.userId?.college || '---'}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest line-clamp-1">{r.userId?.college || '---'}</p>
                       </td>
                       <td className="px-6 py-5">
                         <p className="text-xs font-black text-slate-300 group-hover:text-primary-400 transition-colors leading-none uppercase tracking-tight">{r.eventId?.title}</p>
@@ -276,7 +276,7 @@ export default function Registrations() {
                     {expanded === r._id && (
                       <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
                         <td colSpan="6" className="px-12 py-12">
-                          <div className="flex flex-col gap-12">
+                          <div className="flex flex-col gap-12 max-h-[600px] overflow-y-auto custom-scrollbar pr-4">
                             {/* Detailed layout */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                                <div className="space-y-8">

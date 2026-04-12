@@ -93,7 +93,7 @@ export default function Events() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">Event Management</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight uppercase mb-1">Event Management</h1>
           <p className="text-slate-500 font-medium">Manage and monitor event activities and categories</p>
         </div>
         {isSuperadmin && (
@@ -164,8 +164,8 @@ export default function Events() {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <p className="text-sm font-black text-white uppercase tracking-tight group-hover:text-primary-400 transition-colors leading-none">{e.title}</p>
-                        <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1.5">{e.category || 'General'}</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-tight group-hover:text-primary-400 transition-colors leading-none">{e.title}</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{e.category || 'General'}</p>
                       </td>
                       <td className="px-6 py-5 hidden sm:table-cell">
                         <div className="flex items-center gap-3">
@@ -207,7 +207,7 @@ export default function Events() {
                     {expanded === e._id && (
                       <tr className="bg-white/[0.01] animate-scale-in">
                         <td colSpan="6" className="px-8 py-10">
-                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 border-l-2 border-primary-500/30 pl-8">
+                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 border-l-2 border-primary-500/30 pl-8 max-h-[500px] overflow-y-auto custom-scrollbar">
                             <div className="col-span-1 lg:col-span-1">
                               <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                                 <HiOutlineInformationCircle className="w-4 h-4 text-primary-400" /> Description

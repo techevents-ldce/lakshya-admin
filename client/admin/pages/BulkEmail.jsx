@@ -644,14 +644,14 @@ export default function BulkEmail() {
             <button
               onClick={() => setPreviewOpen(true)}
               disabled={!body.trim()}
-              className="btn-outline flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
+              className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-widest active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
             >
               <HiOutlineEye className="w-5 h-5" /> Preview Email
             </button>
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={!canSend || sending}
-              className="btn-primary flex-[2] py-4 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
+              className="btn-primary flex-[2] py-4 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
             >
               <HiOutlinePaperAirplane className="w-5 h-5" /> 
               {sending ? 'SENDING...' : 'SEND BULK MAIL'}
@@ -678,7 +678,7 @@ export default function BulkEmail() {
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => setPreviewOpen(false)}>
           <div
-            className="card w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border-slate-700/50 shadow-2xl relative"
+            className="card w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border-slate-800 shadow-2xl relative bg-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/5 blur-[100px] pointer-events-none"></div>
@@ -696,8 +696,8 @@ export default function BulkEmail() {
               </button>
             </div>
 
-            <div className="p-8 overflow-y-auto custom-scrollbar bg-slate-100 flex items-center justify-center">
-              <div className="max-w-full shadow-lg rounded-xl overflow-hidden scale-[0.85] sm:scale-100 transform origin-top">
+            <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar bg-slate-200/50 flex items-center justify-center min-h-[400px]">
+              <div className="w-full max-w-[600px] shadow-2xl rounded-xl overflow-hidden bg-white">
                 <div dangerouslySetInnerHTML={{ __html: getPreviewHtml() }} />
               </div>
             </div>

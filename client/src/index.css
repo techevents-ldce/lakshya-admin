@@ -5,33 +5,33 @@
 @layer base {
   * { @apply transition-colors duration-200 ease-in-out; }
   body { 
-    @apply bg-[#0f172a] text-slate-200 antialiased;
+    @apply bg-slate-950 text-slate-200 antialiased;
     background-image: 
-      radial-gradient(at 0% 0%, rgba(217, 119, 6, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(13, 148, 136, 0.05) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.03) 0px, transparent 50%);
     background-attachment: fixed;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary-900/20 hover:shadow-primary-600/30 hover:-translate-y-0.5 transition-all duration-300;
+    @apply bg-primary-600 hover:bg-primary-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary-900/10 hover:shadow-primary-600/20 active:scale-95 transition-all duration-300;
   }
   .btn-secondary {
-    @apply bg-slate-800 hover:bg-slate-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-slate-700/30 hover:-translate-y-0.5 transition-all duration-300;
+    @apply bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-2.5 rounded-xl border border-slate-700 hover:border-slate-600 transition-all duration-300;
   }
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-red-900/20 hover:shadow-red-600/30 hover:-translate-y-0.5 transition-all duration-300;
+    @apply bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white font-bold px-6 py-2.5 rounded-xl border border-red-500/20 hover:border-red-600 transition-all duration-300;
   }
   .btn-outline {
-    @apply border-2 border-primary-600/20 hover:border-primary-500/50 text-primary-400 hover:bg-primary-600/5 font-semibold px-5 py-2.5 rounded-xl transition-all duration-300;
+    @apply border-2 border-slate-800 hover:border-primary-500/50 text-slate-400 hover:text-primary-400 font-bold px-6 py-2.5 rounded-xl transition-all duration-300;
   }
   .btn-accent {
-    @apply bg-accent-600 hover:bg-accent-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-accent-900/20 hover:shadow-accent-600/30 hover:-translate-y-0.5 transition-all duration-300;
+    @apply bg-accent-600 hover:bg-accent-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-accent-900/10 hover:shadow-accent-600/20 active:scale-95 transition-all duration-300;
   }
   
   .glass-card {
-    @apply bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl hover:bg-slate-900/50 hover:border-slate-600/60 transition-all duration-300;
+    @apply bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-2xl shadow-xl hover:border-slate-700/50 transition-all duration-300;
   }
 
   .card {
@@ -39,28 +39,28 @@
   }
 
   .stat-card {
-    @apply glass-card p-5 flex items-center gap-4 hover:scale-[1.02];
+    @apply glass-card p-5 flex items-center gap-4;
   }
 
   .input-field {
-    @apply w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/50 text-slate-100 placeholder-slate-500 focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all duration-300;
+    @apply w-full px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950/50 text-slate-100 placeholder-slate-600 focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all duration-300;
   }
 
   .label {
-    @apply block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1;
+    @apply block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1;
   }
 
   .table-header {
-    @apply bg-slate-800/50 text-left text-[11px] font-bold text-slate-400 uppercase tracking-widest;
+    @apply bg-slate-900/50 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest;
   }
 
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border;
   }
-  .badge-green { @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20; }
-  .badge-red { @apply bg-red-500/10 text-red-400 border border-red-500/20; }
-  .badge-yellow { @apply bg-amber-500/10 text-amber-400 border border-amber-500/20; }
-  .badge-blue { @apply bg-blue-500/10 text-blue-400 border border-blue-500/20; }
+  .badge-green { @apply bg-emerald-500/5 text-emerald-400 border-emerald-500/20; }
+  .badge-red { @apply bg-red-500/5 text-red-400 border-red-500/20; }
+  .badge-yellow { @apply bg-amber-500/5 text-amber-400 border-amber-500/20; }
+  .badge-blue { @apply bg-blue-500/5 text-blue-400 border-blue-500/20; }
 }
 
 /* Scrollbar */

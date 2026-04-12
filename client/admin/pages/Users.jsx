@@ -112,7 +112,7 @@ export default function Users() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">User Management</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight uppercase mb-1">User Management</h1>
           <p className="text-slate-500 font-medium">Manage user accounts, roles, and access permissions</p>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function Users() {
                   <React.Fragment key={u._id}>
                     <tr className={`group hover:bg-white/[0.02] transition-all cursor-pointer ${expanded === u._id ? 'bg-primary-500/[0.03] border-l-2 border-l-primary-500' : ''}`} onClick={() => toggleExpand(u._id)}>
                       <td className="px-6 py-6 text-center">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expanded === u._id ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/40' : 'bg-slate-900 text-slate-600 group-hover:text-white'}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expanded === u._id ? 'bg-primary-500 text-white shadow-lg shadow-primary-900/20' : 'bg-slate-900 text-slate-500 group-hover:text-white'}`}>
                           {expanded === u._id ? <HiOutlineChevronUp className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
                         </div>
                       </td>
@@ -190,8 +190,8 @@ export default function Users() {
                             {u.name?.[0]?.toUpperCase() || <HiOutlineUser />}
                           </div>
                           <div>
-                            <p className="text-sm font-black text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{u.name}</p>
-                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest truncate max-w-[150px]">{u.email}</p>
+                            <p className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{u.name}</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate max-w-[150px]">{u.email}</p>
                           </div>
                         </div>
                       </td>
@@ -227,7 +227,7 @@ export default function Users() {
                     {expanded === u._id && (
                       <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
                         <td colSpan="6" className="px-12 py-12">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 max-h-[500px] overflow-y-auto custom-scrollbar pr-4">
                             <DetailNode label="Phone Number" value={u.phone || 'Not provided'} />
                             <DetailNode label="Branch / Course" value={u.branch || 'Not specified'} />
                             <DetailNode label="Academic Year" value={u.year ? `Year ${u.year}` : 'Not specified'} />
@@ -290,15 +290,15 @@ export default function Users() {
       {/* Reset Password Modal Overlay */}
       {isSuperadmin && resetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => { setResetModal(null); setNewPassword(''); }}>
-          <div className="card w-full max-w-sm border-slate-700/50 shadow-2xl relative overflow-hidden bg-slate-900/40" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 blur-[100px] -mr-16 -mt-16 pointer-events-none"></div>
+          <div className="card w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar border-slate-800 shadow-2xl relative bg-slate-900" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-[100px] -mr-16 -mt-16 pointer-events-none"></div>
             <div className="relative z-10 space-y-8 p-4 text-center">
-              <div className="w-20 h-20 rounded-[2.5rem] bg-primary-500 flex items-center justify-center mx-auto text-white shadow-2xl shadow-primary-900/50 rotate-6 transform transition-transform">
-                <HiOutlineKey className="w-10 h-10" />
+              <div className="w-16 h-16 rounded-2xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center mx-auto text-primary-400 shadow-lg">
+                <HiOutlineKey className="w-8 h-8" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Reset Password</h3>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Changing password for {resetModal.name}</p>
+                <h3 className="text-xl font-bold text-white uppercase tracking-tight leading-none">Reset Password</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Changing password for {resetModal.name}</p>
               </div>
               <div className="space-y-2">
                 <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block text-left px-2">New Password</label>
