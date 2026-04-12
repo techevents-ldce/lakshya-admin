@@ -57,6 +57,10 @@ const COLUMN_ALIASES = {
   // Social/professional profiles
   linkedin:     ['linkedin', 'linkedin url', 'linkedin profile', 'linkedinurl', 'linkedin link', 'linkedin id'],
   github:       ['github', 'github url', 'github profile', 'githuburl', 'github link', 'github id'],
+
+  // Custom import flags
+  referralCode:    ['referralcode', 'referral code', 'referral_code', 'ca code', 'ca-ref-code', 'ca_code', 'ref code', 'ref_code'],
+  defaultPassword: ['defaultpassword', 'default password', 'default_password', 'password', 'pass', 'default-pass', 'default_pass'],
 };
 
 /** Build headerIndex -> canonicalFieldName from the header row */
@@ -309,20 +313,32 @@ const processImportRows = async (allRows, event, defaultStatus, adminId) => {
       let isNewUser  = false;
 
       const yearNum = parseInt(leaderRow.year, 10);
+      const customPass = (leaderRow.defaultPassword || '').trim();
+      const userData = {
+        name:         leaderName || leaderEmail.split('@')[0],
+        phone:        leaderRow.phone || '',
+        college:      grp.collegeName || leaderRow.collegeName || '',
+        branch:       leaderRow.department || '',
+        year:         !isNaN(yearNum) && yearNum >= 1 && yearNum <= 6 ? yearNum : undefined,
+      };
+
+      if (customPass) {
+        userData.passwordHash = await hashPassword(customPass);
+      }
 
       if (!leaderUser) {
         leaderUser = await User.create({
-          name:         leaderName || leaderEmail.split('@')[0],
+          ...userData,
           email:        leaderEmail,
-          phone:        leaderRow.phone || '',
-          college:      grp.collegeName || leaderRow.collegeName || '',
-          branch:       leaderRow.department || '',
-          year:         !isNaN(yearNum) && yearNum >= 1 && yearNum <= 6 ? yearNum : undefined,
-          passwordHash,
+          passwordHash: userData.passwordHash || passwordHash,
           role:         'participant',
           isActive:     true,
         });
         isNewUser = true;
+      } else {
+        // Update existing user fields
+        Object.assign(leaderUser, userData);
+        await leaderUser.save();
       }
 
       // ── HackathonTeam duplicate check (only this — not Registration) ─────────
@@ -365,19 +381,32 @@ const processImportRows = async (allRows, event, defaultStatus, adminId) => {
         if (!mEmail) continue;
 
         let mUser = await User.findOne({ email: mEmail });
+        const mYearNum = parseInt(mRow.year, 10);
+        const mCustomPass = (mRow.defaultPassword || '').trim();
+        const mUserData = {
+          name:         mName || mEmail.split('@')[0],
+          phone:        mRow.phone || '',
+          college:      mRow.collegeName || grp.collegeName || '',
+          branch:       mRow.department || '',
+          year:         !isNaN(mYearNum) && mYearNum >= 1 && mYearNum <= 6 ? mYearNum : undefined,
+        };
+
+        if (mCustomPass) {
+          mUserData.passwordHash = await hashPassword(mCustomPass);
+        }
+
         if (!mUser) {
-          const mYearNum = parseInt(mRow.year, 10);
           mUser = await User.create({
-            name:         mName || mEmail.split('@')[0],
+            ...mUserData,
             email:        mEmail,
-            phone:        mRow.phone || '',
-            college:      mRow.collegeName || grp.collegeName || '',
-            branch:       mRow.department || '',
-            year:         !isNaN(mYearNum) && mYearNum >= 1 && mYearNum <= 6 ? mYearNum : undefined,
-            passwordHash,
+            passwordHash: mUserData.passwordHash || passwordHash,
             role:         'participant',
             isActive:     true,
           });
+        } else {
+          // Update existing member fields
+          Object.assign(mUser, mUserData);
+          await mUser.save();
         }
 
         const existingTM = await TeamMember.findOne({ teamId: team._id, userId: mUser._id });
@@ -396,6 +425,13 @@ const processImportRows = async (allRows, event, defaultStatus, adminId) => {
         registration.teamId      = registration.teamId || team._id;
         // Overwrite the portal's default memberCount (1) with the real size from the Excel import
         registration.memberCount = Math.max(registration.memberCount || 0, members.length);
+        
+        // Update referral code if provided in import and not already set
+        const refCode = (leaderRow.referralCode || '').trim();
+        if (refCode && !registration.referralCodeUsed) {
+          registration.referralCodeUsed = refCode.toUpperCase();
+        }
+
         if (!registration.registrationData?.get?.('importSource')) {
           registration.registrationData = registration.registrationData || {};
           if (typeof registration.registrationData.set === 'function') {
@@ -411,6 +447,7 @@ const processImportRows = async (allRows, event, defaultStatus, adminId) => {
           registrationMode: 'team',
           memberCount:      members.length,
           status:           regStatus,
+          referralCodeUsed: (leaderRow.referralCode || '').trim().toUpperCase() || null,
           registrationData: {
             gender:       leaderRow.gender     || '',
             department:   leaderRow.department || '',

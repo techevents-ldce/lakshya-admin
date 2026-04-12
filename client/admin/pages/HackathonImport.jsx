@@ -50,6 +50,8 @@ const COLUMN_OPTIONS = [
   { value: 'year',         label: 'Year of Study',  required: false },
   { value: 'linkedin',     label: 'LinkedIn URL',   required: false },
   { value: 'github',       label: 'GitHub URL',     required: false },
+  { value: 'referralCode',    label: 'Referral Code',   required: false },
+  { value: 'defaultPassword', label: 'Default Password', required: false },
 ];
 
 const SELECTION_STATUS_CONFIG = {
@@ -196,7 +198,9 @@ export default function HackathonImport() {
         else if (lowerH.includes('name') && !lowerH.includes('team')) initialMappings[header] = 'name';
         else if (lowerH.includes('phone') || lowerH.includes('contact') || lowerH.includes('mobile')) initialMappings[header] = 'phone';
         else if (lowerH.includes('team') || lowerH.includes('unit')) initialMappings[header] = 'teamName';
-        else if (lowerH.includes('college') || lowerH.includes('inst')) initialMappings[header] = 'college';
+        else if (lowerH.includes('college') || lowerH.includes('inst')) initialMappings[header] = 'collegeName';
+        else if (lowerH.includes('referral') || lowerH.includes('ca')) initialMappings[header] = 'referralCode';
+        else if (lowerH.includes('password') || lowerH.includes('pass')) initialMappings[header] = 'defaultPassword';
       });
       setMappings(initialMappings);
       setStep('mapping');
@@ -350,7 +354,8 @@ export default function HackathonImport() {
                      <tr className="bg-white/[0.01]">
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Information</th>
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Members</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-center">Status</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Payment</th>
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Batch</th>
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
                      </tr>
@@ -377,10 +382,21 @@ export default function HackathonImport() {
                                 ))}
                              </div>
                           </td>
-                          <td className="px-6 py-6">
+                          <td className="px-6 py-6 text-center">
                              <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.bg} ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.color}`}>
                                 {SELECTION_STATUS_CONFIG[t.selectionStatus]?.label || t.selectionStatus}
                              </span>
+                          </td>
+                          <td className="px-6 py-6">
+                             {t.isPaid ? (
+                               <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider text-emerald-400">
+                                 <HiOutlineCheckCircle className="w-3 h-3" /> Paid
+                               </span>
+                             ) : (
+                               <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider text-slate-500/50">
+                                 <HiOutlineExclamationCircle className="w-3 h-3" /> Unpaid
+                               </span>
+                             )}
                           </td>
                           <td className="px-6 py-6">
                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate max-w-[100px]">{t.importBatch || 'Direct'}</p>
@@ -415,7 +431,7 @@ export default function HackathonImport() {
                         </tr>
                         {expandedTeam === t._id && (
                           <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
-                            <td colSpan="5" className="px-12 py-10">
+                            <td colSpan="6" className="px-12 py-10">
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {t.members?.map((m, idx) => (
                                   <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-3 hover:border-primary-500/30 transition-all group">
@@ -428,9 +444,18 @@ export default function HackathonImport() {
                                       <p className="text-[10px] text-slate-500 font-bold lowercase tracking-tight truncate">{m.email}</p>
                                     </div>
                                     {m.phone && (
-                                      <div className="pt-2 flex items-center gap-2 border-t border-white/[0.05]">
-                                        <HiOutlinePhone className="w-3 h-3 text-primary-500" />
-                                        <span className="text-[10px] text-slate-400 font-bold tabular-nums">{m.phone}</span>
+                                      <div className="pt-2 flex items-center justify-between border-t border-white/[0.05]">
+                                        <div className="flex items-center gap-2">
+                                          <HiOutlinePhone className="w-3 h-3 text-primary-500" />
+                                          <span className="text-[10px] text-slate-400 font-bold tabular-nums">{m.phone}</span>
+                                        </div>
+                                        <span className="text-[8px] text-slate-600 font-bold uppercase">{m.gender}</span>
+                                      </div>
+                                    )}
+                                    {(m.collegeName || m.department) && (
+                                      <div className="space-y-1">
+                                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight truncate">{m.collegeName}</p>
+                                         <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tight">{m.department} {m.year ? `— Year ${m.year}` : ''}</p>
                                       </div>
                                     )}
                                   </div>
@@ -438,7 +463,8 @@ export default function HackathonImport() {
                               </div>
                               <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
                                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.4em]">Team ID: {t._id}</p>
-                                 <div className="flex gap-4">
+                                 <div className="flex flex-wrap gap-4">
+                                    {t.registrationId?.referralCodeUsed && <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider p-2 bg-amber-500/5 border border-amber-500/10 rounded-lg">REF CODE: {t.registrationId.referralCodeUsed}</span>}
                                     {t.unstopTeamId && <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">UNSTOP ID: {t.unstopTeamId}</span>}
                                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">TOTAL MEMBERS: {t.members?.length || 0}</span>
                                  </div>
@@ -450,7 +476,7 @@ export default function HackathonImport() {
                      ))}
                      {teams.length === 0 && (
                        <tr>
-                         <td colSpan="5" className="text-center py-40">
+                         <td colSpan="6" className="text-center py-40">
                            <HiOutlineSearch className="w-16 h-16 text-slate-800 mx-auto mb-6" />
                            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em]">No hackathon teams found</p>
                          </td>
@@ -470,7 +496,7 @@ export default function HackathonImport() {
               const isDone = STEPS.findIndex(st => st.id === step) > i;
               const Icon = s.icon;
               return (
-                <div key={s.id} className={`relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${isActive ? 'bg-primary-500/10 border border-primary-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'opacity-40 grayscale filter'}`}>
+                <div key={s.id} className={`relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${isActive ? 'bg-primary-500/10 border-primary-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'opacity-40 grayscale filter'}`}>
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-primary-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-slate-500'}`}>
                     {isDone ? <HiOutlineCheckCircle className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
                   </div>
@@ -581,7 +607,7 @@ export default function HackathonImport() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.02]">
-                          {previewData.map((row, i) => (
+                           {previewData.slice(0, 5).map((row, i) => (
                             <tr key={i} className="hover:bg-white/[0.01] transition-all">
                               {headers.map(h => (
                                 <td key={h} className="px-5 py-3 text-[10px] text-slate-400 font-bold tracking-tight whitespace-nowrap">{row[h] || '—'}</td>
@@ -675,7 +701,7 @@ export default function HackathonImport() {
                      <div className="space-y-4">
                         <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">File:</span>
-                           <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate max-w-[100px]">{file.name}</span>
+                           <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate max-w-[100px]">{file?.name || 'Unknown'}</span>
                         </div>
                      </div>
                      
@@ -691,7 +717,7 @@ export default function HackathonImport() {
                         >
                           <HiOutlineDatabase className="w-5 h-5" /> START IMPORT
                         </button>
-                        <button onClick={resetImportState} className="btn-outline w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em]">Reset</button>
+                        <button onClick={resetImportState} className="btn-outline w-full py-4 text-[11px] font-bold uppercase tracking-wider">Reset</button>
                      </div>
                    </div>
                 </div>
@@ -700,6 +726,9 @@ export default function HackathonImport() {
           </div>
         </div>
       )}
+
+      {/* Spacing element at bottom */}
+      <div className="h-20"></div>
 
       <ConfirmWithPassword
         open={confirmModal.open}
