@@ -81,7 +81,7 @@ function cellText(cell) {
 }
 
 /** Parse spreadsheet -> array of person-row objects */
-async function parseSpreadsheet(filePath) {
+async function parseSpreadsheet(filePath, shouldDelete = true) {
   const ext = path.extname(filePath).toLowerCase();
   const wb  = new ExcelJS.Workbook();
   if (ext === '.csv') await wb.csv.readFile(filePath);
@@ -92,26 +92,35 @@ async function parseSpreadsheet(filePath) {
 
   const rows = [];
   let headerMap = null;
+  let rawHeaders = [];
 
   ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
     const cells = Array.isArray(row.values) ? row.values.slice(1) : [];
-    if (rowNumber === 1) { headerMap = buildHeaderMap(cells); return; }
+    if (rowNumber === 1) {
+      headerMap = buildHeaderMap(cells);
+      rawHeaders = cells.map(c => cellText(c));
+      return;
+    }
     if (!headerMap) return;
 
     const obj = {};
     cells.forEach((cell, idx) => {
       const field = headerMap[idx];
       if (field) obj[field] = cellText(cell);
+      // Also store raw values for custom mapping usage if needed
+      obj[`raw_${idx}`] = cellText(cell);
     });
 
     if (Object.values(obj).some((v) => v !== '')) {
-      rows.push({ ...obj, _row: rowNumber });
+      rows.push({ ...obj, _row: rowNumber, _rawValues: cells.map(c => cellText(c)) });
     }
   });
 
   if (!headerMap) throw new AppError('Could not read header row', 400, 'MISSING_HEADER');
-  try { fs.unlinkSync(filePath); } catch { /* best effort */ }
-  return rows;
+  if (shouldDelete) {
+    try { fs.unlinkSync(filePath); } catch { /* best effort */ }
+  }
+  return { rows, headers: rawHeaders };
 }
 
 /**
@@ -164,6 +173,55 @@ function buildMemberData(row, roleLabel = 'member') {
 // ─── Default password ────────────────────────────────────────────────────────
 const DEFAULT_PASSWORD = process.env.HACKATHON_DEFAULT_PASSWORD || 'Lakshya@2025';
 
+// ─── Phase 1: Parse ──────────────────────────────────────────────────────────
+const getHeadersAndPreview = async (filePath) => {
+  const { rows, headers } = await parseSpreadsheet(filePath, false); // don't delete yet
+  const preview = rows.slice(0, 5).map(r => {
+    const p = {};
+    headers.forEach((h, i) => { p[h] = r._rawValues[i] || ''; });
+    return p;
+  });
+  return { headers, preview };
+};
+
+// ─── Phase 2: Validate ───────────────────────────────────────────────────────
+const validateImportData = async (filePath, mappings) => {
+  const { rows, headers } = await parseSpreadsheet(filePath, false); // don't delete yet
+  
+  const mappedRows = rows.map(r => {
+    const mapped = { _row: r._row };
+    Object.entries(mappings).forEach(([header, field]) => {
+      const idx = headers.indexOf(header);
+      if (idx !== -1) mapped[field] = r._rawValues[idx];
+    });
+    return mapped;
+  });
+
+  const validNodesPreview = [];
+  let validCount = 0;
+  let invalidCount = 0;
+  let duplicateCount = 0;
+
+  for (const row of mappedRows) {
+    if (row.email && row.teamName && row.name) {
+      validCount++;
+      if (validNodesPreview.length < 10) {
+        validNodesPreview.push({
+          name: row.name,
+          teamName: row.teamName,
+          email: row.email
+        });
+      }
+    } else {
+      invalidCount++;
+    }
+  }
+
+  return { validCount, invalidCount, duplicateCount, validNodesPreview };
+};
+
+// ─── Phase 3: Execute ────────────────────────────────────────────────────────
+
 // ─── importTeams ─────────────────────────────────────────────────────────────
 /**
  * @param {string} filePath      - uploaded spreadsheet file path
@@ -172,26 +230,25 @@ const DEFAULT_PASSWORD = process.env.HACKATHON_DEFAULT_PASSWORD || 'Lakshya@2025
  * @param {string} adminId       - importing admin's ObjectId
  */
 const importTeams = async (filePath, eventId, defaultStatus, adminId) => {
+  const { rows: allRows } = await parseSpreadsheet(filePath);
+  if (allRows.length === 0) throw new AppError('Spreadsheet has no data rows', 400, 'NO_DATA_ROWS');
+
   // Resolve the hackathon event — either by explicit ID or auto-detect
   let event;
   if (eventId && eventId !== 'hackathon') {
     event = await Event.findById(eventId).catch(() => null);
   }
   if (!event) {
-    // Auto-detect: find event whose title or slug contains "hackathon"
     event = await Event.findOne({
-      $or: [
-        { title: { $regex: /hackathon/i } },
-        { slug:  { $regex: /hackathon/i } },
-      ],
+      $or: [{ title: { $regex: /hackathon/i } }, { slug: { $regex: /hackathon/i } }],
     });
   }
-  if (!event) throw new AppError('Hackathon event not found. Create it in Events first.', 404, 'EVENT_NOT_FOUND');
+  if (!event) throw new AppError('Hackathon event not found', 404, 'EVENT_NOT_FOUND');
 
+  return processImportRows(allRows, event, defaultStatus, adminId);
+};
 
-  const allRows = await parseSpreadsheet(filePath);
-  if (allRows.length === 0) throw new AppError('Spreadsheet has no data rows', 400, 'NO_DATA_ROWS');
-
+const processImportRows = async (allRows, event, defaultStatus, adminId) => {
   const importBatch  = new Date().toISOString().slice(0, 16).replace('T', ' ');
   const passwordHash = await hashPassword(DEFAULT_PASSWORD);
   const summary      = { created: 0, duplicates: 0, invalid: 0, errors: [], totalPersonRows: allRows.length };
@@ -652,4 +709,39 @@ const deleteBatch = async (importBatch, eventId, adminId, reqMeta = {}) => {
   return { deletedCount, total: teams.length, importBatch, errors };
 };
 
-module.exports = { importTeams, listTeams, getTeamDetail, promoteToSelected, suspendTeam, removeTeam, restoreTeam, listImportBatches, deleteTeam, deleteBatch };
+const finalizeImport = async (filePath, mappings, adminId) => {
+  const { rows, headers } = await parseSpreadsheet(filePath, true); // final step, delete file
+  
+  // Resolve hackathon event
+  const event = await Event.findOne({
+    $or: [{ title: { $regex: /hackathon/i } }, { slug: { $regex: /hackathon/i } }]
+  });
+  if (!event) throw new AppError('Hackathon event not found', 404);
+
+  const mappedRows = rows.map(r => {
+    const mapped = { _row: r._row };
+    Object.entries(mappings).forEach(([header, field]) => {
+      const idx = headers.indexOf(header);
+      if (idx !== -1) mapped[field] = r._rawValues[idx];
+    });
+    return mapped;
+  });
+
+  return processImportRows(mappedRows, event, 'selected', adminId);
+};
+
+module.exports = { 
+  importTeams, 
+  getHeadersAndPreview, 
+  validateImportData,
+  finalizeImport,
+  listTeams, 
+  getTeamDetail, 
+  promoteToSelected, 
+  suspendTeam, 
+  removeTeam, 
+  restoreTeam, 
+  listImportBatches, 
+  deleteTeam, 
+  deleteBatch 
+};

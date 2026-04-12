@@ -1,5 +1,6 @@
 const hackathonService = require('../services/hackathonService');
 const asyncHandler     = require('../utils/asyncHandler');
+const path             = require('path');
 
 /** POST /api/hackathon/import  — upload + parse + import */
 exports.importTeams = asyncHandler(async (req, res) => {
@@ -23,6 +24,41 @@ exports.importTeams = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({ success: true, data: summary });
+});
+
+/** POST /api/hackathon/import-parse — handles file upload + preview */
+exports.importParse = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded', errorCode: 'NO_FILE' });
+  }
+  
+  const result = await hackathonService.getHeadersAndPreview(req.file.path);
+  res.json({ 
+    success: true, 
+    data: { 
+      headers: result.headers, 
+      preview: result.preview, 
+      tempFileName: req.file.filename // Send unique name back
+    } 
+  });
+});
+
+/** POST /api/hackathon/import-validate — validates based on mappings */
+exports.importValidate = asyncHandler(async (req, res) => {
+  const { fileName, mappings } = req.body;
+  const filePath = path.join(__dirname, '..', '..', 'uploads', 'hackathon', fileName);
+  
+  const result = await hackathonService.validateImportData(filePath, mappings);
+  res.json({ success: true, data: result });
+});
+
+/** POST /api/hackathon/import-execute — final import */
+exports.importExecute = asyncHandler(async (req, res) => {
+  const { fileName, mappings } = req.body;
+  const filePath = path.join(__dirname, '..', '..', 'uploads', 'hackathon', fileName);
+
+  const result = await hackathonService.finalizeImport(filePath, mappings, req.user.id);
+  res.status(201).json({ success: true, data: { importedCount: result.created } });
 });
 
 /** GET /api/hackathon/teams  — list with filters */

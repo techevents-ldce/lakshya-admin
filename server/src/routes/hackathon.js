@@ -3,6 +3,7 @@ const router     = express.Router();
 const protect    = require('../middleware/auth');
 const authorize  = require('../middleware/authorize');
 const uploadSpreadsheet = require('../middleware/uploadSpreadsheet');
+const verifyAdminPassword = require('../middleware/verifyAdminPassword');
 const hackathonController = require('../controllers/hackathonController');
 
 // All hackathon routes are superadmin-only
@@ -24,6 +25,9 @@ router.use(protect, superadminOnly);
 
 // ── Import ──────────────────────────────────────────────────────────────────
 router.post('/import', uploadSpreadsheet.single('file'), hackathonController.importTeams);
+router.post('/import-parse', uploadSpreadsheet.single('file'), hackathonController.importParse);
+router.post('/import-validate', hackathonController.importValidate);
+router.post('/import-execute', verifyAdminPassword, hackathonController.importExecute);
 
 // ── List & Detail ────────────────────────────────────────────────────────────
 router.get('/teams',          hackathonController.listTeams);

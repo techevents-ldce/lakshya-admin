@@ -37,11 +37,19 @@ const STEPS = [
 ];
 
 const COLUMN_OPTIONS = [
-  { value: 'email', label: 'Email', required: true },
-  { value: 'name', label: 'Full Name', required: true },
-  { value: 'phone', label: 'Phone Number', required: true },
-  { value: 'teamName', label: 'Team Name', required: true },
-  { value: 'college', label: 'College', required: true },
+  { value: 'email',        label: 'Email',          required: true },
+  { value: 'name',         label: 'Full Name',      required: true },
+  { value: 'phone',        label: 'Phone Number',   required: true },
+  { value: 'teamName',     label: 'Team Name',      required: true },
+  { value: 'collegeName',  label: 'College',        required: true },
+  { value: 'teamRole',     label: 'Team Role',      required: false },
+  { value: 'unstopTeamId', label: 'Unstop Team ID', required: false },
+  { value: 'status',       label: 'Selection Status', required: false },
+  { value: 'gender',       label: 'Gender',         required: false },
+  { value: 'department',   label: 'Department',     required: false },
+  { value: 'year',         label: 'Year of Study',  required: false },
+  { value: 'linkedin',     label: 'LinkedIn URL',   required: false },
+  { value: 'github',       label: 'GitHub URL',     required: false },
 ];
 
 const SELECTION_STATUS_CONFIG = {
@@ -58,6 +66,7 @@ export default function HackathonImport() {
   
   const [step, setStep] = useState('upload');
   const [file, setFile] = useState(null);
+  const [tempFileName, setTempFileName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [headers, setHeaders] = useState([]);
@@ -178,6 +187,7 @@ export default function HackathonImport() {
       
       setHeaders(data.data.headers);
       setPreviewData(data.data.preview);
+      setTempFileName(data.data.tempFileName);
       
       const initialMappings = {};
       data.data.headers.forEach(header => {
@@ -225,7 +235,7 @@ export default function HackathonImport() {
       const { data } = await api.post('/hackathon/import-validate', {
         headers,
         mappings,
-        fileName: file.name
+        fileName: tempFileName
       });
       setValidationResults(data.data);
       setStep('verification');
@@ -242,7 +252,7 @@ export default function HackathonImport() {
       const { data } = await api.post('/hackathon/import-execute', {
         adminPassword: password,
         mappings,
-        fileName: file.name
+        fileName: tempFileName
       });
       toast.success(`Import successful: ${data.data.importedCount} teams imported`);
       resetImportState();
@@ -262,6 +272,7 @@ export default function HackathonImport() {
     setMappings({});
     setPreviewData([]);
     setValidationResults(null);
+    setTempFileName('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -503,6 +514,33 @@ export default function HackathonImport() {
             {step === 'mapping' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
+                  {/* Mapping Info & Password */}
+                  <div className="bg-primary-500/5 border border-primary-500/20 rounded-2xl p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <h4 className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-widest">
+                          <HiOutlineExclamationCircle className="w-4 h-4" /> Required Mapping
+                        </h4>
+                        <p className="text-[10px] text-slate-400 leading-relaxed font-medium uppercase tracking-tight">
+                          Email, Name, Phone, Team Name, and College are mandatory for successful import.
+                        </p>
+                      </div>
+                      <div className="space-y-2 md:border-l md:border-white/10 md:pl-6">
+                        <h4 className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-widest">
+                          <HiOutlineShieldCheck className="w-4 h-4" /> Default Password
+                        </h4>
+                        <div className="flex items-center gap-3">
+                          <code className="bg-blue-500/10 px-3 py-1.5 rounded-lg text-white font-mono text-xs border border-blue-500/30">
+                            Lakshya@2025
+                          </code>
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
+                            For new accounts
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="card space-y-6 border-slate-700/30">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -557,16 +595,18 @@ export default function HackathonImport() {
                 </div>
 
                 <div className="space-y-6">
-                  <div className="card border-slate-700/30 space-y-6">
+                  <div className="card mb-6 border-slate-700/30 space-y-6">
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                       <HiOutlineInformationCircle className="w-4 h-4 text-primary-400" /> Import Rules
                     </h3>
                     <div className="space-y-4">
                        <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
-                          <p className="text-[10px] font-black text-orange-200 uppercase tracking-widest mb-1">Required Columns:</p>
-                          <p className="text-[9px] text-orange-300 font-bold uppercase tracking-tight leading-relaxed">
-                            Full Name, Email, Phone, Team Name, and College must be mapped correctly.
-                          </p>
+                          <p className="text-[10px] font-black text-orange-200 uppercase tracking-widest mb-1">Mapping Guide:</p>
+                          <ul className="text-[9px] text-orange-300 font-bold uppercase tracking-tight space-y-2 list-disc pl-4">
+                            <li>Groups rows by Team Name</li>
+                            <li>leader role initiates registration</li>
+                            <li>member role adds to Team Members</li>
+                          </ul>
                        </div>
                     </div>
                     <button
@@ -671,14 +711,26 @@ export default function HackathonImport() {
         variant={confirmModal.variant === 'danger' ? 'danger' : 'warning'}
       />
 
+      <div className="mb-6">
+        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
+          <HiOutlineInformationCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-blue-100 font-medium">Default Participant Password</p>
+            <p className="text-xs text-blue-200/70 mt-1">
+              New accounts will be created with: <code className="bg-blue-500/20 px-1.5 py-0.5 rounded text-white font-mono">Lakshya@2025</code>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <ConfirmWithPassword
         open={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={executeImport}
-        title="Confirm Data Import"
-        message={`You are about to import ${validationResults?.validCount} teams into the hackathon database.`}
-        confirmLabel="AUTHORIZE IMPORT"
-        variant="danger"
+        title="Finalize Data Import"
+        message={`This will create/update up to ${validationResults?.validCount} records. This action is recorded in the audit logs.`}
+        confirmLabel="Execute Import"
+        loading={importing}
       />
     </div>
   );
