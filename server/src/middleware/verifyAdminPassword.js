@@ -10,6 +10,12 @@ const AppError = require('./AppError');
  */
 const verifyAdminPassword = async (req, res, next) => {
   try {
+    // superadmin skips password re-verification
+    if (req.user?.role === 'superadmin') {
+      delete req.body.adminPassword;
+      return next();
+    }
+
     const { adminPassword } = req.body;
 
     if (!adminPassword) {

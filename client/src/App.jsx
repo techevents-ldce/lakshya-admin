@@ -41,8 +41,20 @@ export default function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          duration: 3000,
-          style: { borderRadius: '10px', background: '#1e293b', color: '#f1f5f9' },
+          duration: 4000,
+          style: { 
+            borderRadius: '20px', 
+            background: 'rgba(15, 23, 42, 0.9)', 
+            color: '#f8fafc',
+            border: '1px solid rgba(51, 65, 85, 0.5)',
+            backdropFilter: 'blur(16px)',
+            fontSize: '12px',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            padding: '16px 24px',
+            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+          },
         }}
       />
       <Routes>

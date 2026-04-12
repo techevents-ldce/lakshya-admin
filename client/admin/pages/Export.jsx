@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlineDocumentDownload, HiOutlineFilter, HiOutlineCalendar, HiOutlineUsers, HiOutlineTicket, HiOutlineCreditCard, HiOutlineClipboardCheck, HiOutlineReceiptTax } from 'react-icons/hi';
+import { 
+  HiOutlineDocumentDownload, 
+  HiOutlineFilter, 
+  HiOutlineCalendar, 
+  HiOutlineUsers, 
+  HiOutlineTicket, 
+  HiOutlineCreditCard, 
+  HiOutlineClipboardCheck, 
+  HiOutlineReceiptTax,
+  HiOutlineSearch,
+  HiOutlineArrowRight,
+  HiOutlineClock
+} from 'react-icons/hi';
 
 const EXPORT_TYPES = [
   {
     key: 'participants',
     label: 'Participants',
-    description: 'All registered participants with personal details, college, branch, year',
+    description: 'All registered participants with personal details, college, and year',
     icon: HiOutlineUsers,
-    color: 'bg-blue-500',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10 border-blue-500/30',
     supportsEvent: true,
     supportsStatus: true,
     supportsDateRange: true,
@@ -18,9 +31,10 @@ const EXPORT_TYPES = [
   {
     key: 'payments',
     label: 'Payments',
-    description: 'Payment records with transaction IDs, amounts, statuses',
+    description: 'Payment records with transaction IDs, amounts, and statuses',
     icon: HiOutlineCreditCard,
-    color: 'bg-emerald-500',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10 border-emerald-500/30',
     supportsEvent: true,
     supportsStatus: true,
     supportsDateRange: true,
@@ -31,7 +45,8 @@ const EXPORT_TYPES = [
     label: 'Orders',
     description: 'Full order data with Razorpay IDs for reconciliation',
     icon: HiOutlineReceiptTax,
-    color: 'bg-purple-500',
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/10 border-purple-500/30',
     supportsEvent: false,
     supportsStatus: true,
     supportsDateRange: true,
@@ -40,9 +55,10 @@ const EXPORT_TYPES = [
   {
     key: 'attendance',
     label: 'Attendance',
-    description: 'Checked-in participants (used tickets) with timestamps',
+    description: 'Checked-in participants (used tickets) with scan times',
     icon: HiOutlineClipboardCheck,
-    color: 'bg-teal-500',
+    color: 'text-teal-400',
+    bg: 'bg-teal-500/10 border-teal-500/30',
     supportsEvent: true,
     supportsStatus: false,
     supportsDateRange: true,
@@ -51,9 +67,10 @@ const EXPORT_TYPES = [
   {
     key: 'tickets',
     label: 'Tickets',
-    description: 'All issued tickets with QR status and scan times',
+    description: 'All issued tickets with QR status and registration details',
     icon: HiOutlineTicket,
-    color: 'bg-indigo-500',
+    color: 'text-indigo-400',
+    bg: 'bg-indigo-500/10 border-indigo-500/30',
     supportsEvent: true,
     supportsStatus: true,
     supportsDateRange: true,
@@ -111,7 +128,7 @@ export default function Export() {
         if (err.response.status === 404) isNoData = true;
       }
       if (isNoData) {
-        toast('No data available matching your filters', { icon: 'ℹ️' });
+        toast('No data found for these filters', { icon: 'ℹ️' });
       } else {
         toast.error(msg);
       }
@@ -119,17 +136,20 @@ export default function Export() {
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Data Export</h1>
-        <p className="text-sm text-gray-500 mt-1">Export filtered data as CSV or Excel</p>
+    <div className="animate-fade-in space-y-8">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">Export</h1>
+          <p className="text-slate-500 font-medium">Download participant, payment, and event data</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Export Type Selection */}
-        <div className="lg:col-span-1">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Select Data Type</h3>
-          <div className="space-y-2">
+        <div className="lg:col-span-1 space-y-4">
+          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2 mb-4">What to export?</h3>
+          <div className="space-y-3">
             {EXPORT_TYPES.map((type) => {
               const Icon = type.icon;
               const isSelected = selectedType?.key === type.key;
@@ -137,21 +157,22 @@ export default function Export() {
                 <button
                   key={type.key}
                   onClick={() => { setSelectedType(type); setStatus(''); }}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                  className={`w-full text-left p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
                     isSelected
-                      ? 'border-primary-500 bg-primary-50 shadow-md'
-                      : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                      ? 'bg-primary-500 border-primary-500 shadow-xl shadow-primary-900/40 text-white translate-x-1'
+                      : 'bg-slate-900/40 border-slate-700/30 text-slate-400 hover:border-slate-500/50 hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`${type.color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <Icon className="w-5 h-5 text-white" />
+                  <div className="flex items-start gap-4 relative z-10">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-500 group-hover:text-primary-400'}`}>
+                      <Icon className="w-6 h-6" />
                     </div>
                     <div className="min-w-0">
-                      <p className={`font-semibold text-sm ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}>{type.label}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{type.description}</p>
+                      <p className="font-black text-sm uppercase tracking-tight">{type.label}</p>
+                      <p className={`text-[10px] mt-1.5 font-bold uppercase tracking-tight leading-relaxed ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>{type.description}</p>
                     </div>
                   </div>
+                  {isSelected && <HiOutlineArrowRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 opacity-40 animate-pulse" />}
                 </button>
               );
             })}
@@ -161,114 +182,128 @@ export default function Export() {
         {/* Right: Filters + Export */}
         <div className="lg:col-span-2">
           {!selectedType ? (
-            <div className="card text-center py-16 text-gray-400">
-              <HiOutlineFilter className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-lg font-medium">Select a data type to configure filters</p>
-              <p className="text-sm mt-1">Choose from the options on the left to get started</p>
+            <div className="card h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 bg-slate-900/40 border-slate-700/30 backdrop-blur-xl border-dashed border-2">
+              <div className="w-20 h-20 rounded-3xl bg-slate-800 flex items-center justify-center mb-6 text-slate-600">
+                <HiOutlineSearch className="w-10 h-10" />
+              </div>
+              <h3 className="text-xl font-black text-white uppercase tracking-tighter">Choose what to export</h3>
+              <p className="text-sm text-slate-500 mt-2 font-medium">Select a category from the left to configure your filters.</p>
             </div>
           ) : (
-            <div className="card space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className={`${selectedType.color} w-10 h-10 rounded-lg flex items-center justify-center`}>
-                  <selectedType.icon className="w-5 h-5 text-white" />
+            <div className="card space-y-8 animate-scale-in bg-slate-900/40 border-slate-700/30 backdrop-blur-xl p-8 relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 blur-[100px] pointer-events-none"></div>
+
+              <div className="flex items-center gap-4 pb-6 border-b border-white/[0.05]">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-primary-500 text-white shadow-xl shadow-primary-900/40`}>
+                  <selectedType.icon className="w-7 h-7" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Export {selectedType.label}</h3>
-                  <p className="text-xs text-gray-500">{selectedType.description}</p>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Export {selectedType.label}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Configure filters & format</p>
                 </div>
               </div>
 
-              {/* Event Filter */}
-              {selectedType.supportsEvent && (
-                <div>
-                  <label className="label flex items-center gap-1.5">
-                    <HiOutlineCalendar className="w-4 h-4 text-gray-400" /> Event
-                  </label>
-                  <select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} className="input-field">
-                    <option value="">All Events</option>
-                    {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-                  </select>
-                  <p className="text-xs text-gray-400 mt-1">Leave blank to export data for all events</p>
-                </div>
-              )}
-
-              {/* Status Filter */}
-              {selectedType.supportsStatus && selectedType.statusOptions.length > 0 && (
-                <div>
-                  <label className="label">Status Filter</label>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setStatus('')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                        !status ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >All</button>
-                    {selectedType.statusOptions.map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => setStatus(s)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors capitalize ${
-                          status === s ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                        }`}
-                      >{s}</button>
-                    ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Event Filter */}
+                {selectedType.supportsEvent && (
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <HiOutlineCalendar className="w-4 h-4 text-primary-400" /> Filter by Event
+                    </label>
+                    <select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} className="input-field">
+                      <option value="" className="bg-slate-900">All Events</option>
+                      {events.map((ev) => <option key={ev._id} value={ev._id} className="bg-slate-900">{ev.title}</option>)}
+                    </select>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Status Filter */}
+                {selectedType.supportsStatus && selectedType.statusOptions.length > 0 && (
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                       <HiOutlineFilter className="w-4 h-4 text-emerald-400" /> Filter by Status
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setStatus('')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                          !status ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-900/40' : 'bg-slate-900 text-slate-500 border-slate-800 hover:border-slate-600'
+                        }`}
+                      >All</button>
+                      {selectedType.statusOptions.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setStatus(s)}
+                          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all capitalize ${
+                            status === s ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-900/40' : 'bg-slate-900 text-slate-500 border-slate-800 hover:border-slate-600'
+                          }`}
+                        >{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Date Range */}
               {selectedType.supportsDateRange && (
-                <div>
-                  <label className="label">Date Range</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1 block">From</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                     <HiOutlineClock className="w-4 h-4 text-amber-400" /> Filter by Date
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-1">From</span>
                       <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input-field" />
                     </div>
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1 block">To</label>
+                    <div className="space-y-1">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-1">To</span>
                       <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input-field" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Leave blank for all-time data</p>
                 </div>
               )}
 
               {/* Format */}
-              <div>
-                <label className="label">Format</label>
-                <div className="flex gap-3">
-                  <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border-2 transition-colors ${format === 'csv' ? 'border-primary-500 bg-primary-50' : 'border-gray-100'}`}>
-                    <input type="radio" name="format" value="csv" checked={format === 'csv'} onChange={() => setFormat('csv')} className="text-primary-600" />
-                    <div><span className="text-sm font-medium">CSV</span><p className="text-[10px] text-gray-400">Comma-separated (opens in any spreadsheet)</p></div>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Format</label>
+                <div className="flex gap-4">
+                  <label className={`flex-1 flex items-center gap-4 cursor-pointer p-4 rounded-2xl border-2 transition-all group ${format === 'csv' ? 'border-primary-500 bg-primary-500/5' : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'}`}>
+                    <input type="radio" name="format" value="csv" checked={format === 'csv'} onChange={() => setFormat('csv')} className="w-5 h-5 text-primary-500 focus:ring-primary-500/20 bg-slate-950 border-slate-700" />
+                    <div>
+                      <span className="text-sm font-black text-white uppercase tracking-tight">CSV</span>
+                      <p className="text-[8px] text-slate-600 font-black uppercase tracking-widest mt-1">Comma-separated</p>
+                    </div>
                   </label>
-                  <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border-2 transition-colors ${format === 'excel' ? 'border-primary-500 bg-primary-50' : 'border-gray-100'}`}>
-                    <input type="radio" name="format" value="excel" checked={format === 'excel'} onChange={() => setFormat('excel')} className="text-primary-600" />
-                    <div><span className="text-sm font-medium">Excel</span><p className="text-[10px] text-gray-400">Native .xlsx with formatted columns</p></div>
+                  <label className={`flex-1 flex items-center gap-4 cursor-pointer p-4 rounded-2xl border-2 transition-all group ${format === 'excel' ? 'border-primary-500 bg-primary-500/5' : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'}`}>
+                    <input type="radio" name="format" value="excel" checked={format === 'excel'} onChange={() => setFormat('excel')} className="w-5 h-5 text-primary-500 focus:ring-primary-500/20 bg-slate-950 border-slate-700" />
+                    <div>
+                      <span className="text-sm font-black text-white uppercase tracking-tight">Excel</span>
+                      <p className="text-[8px] text-slate-600 font-black uppercase tracking-widest mt-1">Native XLSX format</p>
+                    </div>
                   </label>
                 </div>
               </div>
 
               {/* Summary & Download */}
-              <div className="pt-4 border-t border-gray-100">
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Export Summary</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                    <div><span className="text-gray-400 text-xs block">Type</span><span className="font-medium">{selectedType.label}</span></div>
-                    <div><span className="text-gray-400 text-xs block">Event</span><span className="font-medium">{selectedEvent ? events.find((e) => e._id === selectedEvent)?.title : 'All'}</span></div>
-                    <div><span className="text-gray-400 text-xs block">Status</span><span className="font-medium capitalize">{status || 'All'}</span></div>
-                    <div><span className="text-gray-400 text-xs block">Date</span><span className="font-medium">{dateFrom || dateTo ? `${dateFrom || '...'} → ${dateTo || '...'}` : 'All time'}</span></div>
+              <div className="pt-8 border-t border-white/[0.05]">
+                <div className="bg-white/[0.02] rounded-2xl p-6 mb-8 border border-white/[0.05]">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Summary</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-[10px]">
+                    <div><span className="text-slate-600 font-bold uppercase block mb-1">Type</span><span className="text-white font-black uppercase tracking-tighter">{selectedType.label}</span></div>
+                    <div><span className="text-slate-600 font-bold uppercase block mb-1">Event</span><span className="text-white font-black uppercase tracking-tighter">{selectedEvent ? events.find((e) => e._id === selectedEvent)?.title : 'All'}</span></div>
+                    <div><span className="text-slate-600 font-bold uppercase block mb-1">Status</span><span className="text-white font-black uppercase tracking-tighter capitalize">{status || 'All'}</span></div>
+                    <div><span className="text-slate-600 font-bold uppercase block mb-1">Date</span><span className="text-white font-black uppercase tracking-tighter">{dateFrom || dateTo ? `${dateFrom || '...'} → ${dateTo || '...'}` : 'All time'}</span></div>
                   </div>
                 </div>
                 <button
                   onClick={download}
                   disabled={downloading}
-                  className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary-900/40 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   {downloading ? (
-                    <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Exporting...</>
+                    <><HiOutlineClock className="w-5 h-5 animate-spin" /> DOWNLOADING...</>
                   ) : (
-                    <><HiOutlineDocumentDownload className="w-5 h-5" /> Export {selectedType.label} ({format.toUpperCase()})</>
+                    <><HiOutlineDocumentDownload className="w-6 h-6" /> Export {selectedType.label} (.{format === 'excel' ? 'xlsx' : 'csv'})</>
                   )}
                 </button>
               </div>

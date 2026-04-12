@@ -1,852 +1,685 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import api from '../../src/services/api';
+import { useState, useRef, useEffect, useCallback, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  HiOutlineUpload, HiOutlineRefresh, HiOutlineSearch,
-  HiOutlineCheckCircle, HiOutlineBan, HiOutlineTrash,
-  HiOutlineArrowCircleUp, HiOutlineInformationCircle,
-  HiOutlineDocumentText, HiOutlineChevronDown, HiOutlineChevronUp,
-  HiOutlineX, HiOutlineExclamation, HiOutlineLightningBolt,
+  HiOutlineUpload,
+  HiOutlineDatabase,
+  HiOutlineCheckCircle,
+  HiOutlineExclamationCircle,
+  HiOutlineTrash,
+  HiOutlineRefresh,
+  HiOutlineChevronRight,
+  HiOutlineChevronLeft,
+  HiOutlineX,
+  HiOutlineSearch,
+  HiOutlineInformationCircle,
+  HiOutlineShieldCheck,
+  HiOutlineChip,
+  HiOutlineBeaker,
+  HiOutlineFolderOpen,
+  HiOutlineUserGroup,
+  HiOutlineFilter,
+  HiOutlineTrendingUp,
+  HiOutlineBan,
+  HiOutlineTrash as HiOutlineTrashAlternative,
+  HiOutlineDotsHorizontal,
+  HiOutlinePhone,
 } from 'react-icons/hi';
+import api from '../services/api';
 import toast from 'react-hot-toast';
+import ConfirmWithPassword from '../components/ConfirmWithPassword';
+import { useAuth } from '../context/AuthContext';
 
-// ─── Status helpers ───────────────────────────────────────────────────────────
-const STATUS_META = {
-  selected:   { label: 'Selected',  color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30' },
-  waitlisted: { label: 'Waitlist',  color: 'text-amber-400',   bg: 'bg-amber-500/10   border-amber-500/30'   },
-  suspended:  { label: 'Suspended', color: 'text-orange-400',  bg: 'bg-orange-500/10  border-orange-500/30'  },
-  removed:    { label: 'Removed',   color: 'text-red-400',     bg: 'bg-red-500/10     border-red-500/30'     },
-};
-const StatusBadge = ({ status }) => {
-  const m = STATUS_META[status] || { label: status, color: 'text-slate-400', bg: 'bg-slate-500/10 border-slate-500/30' };
-  return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${m.bg} ${m.color}`}>{m.label}</span>;
-};
-const PayBadge = ({ paid }) => paid
-  ? <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">Paid</span>
-  : <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 border border-slate-500/30 text-slate-400">Unpaid</span>;
-
-// ─── Column reference data ────────────────────────────────────────────────────
-const ALL_COLUMNS = [
-  { col: 'teamName',     cat: 'Team',     req: true,  desc: 'All rows with same teamName form one team' },
-  { col: 'teamRole',     cat: 'Team',     req: true,  desc: '"leader" or "member" — one leader per team required' },
-  { col: 'unstopTeamId', cat: 'Team',     req: false, desc: 'Unstop ID — used for grouping instead of teamName if set' },
-  { col: 'status',       cat: 'Team',     req: false, desc: '"selected" or "waitlisted" — overrides import toggle' },
-  { col: 'name',         cat: 'Personal', req: true,  desc: 'Full name of this person' },
-  { col: 'email',        cat: 'Personal', req: true,  desc: 'Email — login ID for leader; stored for members' },
-  { col: 'phone',        cat: 'Personal', req: false, desc: 'Mobile number' },
-  { col: 'gender',       cat: 'Personal', req: false, desc: 'Male / Female / Other' },
-  { col: 'collegeName',  cat: 'Academic', req: false, desc: 'College or university name' },
-  { col: 'department',   cat: 'Academic', req: false, desc: 'Branch / stream (e.g. "Computer Engineering")' },
-  { col: 'year',         cat: 'Academic', req: false, desc: 'Current year of study (1, 2, 3, 4…)' },
-  { col: 'linkedin',     cat: 'Profiles', req: false, desc: 'LinkedIn profile URL' },
-  { col: 'github',       cat: 'Profiles', req: false, desc: 'GitHub profile URL' },
+const STEPS = [
+  { id: 'upload', label: 'Upload File', icon: HiOutlineUpload },
+  { id: 'mapping', label: 'Map Columns', icon: HiOutlineChip },
+  { id: 'verification', label: 'Verify Data', icon: HiOutlineShieldCheck },
+  { id: 'import', label: 'Finalize Import', icon: HiOutlineDatabase }
 ];
 
-const CAT_COLORS = {
-  Team:     'bg-violet-500/20 text-violet-300 border-violet-500/30',
-  Personal: 'bg-sky-500/20    text-sky-300    border-sky-500/30',
-  Academic: 'bg-teal-500/20   text-teal-300   border-teal-500/30',
-  Profiles: 'bg-pink-500/20   text-pink-300   border-pink-500/30',
+const COLUMN_OPTIONS = [
+  { value: 'email', label: 'Email', required: true },
+  { value: 'name', label: 'Full Name', required: true },
+  { value: 'phone', label: 'Phone Number', required: true },
+  { value: 'teamName', label: 'Team Name', required: true },
+  { value: 'college', label: 'College', required: true },
+];
+
+const SELECTION_STATUS_CONFIG = {
+  selected: { label: 'Selected', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30' },
+  waitlisted: { label: 'Waitlisted', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30' },
+  suspended: { label: 'Suspended', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/30' },
+  removed: { label: 'Removed', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30' },
 };
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function HackathonImport() {
-  const [tab, setTab] = useState('import');
-  return (
-    <div className="text-slate-100">
-      {/* Page header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
-            <HiOutlineLightningBolt className="w-5 h-5 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white">Hackathon Management</h1>
-            <p className="text-slate-400 text-sm">Import shortlisted teams from Unstop &amp; manage payment access</p>
-          </div>
-        </div>
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [viewMode, setViewMode] = useState('manage'); 
+  
+  const [step, setStep] = useState('upload');
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [headers, setHeaders] = useState([]);
+  const [mappings, setMappings] = useState({});
+  const [previewData, setPreviewData] = useState([]);
+  const [validationResults, setValidationResults] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const fileInputRef = useRef(null);
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-slate-700/60 pb-0">
-          {[
-            { id: 'import', label: 'Import Teams', icon: '📥' },
-            { id: 'teams',  label: 'Manage Teams', icon: '🏆' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`px-5 py-2.5 text-sm font-medium -mb-px border-b-2 transition-colors ${
-                tab === t.id
-                  ? 'border-primary-400 text-primary-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+  const [teams, setTeams] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+  const [totalTeams, setTotalTeams] = useState(0);
+  const [teamPage, setTeamPage] = useState(1);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [batchFilter, setBatchFilter] = useState('');
+  const [expandedTeam, setExpandedTeam] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
 
-      {tab === 'import' ? <ImportTab /> : <TeamsTab />}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// IMPORT TAB
-// ═══════════════════════════════════════════════════════════════════════════════
-function ImportTab() {
-  const [hackathonEvent, setHackathonEvent] = useState(null); // auto-detected
-  const [eventError, setEventError]         = useState('');
-  const [defaultStatus, setDefaultStatus]   = useState('selected');
-  const [file, setFile]                     = useState(null);
-  const [dragging, setDragging]             = useState(false);
-  const [loading, setLoading]               = useState(false);
-  const [result, setResult]                 = useState(null);
-  const [showFormat, setShowFormat]         = useState(false);
-  const fileRef                             = useRef();
-
-  // Auto-detect the hackathon event — no dropdown needed, it's the flagship event
-  useEffect(() => {
-    api.get('/events?limit=100').then(({ data }) => {
-      const events = data.events || [];
-      const found  = events.find((e) =>
-        /hackathon/i.test(e.title) || /hackathon/i.test(e.slug)
-      );
-      if (found) {
-        setHackathonEvent(found);
-      } else {
-        setEventError('No Hackathon event found in the database. Please create it in Events first.');
-      }
-    }).catch(() => setEventError('Failed to load events.'));
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault(); setDragging(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) setFile(f);
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!hackathonEvent) return toast.error('Hackathon event not found — create it in Events first');
-    if (!file)           return toast.error('Please upload an Excel/CSV file');
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('eventId', hackathonEvent._id);
-    fd.append('defaultStatus', defaultStatus);
-    setLoading(true); setResult(null);
+  const fetchTeams = async () => {
+    if (viewMode !== 'manage') return;
+    setLoadingTeams(true);
     try {
-      const { data } = await api.post('/hackathon/import', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setResult(data.data);
-      toast.success(`Import complete — ${data.data.created} teams created`);
-      setFile(null);
-    } catch (err) {
-      toast.error(err.userMessage || 'Import failed');
-    } finally { setLoading(false); }
+      const params = { page: teamPage, limit: 15, search: teamSearch };
+      if (statusFilter) params.selectionStatus = statusFilter;
+      if (batchFilter) params.importBatch = batchFilter;
+      
+      const { data } = await api.get('/hackathon/teams', { params });
+      setTeams(data.teams || []);
+      setTotalTeams(data.total || 0);
+    } catch { toast.error('Failed to load hackathon teams'); }
+    finally { setLoadingTeams(false); }
   };
 
-  return (
-    <div className="max-w-4xl space-y-5">
-
-      {/* ── Import Card ───────────────────────────────────────────────────── */}
-      <div className="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 space-y-6">
-
-        {/* Hackathon event — auto-detected, not a dropdown */}
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
-          hackathonEvent
-            ? 'bg-emerald-500/5 border-emerald-500/20'
-            : eventError
-            ? 'bg-red-500/5 border-red-500/20'
-            : 'bg-slate-900 border-slate-700'
-        }`}>
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-            hackathonEvent ? 'bg-emerald-500/10' : eventError ? 'bg-red-500/10' : 'bg-slate-800'
-          }`}>
-            <HiOutlineLightningBolt className={`w-4 h-4 ${
-              hackathonEvent ? 'text-emerald-400' : eventError ? 'text-red-400' : 'text-slate-500 animate-pulse'
-            }`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            {hackathonEvent ? (
-              <>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Linked Event</p>
-                <p className="text-sm font-bold text-emerald-300">{hackathonEvent.title}</p>
-              </>
-            ) : eventError ? (
-              <>
-                <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">Event Not Found</p>
-                <p className="text-xs text-slate-400 mt-0.5">{eventError}</p>
-              </>
-            ) : (
-              <p className="text-sm text-slate-500">Detecting Hackathon event&hellip;</p>
-            )}
-          </div>
-          {hackathonEvent && (
-            <span className="text-[10px] font-mono text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded flex-shrink-0">
-              {hackathonEvent._id?.slice(-6)}
-            </span>
-          )}
-        </div>
-
-        {/* Step 1: Import type */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-200 mb-2">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary-600 text-white text-xs font-bold mr-2">1</span>
-            Import Type
-          </label>
-          <div className="grid grid-cols-2 gap-3 ml-7">
-            {[
-              { val: 'selected',   emoji: '✅', label: 'Selected Teams',   sub: 'Can pay immediately after import' },
-              { val: 'waitlisted', emoji: '⏳', label: 'Waitlist Teams',   sub: 'Blocked from paying until promoted' },
-            ].map((opt) => (
-              <button
-                key={opt.val}
-                onClick={() => setDefaultStatus(opt.val)}
-                className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
-                  defaultStatus === opt.val
-                    ? 'border-primary-500 bg-primary-500/10 ring-2 ring-primary-500/20'
-                    : 'border-slate-600 bg-slate-900 hover:border-slate-500'
-                }`}
-              >
-                <span className="text-xl mt-0.5">{opt.emoji}</span>
-                <div>
-                  <p className={`text-sm font-semibold ${defaultStatus === opt.val ? 'text-primary-300' : 'text-slate-300'}`}>
-                    {opt.label}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-0.5">{opt.sub}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-slate-500 mt-2 ml-7">
-            Per-team <code className="text-primary-300 bg-slate-900 px-1 rounded">status</code> column in the Excel overrides this setting.
-          </p>
-        </div>
-
-        {/* Step 3: File */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-200 mb-2">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary-600 text-white text-xs font-bold mr-2">2</span>
-            Upload Excel / CSV File
-          </label>
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`ml-7 border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-              dragging   ? 'border-primary-400 bg-primary-500/10 scale-[1.01]'
-              : file     ? 'border-emerald-500 bg-emerald-500/10'
-              : 'border-slate-600 hover:border-primary-500/50 hover:bg-slate-800 bg-slate-900'
-            }`}
-          >
-            {file ? (
-              <div className="flex items-center justify-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                  <HiOutlineCheckCircle className="w-6 h-6 text-emerald-400" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-emerald-300 text-sm">{file.name}</p>
-                  <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB · ready to import</p>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  className="ml-auto text-slate-500 hover:text-red-400 transition-colors p-1"
-                >
-                  <HiOutlineX className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto">
-                  <HiOutlineUpload className="w-6 h-6 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-slate-300 font-medium text-sm">Drop your file here, or click to browse</p>
-                  <p className="text-slate-500 text-xs mt-1">.xlsx · .xls · .csv — max 10 MB</p>
-                </div>
-              </div>
-            )}
-          </div>
-          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] || null)} />
-        </div>
-
-        {/* Submit */}
-        <div className="ml-7 pt-2 border-t border-slate-700/50">
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !file || !hackathonEvent}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-white text-sm transition-all shadow-lg shadow-primary-900/20"
-          >
-            {loading
-              ? <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />Processing…</>
-              : <><HiOutlineUpload className="w-4 h-4" />Run Import</>}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Import Result ─────────────────────────────────────────────────── */}
-      {result && <ImportResult result={result} />}
-
-      {/* ── Format Reference (collapsed by default) ───────────────────────── */}
-      <div className="bg-slate-800/30 border border-slate-700/40 rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setShowFormat((v) => !v)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-800/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <HiOutlineDocumentText className="w-5 h-5 text-slate-400" />
-            <span className="text-sm font-semibold text-slate-300">Excel / CSV Format Reference</span>
-            <span className="text-xs text-slate-500 hidden sm:block">— click to expand column guide &amp; example</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">13 columns</span>
-            {showFormat
-              ? <HiOutlineChevronUp className="w-4 h-4 text-slate-400" />
-              : <HiOutlineChevronDown className="w-4 h-4 text-slate-400" />}
-          </div>
-        </button>
-
-        {showFormat && (
-          <div className="border-t border-slate-700/40 p-6 space-y-6">
-
-            {/* How it works */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                { emoji: '1️⃣', title: 'One row per person', desc: 'Every team member, including the leader, needs their own row in the spreadsheet.' },
-                { emoji: '2️⃣', title: 'Group by teamName', desc: 'Rows sharing the same teamName (or unstopTeamId) are automatically grouped.' },
-                { emoji: '3️⃣', title: 'Mark the leader', desc: 'Exactly one row per team must have teamRole = "leader". Others are members.' },
-                { emoji: '4️⃣', title: 'Leader gets login', desc: "Only the leader's email creates a login account. Member data is stored as-is." },
-              ].map((c) => (
-                <div key={c.title} className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/40">
-                  <div className="text-2xl mb-2">{c.emoji}</div>
-                  <p className="text-sm font-semibold text-slate-200 mb-1">{c.title}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed">{c.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Unified column table */}
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">All Columns</p>
-              <div className="rounded-xl border border-slate-700/50 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-800/80">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 w-36">Column</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 w-24">Category</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 w-20">Required?</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700/30">
-                    {ALL_COLUMNS.map((c) => (
-                      <tr key={c.col} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs text-primary-300 font-semibold">{c.col}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold border ${CAT_COLORS[c.cat]}`}>
-                            {c.cat}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {c.req
-                            ? <span className="text-xs font-semibold text-red-400">✦ Yes</span>
-                            : <span className="text-xs text-slate-500">Optional</span>}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{c.desc}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* teamRole values */}
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs text-slate-400 font-semibold">teamRole values:</span>
-              {['leader','lead','captain','head'].map((v) => (
-                <code key={v} className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-lg text-xs">{v} → leader</code>
-              ))}
-              <code className="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2.5 py-1 rounded-lg text-xs">anything else → member</code>
-            </div>
-
-            {/* Example */}
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Example — 2 teams, 5 rows</p>
-              <div className="rounded-xl border border-slate-700/50 overflow-x-auto">
-                <table className="text-xs font-mono min-w-max">
-                  <thead className="bg-slate-800/80">
-                    <tr>
-                      {['teamName','teamRole','unstopTeamId','status','name','email','phone','gender','collegeName','department','year','linkedin','github'].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-left text-primary-300 font-semibold whitespace-nowrap border-b border-slate-700/50">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700/30">
-                    {[
-                      ['Team Alpha','leader','UST-10','selected',  'Ravi Sharma', 'ravi@ex.com', '9876543210','Male',  'LDCE',  'CE','3','linkedin.com/…','github.com/…'],
-                      ['Team Alpha','member','UST-10','',          'Priya Patel', 'priya@ex.com','9988776655','Female','LDCE',  'IT','3','',''],
-                      ['Team Alpha','member','UST-10','',          'Dev Modi',    'dev@ex.com',  '',          'Male',  'NIRMA', 'CE','2','','github.com/…'],
-                      ['Tech Wave', 'leader','UST-11','waitlisted','Ankit Shah',  'ankit@ex.com','9123456789','Male',  'SVNIT', 'EC','4','linkedin.com/…',''],
-                      ['Tech Wave', 'member','UST-11','',          'Mira Joshi',  'mira@ex.com', '',          'Female','SVNIT', 'IT','3','',''],
-                    ].map((row, i) => (
-                      <tr key={i} className={i < 3 ? 'bg-violet-950/20 hover:bg-violet-950/40' : 'bg-teal-950/20 hover:bg-teal-950/40'}>
-                        {row.map((v, vi) => (
-                          <td key={vi} className="px-3 py-2 whitespace-nowrap text-slate-400">
-                            {v === 'leader'     ? <span className="text-emerald-400 font-bold">{v}</span>
-                            : v === 'member'    ? <span className="text-amber-400">{v}</span>
-                            : v === 'selected'  ? <span className="text-emerald-400">{v}</span>
-                            : v === 'waitlisted'? <span className="text-amber-400">{v}</span>
-                            : v || <span className="text-slate-700">—</span>}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-2 space-y-1 text-xs text-slate-500">
-                <p><span className="inline-block w-2.5 h-2.5 rounded-sm bg-violet-900 mr-1.5" />Rows 1–3: <code className="text-primary-300">teamName="Team Alpha"</code> → one team. Ravi is leader, Priya &amp; Dev are members.</p>
-                <p><span className="inline-block w-2.5 h-2.5 rounded-sm bg-teal-900 mr-1.5" />Rows 4–5: <code className="text-primary-300">teamName="Tech Wave"</code> → separate team, status "waitlisted".</p>
-              </div>
-            </div>
-
-            {/* Default password */}
-            <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
-              <HiOutlineInformationCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-200/80 space-y-1">
-                <p><strong className="text-amber-300">Default password</strong> for new leader accounts:{' '}
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300">Lakshya@2025</code>{' '}
-                  — configurable via server env <code className="bg-slate-900 px-1.5 py-0.5 rounded">HACKATHON_DEFAULT_PASSWORD</code>.</p>
-                <p>Column names are <strong>case-insensitive</strong> and accept variations (e.g. "mobile", "branch", "LinkedIn URL" all resolve correctly).</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Import result ────────────────────────────────────────────────────────────
-function ImportResult({ result }) {
-  const [showErrors, setShowErrors] = useState(false);
-  return (
-    <div className="bg-slate-800/50 border border-emerald-500/20 rounded-2xl p-6 space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-          <HiOutlineCheckCircle className="w-5 h-5 text-emerald-400" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-white">Import Complete</p>
-          <p className="text-xs text-slate-500">Batch: {result.importBatch}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {[
-          { label: 'Total Rows',  val: result.totalPersonRows, cls: 'border-slate-700' },
-          { label: 'Teams Found', val: result.totalTeams,      cls: 'border-violet-500/30 bg-violet-500/5' },
-          { label: 'Created',     val: result.created,         cls: 'border-emerald-500/30 bg-emerald-500/5' },
-          { label: 'Duplicates',  val: result.duplicates,      cls: 'border-amber-500/30  bg-amber-500/5'  },
-          { label: 'Invalid',     val: result.invalid,         cls: 'border-red-500/30    bg-red-500/5'    },
-        ].map((s) => (
-          <div key={s.label} className={`rounded-xl p-4 text-center border bg-slate-900/50 ${s.cls}`}>
-            <p className="text-2xl font-bold text-white">{s.val ?? '—'}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {result.errors?.length > 0 && (
-        <div className="border-t border-slate-700/50 pt-4">
-          <button onClick={() => setShowErrors((v) => !v)}
-            className="flex items-center gap-2 text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors">
-            {showErrors ? <HiOutlineChevronUp className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
-            {result.errors.length} row issue{result.errors.length !== 1 ? 's' : ''} — click to {showErrors ? 'hide' : 'view'}
-          </button>
-          {showErrors && (
-            <div className="mt-3 rounded-xl border border-slate-700 overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-slate-800">
-                  <tr>
-                    {['Row','Team / Email','Reason'].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-slate-400 font-semibold">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700/50">
-                  {result.errors.map((e, i) => (
-                    <tr key={i} className="hover:bg-slate-800/50">
-                      <td className="px-4 py-2.5 text-slate-400 font-mono">#{e.row}</td>
-                      <td className="px-4 py-2.5 text-slate-400">{e.data?.leaderEmail || e.data?.email || e.data?.teamName || '—'}</td>
-                      <td className="px-4 py-2.5 text-red-400">{e.reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// TEAMS TAB
-// ═══════════════════════════════════════════════════════════════════════════════
-function TeamsTab() {
-  const [teams, setTeams]       = useState([]);
-  const [total, setTotal]       = useState(0);
-  const [pages, setPages]       = useState(1);
-  const [page, setPage]         = useState(1);
-  const [loading, setLoading]   = useState(false);
-  const [actionLoading, setActionLoading] = useState('');
-  const [confirm, setConfirm]   = useState(null);
-  const [expanded, setExpanded] = useState(null);
-  const [batches, setBatches]   = useState([]);
-  const [showBatches, setShowBatches] = useState(false);
-
-  const [selectionStatus, setSelection]   = useState('');
-  const [paymentStatus, setPaymentStatus] = useState('');
-  const [search, setSearch]               = useState('');
-  const [searchInput, setSearchInput]     = useState('');
-
-  const fetchBatches = useCallback(async () => {
+  const fetchBatches = async () => {
     try {
       const { data } = await api.get('/hackathon/batches');
       setBatches(data.data || []);
-    } catch { /* silent */ }
-  }, []);
+    } catch {}
+  };
 
-  const fetchTeams = useCallback(async (pg = 1) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: pg, limit: 20 });
-      if (selectionStatus) params.set('selectionStatus', selectionStatus);
-      if (paymentStatus)   params.set('paymentStatus', paymentStatus);
-      if (search)          params.set('search', search);
-      const { data } = await api.get(`/hackathon/teams?${params}`);
-      setTeams(data.teams || []); setTotal(data.total || 0);
-      setPages(data.pages || 1);  setPage(pg);
-    } catch (err) { toast.error(err.userMessage || 'Failed to load teams'); }
-    finally { setLoading(false); }
-  }, [selectionStatus, paymentStatus, search]);
+  useEffect(() => {
+    if (viewMode === 'manage') {
+      fetchTeams();
+      fetchBatches();
+    }
+  }, [viewMode, teamPage, teamSearch, statusFilter, batchFilter]);
 
-  useEffect(() => { fetchTeams(1); fetchBatches(); }, [fetchTeams, fetchBatches]);
+  const handleAction = (teamId, teamName, actionType) => {
+    let title, message, confirmLabel, variant, endpoint, method = 'PATCH';
+    
+    switch(actionType) {
+      case 'promote':
+        title = 'Promote Team';
+        message = `You are about to promote "${teamName}" to Selected. This will unlock the payment flow for all team members.`;
+        confirmLabel = 'PROMOTE TEAM';
+        variant = 'emerald';
+        endpoint = `/hackathon/teams/${teamId}/promote`;
+        break;
+      case 'suspend':
+        title = 'Suspend Team';
+        message = `You are about to suspend "${teamName}". Team members will no longer be able to proceed with payments.`;
+        confirmLabel = 'SUSPEND TEAM';
+        variant = 'warning';
+        endpoint = `/hackathon/teams/${teamId}/suspend`;
+        break;
+      case 'restore':
+        title = 'Restore Team';
+        message = `You are about to restore "${teamName}" to Selected status.`;
+        confirmLabel = 'RESTORE TEAM';
+        variant = 'emerald';
+        endpoint = `/hackathon/teams/${teamId}/restore`;
+        break;
+      case 'remove':
+        title = 'Remove Team';
+        message = `Are you sure you want to remove "${teamName}"? This will withdraw them from the selection list.`;
+        confirmLabel = 'REMOVE TEAM';
+        variant = 'danger';
+        endpoint = `/hackathon/teams/${teamId}/remove`;
+        break;
+      case 'delete':
+        title = 'Delete Record';
+        message = `CRITICAL: You are about to permanently DELETE "${teamName}" and all its members from the hackathon database. This is irreversible.`;
+        confirmLabel = 'DELETE PERMANENTLY';
+        variant = 'danger';
+        endpoint = `/hackathon/teams/${teamId}`;
+        method = 'DELETE';
+        break;
+    }
 
-  const doAction = async () => {
-    if (!confirm) return;
-    const { id, action, importBatch } = confirm;
-    setActionLoading((id || importBatch) + action); setConfirm(null);
-    try {
-      if (action === 'delete') {
-        await api.delete(`/hackathon/teams/${id}`);
-        toast.success('Team and all related records deleted');
-      } else if (action === 'deleteBatch') {
-        const { data } = await api.delete('/hackathon/batch', { data: { importBatch } });
-        toast.success(data.message || 'Batch deleted');
-        fetchBatches();
-      } else {
-        await api.patch(`/hackathon/teams/${id}/${action}`);
-        toast.success(`Team ${action}d successfully`);
+    setConfirmModal({
+      open: true, title, message, confirmLabel, variant,
+      action: async (password) => {
+        if (method === 'PATCH') await api.patch(endpoint, { adminPassword: password });
+        else await api.delete(endpoint, { data: { adminPassword: password } });
+        toast.success(`Action: ${confirmLabel} completed`);
+        fetchTeams();
       }
-      fetchTeams(page);
-    } catch (err) { toast.error(err.userMessage || 'Action failed'); }
-    finally { setActionLoading(''); }
+    });
   };
 
-  const clearFilters = () => {
-    setSearchInput(''); setSearch(''); setSelection(''); setPaymentStatus('');
+  const handleFileSelect = async (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    
+    setFile(selectedFile);
+    setParsing(true);
+    
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    
+    try {
+      const { data } = await api.post('/hackathon/import-parse', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      setHeaders(data.data.headers);
+      setPreviewData(data.data.preview);
+      
+      const initialMappings = {};
+      data.data.headers.forEach(header => {
+        const lowerH = header.toLowerCase().replace(/[^a-z]/g, '');
+        if (lowerH.includes('email')) initialMappings[header] = 'email';
+        else if (lowerH.includes('name') && !lowerH.includes('team')) initialMappings[header] = 'name';
+        else if (lowerH.includes('phone') || lowerH.includes('contact') || lowerH.includes('mobile')) initialMappings[header] = 'phone';
+        else if (lowerH.includes('team') || lowerH.includes('unit')) initialMappings[header] = 'teamName';
+        else if (lowerH.includes('college') || lowerH.includes('inst')) initialMappings[header] = 'college';
+      });
+      setMappings(initialMappings);
+      setStep('mapping');
+    } catch (err) {
+      toast.error(err.userMessage || 'Failed to parse file');
+      setFile(null);
+    } finally {
+      setParsing(false);
+    }
   };
-  const hasFilters = search || selectionStatus || paymentStatus;
+
+  const handleMapChange = (header, value) => {
+    setMappings(prev => {
+      const next = { ...prev };
+      if (value === 'unmapped') delete next[header];
+      else next[header] = value;
+      return next;
+    });
+  };
+
+  const validateMappings = () => {
+    const mappedValues = Object.values(mappings);
+    const missing = COLUMN_OPTIONS.filter(opt => opt.required && !mappedValues.includes(opt.value));
+    if (missing.length > 0) {
+      toast.error(`Missing required columns: ${missing.map(m => m.label).join(', ')}`);
+      return false;
+    }
+    return true;
+  };
+
+  const runValidation = async () => {
+    if (!validateMappings()) return;
+    
+    setParsing(true);
+    try {
+      const { data } = await api.post('/hackathon/import-validate', {
+        headers,
+        mappings,
+        fileName: file.name
+      });
+      setValidationResults(data.data);
+      setStep('verification');
+    } catch (err) {
+      toast.error('Data validation failed');
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const executeImport = async (password) => {
+    setImporting(true);
+    try {
+      const { data } = await api.post('/hackathon/import-execute', {
+        adminPassword: password,
+        mappings,
+        fileName: file.name
+      });
+      toast.success(`Import successful: ${data.data.importedCount} teams imported`);
+      resetImportState();
+      setViewMode('manage');
+    } catch (err) {
+      toast.error('Failed to import data');
+    } finally {
+      setImporting(false);
+      setShowConfirm(false);
+    }
+  };
+
+  const resetImportState = () => {
+    setStep('upload');
+    setFile(null);
+    setHeaders([]);
+    setMappings({});
+    setPreviewData([]);
+    setValidationResults(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   return (
-    <div className="space-y-5">
+    <div className="animate-fade-in space-y-8">
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none mb-2">Hackathon Management</h1>
+          <p className="text-slate-500 font-medium">Manage team selections and import participant data</p>
+        </div>
 
-      {/* ── Batch Manager ──────────────────────────────────────────────────── */}
-      {batches.length > 0 && (
-        <div className="bg-slate-800/30 border border-slate-700/40 rounded-2xl overflow-hidden">
-          <button
-            onClick={() => setShowBatches((v) => !v)}
-            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-800/50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <HiOutlineTrash className="w-4 h-4 text-red-400" />
-              <span className="text-sm font-semibold text-slate-300">Manage Import Batches</span>
-              <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded">{batches.length} batch{batches.length !== 1 ? 'es' : ''}</span>
-            </div>
-            {showBatches ? <HiOutlineChevronUp className="w-4 h-4 text-slate-400" /> : <HiOutlineChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
-          {showBatches && (
-            <div className="border-t border-slate-700/40 divide-y divide-slate-700/30">
-              {batches.map((batch) => (
-                <div key={batch} className="flex items-center justify-between px-5 py-3">
-                  <div>
-                    <p className="text-sm font-mono text-slate-300">{batch}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Import batch identifier</p>
-                  </div>
-                  <button
-                    onClick={() => setConfirm({ importBatch: batch, action: 'deleteBatch', teamName: `batch "${batch}"` })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-all"
-                  >
-                    <HiOutlineTrash className="w-3.5 h-3.5" />
-                    Delete Entire Batch
-                  </button>
+        <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-2xl border border-slate-700/30 backdrop-blur-xl">
+           <button 
+             onClick={() => setViewMode('manage')}
+             className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'manage' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+           >
+             Manage Teams
+           </button>
+           <button 
+             onClick={() => setViewMode('import')}
+             className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'import' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+           >
+             Import Data
+           </button>
+        </div>
+      </div>
+
+      {viewMode === 'manage' ? (
+        <div className="space-y-6">
+           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
+              <div className="relative group flex-1 min-w-[300px]">
+                <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-5 h-5 transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Search by team name or member email..." 
+                  value={teamSearch} 
+                  onChange={(e) => { setTeamSearch(e.target.value); setTeamPage(1); }} 
+                  className="input-field pl-12" 
+                />
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-4 px-2">
+                <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+                <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
+                   <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+                   <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer">
+                     <option value="" className="bg-slate-900">All Status</option>
+                     {Object.entries(SELECTION_STATUS_CONFIG).map(([key, cfg]) => (
+                       <option key={key} value={key} className="bg-slate-900">{cfg.label}</option>
+                     ))}
+                   </select>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Filter bar */}
-      <div className="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <HiOutlineSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-            <input
-              type="text" value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && setSearch(searchInput)}
-              placeholder="Search team name, leader email, college…"
-              className="w-full bg-slate-900 border border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
-            />
-          </div>
+                <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+                <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
+                   <HiOutlineFolderOpen className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+                   <select value={batchFilter} onChange={(e) => { setBatchFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer max-w-[150px]">
+                     <option value="" className="bg-slate-900">All Batches</option>
+                     {batches.map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
+                   </select>
+                </div>
+              </div>
+           </div>
 
-          {/* Dropdowns */}
-          {[
-            { val: selectionStatus, set: setSelection,     opts: [['','All Status'],['selected','Selected'],['waitlisted','Waitlisted'],['suspended','Suspended'],['removed','Removed']] },
-            { val: paymentStatus,   set: setPaymentStatus, opts: [['','All Payment'],['paid','Paid'],['unpaid','Unpaid']] },
-          ].map((f, i) => (
-            <select key={i} value={f.val} onChange={(e) => f.set(e.target.value)}
-              className="bg-slate-900 border border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:border-primary-500 focus:outline-none transition-all">
-              {f.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          ))}
-
-          <button onClick={() => setSearch(searchInput)}
-            className="px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors">
-            Search
-          </button>
-          <button onClick={() => fetchTeams(page)}
-            className="p-2.5 rounded-xl border border-slate-600 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors" title="Refresh">
-            <HiOutlineRefresh className="w-4 h-4" />
-          </button>
-        </div>
-
-        {hasFilters && (
-          <button onClick={clearFilters} className="mt-2 text-xs text-slate-500 hover:text-slate-300 underline transition-colors">
-            Clear all filters
-          </button>
-        )}
-      </div>
-
-      {/* Summary bar */}
-      <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-        <span>{total} team{total !== 1 ? 's' : ''} found</span>
-        {pages > 1 && <span>Page {page} of {pages}</span>}
-      </div>
-
-      {/* Teams */}
-      {loading ? (
-        <div className="flex items-center justify-center py-24 text-slate-400">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-700 border-t-primary-400 mr-3" />
-          Loading teams…
-        </div>
-      ) : teams.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-slate-500 space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center">
-            <HiOutlineExclamation className="w-8 h-8" />
-          </div>
-          <p className="font-medium text-slate-400">No teams found</p>
-          <p className="text-sm">Try importing from the Import Teams tab, or adjust your filters.</p>
+           {loadingTeams ? (
+             <div className="flex flex-col items-center justify-center py-32 gap-6">
+                <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Hackathon Data...</p>
+             </div>
+           ) : (
+             <div className="card !p-0 border-slate-700/30 overflow-hidden shadow-2xl bg-slate-900/20 backdrop-blur-xl">
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left">
+                   <thead>
+                     <tr className="bg-white/[0.01]">
+                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Team Information</th>
+                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Members</th>
+                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Status</th>
+                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Batch</th>
+                       <th className="px-6 py-6 text-[9px] font-black text-slate-600 uppercase tracking-widest text-right">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-white/[0.02]">
+                     {teams.map((t) => (
+                       <Fragment key={t._id}>
+                         <tr className={`group hover:bg-white/[0.02] transition-all cursor-pointer ${expandedTeam === t._id ? 'bg-primary-500/[0.03] border-l-2 border-l-primary-500' : ''}`} onClick={() => setExpandedTeam(expandedTeam === t._id ? null : t._id)}>
+                          <td className="px-6 py-6">
+                            <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-black text-slate-500 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-xl">
+                                 {t.teamName?.[0]?.toUpperCase()}
+                               </div>
+                               <div>
+                                 <p className="text-sm font-black text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{t.teamName}</p>
+                                 <p className="text-[10px] text-slate-600 font-bold uppercase tracking-tight line-clamp-1">{t.leaderId?.name || 'Unknown Leader'}</p>
+                               </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6">
+                             <div className="flex flex-col gap-1">
+                                {t.members?.map(m => (
+                                  <p key={m._id} className="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate max-w-[150px]">{m.userId?.name || m.userId?.email}</p>
+                                ))}
+                             </div>
+                          </td>
+                          <td className="px-6 py-6">
+                             <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.bg} ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.color}`}>
+                                {SELECTION_STATUS_CONFIG[t.selectionStatus]?.label || t.selectionStatus}
+                             </span>
+                          </td>
+                          <td className="px-6 py-6">
+                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[100px]">{t.importBatch || 'Direct'}</p>
+                          </td>
+                          <td className="px-6 py-6 text-right" onClick={(ev) => ev.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-2">
+                               {t.selectionStatus === 'waitlisted' && (
+                                 <button onClick={() => handleAction(t._id, t.teamName, 'promote')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 transition-all shadow-xl active:scale-95" title="Promote to Selected">
+                                   <HiOutlineTrendingUp className="w-5 h-5" />
+                                 </button>
+                               )}
+                               {t.selectionStatus === 'selected' && (
+                                 <button onClick={() => handleAction(t._id, t.teamName, 'suspend')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/20 transition-all shadow-xl active:scale-95" title="Suspend Team">
+                                   <HiOutlineBan className="w-5 h-5" />
+                                 </button>
+                               )}
+                               {(t.selectionStatus === 'suspended' || t.selectionStatus === 'removed') && (
+                                 <button onClick={() => handleAction(t._id, t.teamName, 'restore')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 transition-all shadow-xl active:scale-95" title="Restore Team">
+                                   <HiOutlineRefresh className="w-5 h-5" />
+                                 </button>
+                               )}
+                               {t.selectionStatus !== 'removed' && (
+                                 <button onClick={() => handleAction(t._id, t.teamName, 'remove')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-400/10 text-red-400 hover:bg-red-400 hover:text-white border border-red-500/20 transition-all shadow-xl active:scale-95" title="Remove Team">
+                                   <HiOutlineTrash className="w-5 h-5" />
+                                 </button>
+                               )}
+                               <button onClick={() => handleAction(t._id, t.teamName, 'delete')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:bg-red-500 hover:text-white transition-all shadow-xl active:scale-95" title="Delete Permanently">
+                                 <HiOutlineTrashAlternative className="w-5 h-5" />
+                               </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedTeam === t._id && (
+                          <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
+                            <td colSpan="5" className="px-12 py-10">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {t.members?.map((m, idx) => (
+                                  <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-3 hover:border-primary-500/30 transition-all group">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{m.teamRole || 'Member'}</span>
+                                      {m.teamRole === 'leader' && <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest">LEADER</span>}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-black text-white uppercase tracking-tight truncate">{m.name}</p>
+                                      <p className="text-[10px] text-slate-500 font-bold lowercase tracking-tight truncate">{m.email}</p>
+                                    </div>
+                                    {m.phone && (
+                                      <div className="pt-2 flex items-center gap-2 border-t border-white/[0.05]">
+                                        <HiOutlinePhone className="w-3 h-3 text-primary-500" />
+                                        <span className="text-[10px] text-slate-400 font-bold tabular-nums">{m.phone}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
+                                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Team ID: {t._id}</p>
+                                 <div className="flex gap-4">
+                                    {t.unstopTeamId && <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">UNSTOP ID: {t.unstopTeamId}</span>}
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">TOTAL MEMBERS: {t.members?.length || 0}</span>
+                                 </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                       </Fragment>
+                     ))}
+                     {teams.length === 0 && (
+                       <tr>
+                         <td colSpan="5" className="text-center py-40">
+                           <HiOutlineSearch className="w-16 h-16 text-slate-800 mx-auto mb-6" />
+                           <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em]">No hackathon teams found</p>
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+               </div>
+             </div>
+           )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {teams.map((team) => {
-            const busy   = actionLoading.startsWith(team._id);
-            const isOpen = expanded === team._id;
-            return (
-              <div key={team._id} className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden transition-all">
-                {/* Main row */}
-                <div className="flex items-center gap-4 px-5 py-4">
-                  {/* Expand toggle */}
-                  <button onClick={() => setExpanded(isOpen ? null : team._id)}
-                    className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-700/50 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-all">
-                    {isOpen ? <HiOutlineChevronUp className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
-                  </button>
-
-                  {/* Team info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-slate-100 text-sm">{team.teamName}</p>
-                      <StatusBadge status={team.selectionStatus} />
-                      <PayBadge paid={team.isPaid} />
-                      {team.unstopTeamId && (
-                        <span className="text-[10px] font-mono text-slate-600 bg-slate-800 px-1.5 rounded">#{team.unstopTeamId}</span>
-                      )}
+        <div className="space-y-8 animate-scale-in">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-2 rounded-3xl bg-slate-950/50 border border-white/[0.05]">
+            {STEPS.map((s, i) => {
+              const isActive = step === s.id;
+              const isDone = STEPS.findIndex(st => st.id === step) > i;
+              const Icon = s.icon;
+              return (
+                <div key={s.id} className={`relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${isActive ? 'bg-primary-500/10 border border-primary-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'opacity-40 grayscale filter'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-primary-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-slate-500'}`}>
+                    {isDone ? <HiOutlineCheckCircle className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Phase 0{i+1}</p>
+                    <p className={`text-[11px] font-black uppercase tracking-tight ${isActive ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <div className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2 z-10">
+                      <HiOutlineChevronRight className="w-4 h-4 text-slate-800" />
                     </div>
-                    <p className="text-xs text-slate-500 mt-1 truncate">
-                      <span className="text-slate-400">{team.leaderName}</span>
-                      <span className="mx-1.5 text-slate-700">·</span>
-                      {team.leaderEmail}
-                      {team.collegeName && <><span className="mx-1.5 text-slate-700">·</span>{team.collegeName}</>}
-                      <span className="mx-1.5 text-slate-700">·</span>
-                      {(team.members?.length || 0)} person{(team.members?.length || 0) !== 1 ? 's' : ''}
-                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="animate-scale-in">
+            {step === 'upload' && (
+              <div className="card py-32 flex flex-col items-center justify-center border-slate-700/30 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-primary-500/5 blur-[100px] pointer-events-none group-hover:bg-primary-500/10 transition-all"></div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="nexus-upload"
+                />
+                <label htmlFor="nexus-upload" className="cursor-pointer flex flex-col items-center text-center">
+                  <div className="w-20 h-20 rounded-3xl bg-slate-950 border border-slate-700 flex items-center justify-center text-slate-600 mb-6 group-hover:text-primary-400 group-hover:border-primary-500/50 group-hover:bg-primary-500/10 transition-all duration-500 shadow-2xl">
+                    {parsing ? <HiOutlineRefresh className="w-10 h-10 animate-spin text-primary-500" /> : <HiOutlineUpload className="w-10 h-10" />}
+                  </div>
+                  <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">{parsing ? 'PARSING FILE...' : 'UPLOAD CSV / XLSX'}</h2>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest max-w-sm">Select a file containing participant and team data</p>
+                  {!parsing && <span className="mt-8 px-8 py-3 rounded-full bg-white/[0.05] border border-white/[0.1] text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 group-hover:bg-primary-500 group-hover:text-white group-hover:border-transparent transition-all">Select File</span>}
+                </label>
+              </div>
+            )}
+
+            {step === 'mapping' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="card space-y-6 border-slate-700/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <HiOutlineChip className="w-4 h-4 text-primary-400" /> Column Mapping
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {headers.map(header => (
+                        <div key={header} className="p-4 rounded-2xl bg-slate-950/50 border border-white/[0.05] flex flex-col gap-3 group hover:border-primary-500/30 transition-all">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{header}</span>
+                          <select
+                            value={mappings[header] || 'unmapped'}
+                            onChange={(e) => handleMapChange(header, e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-white appearance-none cursor-pointer focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
+                          >
+                            <option value="unmapped">Unmapped</option>
+                            {COLUMN_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label} {opt.required ? '*' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Actions */}
-                  <TeamActions
-                    team={team} busy={busy}
-                    onAction={(action) => setConfirm({ id: team._id, action, teamName: team.teamName })}
-                  />
-                </div>
-
-                {/* Expanded members table */}
-                {isOpen && (
-                  <div className="border-t border-slate-700/50 bg-slate-900/40">
-                    <div className="px-5 py-3 flex items-center justify-between">
-                      <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                        Members &amp; Leader — {team.members?.length || 0} people
-                      </p>
-                    </div>
-                    {(!team.members || team.members.length === 0) ? (
-                      <p className="px-5 pb-4 text-xs text-slate-600">No member data stored for this team.</p>
-                    ) : (
-                      <div className="overflow-x-auto px-5 pb-4">
-                        <table className="w-full text-xs min-w-[700px]">
-                          <thead>
-                            <tr className="border-b border-slate-700/50">
-                              {['Role','Name','Email','Phone','Gender','College','Dept','Year','LinkedIn','GitHub'].map((h) => (
-                                <th key={h} className="pb-2 pr-4 text-left text-slate-500 font-semibold uppercase text-[10px] tracking-wider">{h}</th>
+                  <div className="card border-slate-700/30">
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Preview (Top 5 rows)</h3>
+                    <div className="overflow-x-auto rounded-2xl border border-white/[0.05]">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-white/[0.02] border-b border-white/[0.05]">
+                            {headers.map(h => (
+                              <th key={h} className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.02]">
+                          {previewData.map((row, i) => (
+                            <tr key={i} className="hover:bg-white/[0.01] transition-all">
+                              {headers.map(h => (
+                                <td key={h} className="px-5 py-3 text-[10px] text-slate-400 font-bold tracking-tight whitespace-nowrap">{row[h] || '—'}</td>
                               ))}
                             </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="card border-slate-700/30 space-y-6">
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <HiOutlineInformationCircle className="w-4 h-4 text-primary-400" /> Import Rules
+                    </h3>
+                    <div className="space-y-4">
+                       <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
+                          <p className="text-[10px] font-black text-orange-200 uppercase tracking-widest mb-1">Required Columns:</p>
+                          <p className="text-[9px] text-orange-300 font-bold uppercase tracking-tight leading-relaxed">
+                            Full Name, Email, Phone, Team Name, and College must be mapped correctly.
+                          </p>
+                       </div>
+                    </div>
+                    <button
+                      onClick={runValidation}
+                      className="btn-primary w-full py-4 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 transition-all flex items-center justify-center gap-3"
+                    >
+                      <HiOutlineShieldCheck className="w-5 h-5" /> VERIFY DATA
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 'verification' && validationResults && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
+                   <div className="grid grid-cols-3 gap-6">
+                      <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">VALID RECORDS</p>
+                         <p className="text-4xl font-black text-emerald-400 tracking-tighter">{validationResults.validCount}</p>
+                      </div>
+                      <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">INVALID</p>
+                         <p className="text-4xl font-black text-red-400 tracking-tighter">{validationResults.invalidCount}</p>
+                      </div>
+                      <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">DUPLICATES</p>
+                         <p className="text-4xl font-black text-amber-400 tracking-tighter">{validationResults.duplicateCount}</p>
+                      </div>
+                   </div>
+
+                   <div className="card border-slate-700/30">
+                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <HiOutlineDatabase className="w-4 h-4 text-primary-400" /> VALID RECORDS PREVIEW
+                      </h3>
+                      <div className="overflow-x-auto rounded-2xl border border-white/[0.05]">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-white/[0.02] border-b border-white/[0.05]">
+                               <th className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Name</th>
+                               <th className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Team</th>
+                               <th className="px-5 py-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Email</th>
+                            </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-800/80">
-                            {team.members.map((m, mi) => (
-                              <tr key={mi} className="hover:bg-slate-800/20 transition-colors">
-                                <td className="py-2.5 pr-4">
-                                  {m.teamRole === 'leader'
-                                    ? <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">Leader</span>
-                                    : <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 border border-amber-500/30 text-amber-400">Member</span>}
+                          <tbody className="divide-y divide-white/[0.02]">
+                            {validationResults.validNodesPreview.map((node, i) => (
+                              <tr key={i} className="hover:bg-white/[0.01] transition-all">
+                                <td className="px-5 py-4 text-[11px] font-black text-white uppercase tracking-tight">{node.name}</td>
+                                <td className="px-5 py-4">
+                                  <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest p-2 bg-primary-500/5 border border-primary-500/10 rounded-lg">{node.teamName}</span>
                                 </td>
-                                <td className="py-2.5 pr-4 text-slate-300 font-medium whitespace-nowrap">{m.name || '—'}</td>
-                                <td className="py-2.5 pr-4 text-slate-400 font-mono whitespace-nowrap">{m.email || '—'}</td>
-                                <td className="py-2.5 pr-4 text-slate-400 whitespace-nowrap">{m.phone || '—'}</td>
-                                <td className="py-2.5 pr-4 text-slate-400">{m.gender || '—'}</td>
-                                <td className="py-2.5 pr-4 text-slate-400 whitespace-nowrap max-w-[140px] truncate">{m.collegeName || '—'}</td>
-                                <td className="py-2.5 pr-4 text-slate-400">{m.department || '—'}</td>
-                                <td className="py-2.5 pr-4 text-slate-400">{m.year || '—'}</td>
-                                <td className="py-2.5 pr-4">
-                                  {m.linkedin
-                                    ? <a href={m.linkedin} target="_blank" rel="noreferrer" className="text-primary-400 hover:underline">View ↗</a>
-                                    : <span className="text-slate-700">—</span>}
-                                </td>
-                                <td className="py-2.5">
-                                  {m.github
-                                    ? <a href={m.github} target="_blank" rel="noreferrer" className="text-primary-400 hover:underline">View ↗</a>
-                                    : <span className="text-slate-700">—</span>}
-                                </td>
+                                <td className="px-5 py-4 text-[10px] text-slate-500 font-bold lowercase tracking-tight">{node.email}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                    )}
-                  </div>
-                )}
+                   </div>
+                </div>
+
+                <div className="space-y-6">
+                   <div className="card border-slate-700/30 space-y-6">
+                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                       <HiOutlineShieldCheck className="w-4 h-4 text-primary-400" /> Ingestion Summary
+                     </h3>
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">File:</span>
+                           <span className="text-[10px] font-black text-white uppercase tracking-tight truncate max-w-[100px]">{file.name}</span>
+                        </div>
+                     </div>
+                     
+                     <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-[9px] text-blue-300 font-bold uppercase tracking-tight leading-relaxed">
+                        Final import will create user accounts and teams. This action cannot be easily undone.
+                     </div>
+
+                     <div className="flex flex-col gap-3">
+                        <button
+                          onClick={() => setShowConfirm(true)}
+                          disabled={validationResults.validCount === 0}
+                          className="btn-primary w-full py-4 text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-primary-900/40 active:scale-95 disabled:opacity-30 transition-all flex items-center justify-center gap-3"
+                        >
+                          <HiOutlineDatabase className="w-5 h-5" /> START IMPORT
+                        </button>
+                        <button onClick={resetImportState} className="btn-outline w-full py-4 text-[11px] font-black uppercase tracking-[0.2em]">Reset</button>
+                     </div>
+                   </div>
+                </div>
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
       )}
 
-      {/* Pagination */}
-      {pages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <button disabled={page <= 1} onClick={() => fetchTeams(page - 1)}
-            className="px-4 py-2 rounded-xl border border-slate-600 text-slate-400 disabled:opacity-30 hover:text-white hover:border-slate-400 text-sm transition-colors">
-            ← Prev
-          </button>
-          <span className="text-slate-500 text-sm">{page} / {pages}</span>
-          <button disabled={page >= pages} onClick={() => fetchTeams(page + 1)}
-            className="px-4 py-2 rounded-xl border border-slate-600 text-slate-400 disabled:opacity-30 hover:text-white hover:border-slate-400 text-sm transition-colors">
-            Next →
-          </button>
-        </div>
-      )}
+      <ConfirmWithPassword
+        open={confirmModal.open}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant === 'danger' ? 'danger' : 'warning'}
+      />
 
-      {confirm && <ConfirmModal confirm={confirm} onConfirm={doAction} onCancel={() => setConfirm(null)} />}
-    </div>
-  );
-}
-
-// ─── Team action buttons ──────────────────────────────────────────────────────
-function TeamActions({ team, busy, onAction }) {
-  const s = team.selectionStatus;
-  return (
-    <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
-      {s === 'waitlisted' && (
-        <Btn label="Promote" cls="text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10" disabled={busy} onClick={() => onAction('promote')} />
-      )}
-      {(s === 'selected' || s === 'waitlisted') && (
-        <Btn label="Suspend" cls="text-orange-400 border-orange-500/30 hover:bg-orange-500/10" disabled={busy} onClick={() => onAction('suspend')} />
-      )}
-      {(s === 'suspended' || s === 'removed') && (
-        <Btn label="Restore" cls="text-primary-400 border-primary-500/30 hover:bg-primary-500/10" disabled={busy} onClick={() => onAction('restore')} />
-      )}
-      {/* Delete (cascade) — always visible, destructive */}
-      <Btn label="Delete" cls="text-red-400 border-red-500/30 hover:bg-red-500/10 font-bold" disabled={busy} onClick={() => onAction('delete')} />
-      {busy && <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-700 border-t-primary-400 ml-1" />}
-    </div>
-  );
-}
-
-function Btn({ label, cls, disabled, onClick }) {
-  return (
-    <button disabled={disabled} onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all disabled:opacity-30 ${cls}`}>
-      {label}
-    </button>
-  );
-}
-
-// ─── Confirm modal ────────────────────────────────────────────────────────────
-const ACTION_META = {
-  promote:     { title: 'Promote to Selected',  desc: 'Team will be able to complete payment on the registration portal.', btn: 'bg-emerald-600 hover:bg-emerald-700' },
-  suspend:     { title: 'Suspend Team',          desc: 'Registration will be cancelled. Team cannot pay until restored.', btn: 'bg-orange-600 hover:bg-orange-700' },
-  restore:     { title: 'Restore Team',          desc: 'Team moved back to Selected and payment will be re-enabled.', btn: 'bg-primary-600 hover:bg-primary-700' },
-  delete:      { title: 'Delete Team (Cascade)', desc: 'Permanently deletes the HackathonTeam, Registration, Team, TeamMember records, and the leader User account if they have no other registrations. This cannot be undone.', btn: 'bg-red-600 hover:bg-red-700', confirmWord: 'Delete Permanently' },
-  deleteBatch: { title: 'Delete Entire Batch',   desc: 'Permanently deletes ALL teams in this import batch and all their related records. Use this to clean up a partial import before re-importing. This cannot be undone.', btn: 'bg-red-600 hover:bg-red-700', confirmWord: 'Delete Entire Batch' },
-};
-
-function ConfirmModal({ confirm, onConfirm, onCancel }) {
-  const m = ACTION_META[confirm.action] || { title: confirm.action, desc: '', btn: 'bg-primary-600' };
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
-        <div>
-          <p className="text-lg font-bold text-white">{m.title}</p>
-          <p className="text-sm text-slate-400 mt-1">
-            Team: <span className="font-semibold text-slate-200">{confirm.teamName}</span>
-          </p>
-          <p className="text-sm text-slate-500 mt-2">{m.desc}</p>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:text-white text-sm font-medium transition-colors">
-            Cancel
-          </button>
-          <button onClick={onConfirm}
-            className={`flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-colors ${m.btn}`}>
-            {m.confirmWord || 'Confirm'}
-          </button>
-        </div>
-      </div>
+      <ConfirmWithPassword
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={executeImport}
+        title="Confirm Data Import"
+        message={`You are about to import ${validationResults?.validCount} teams into the hackathon database.`}
+        confirmLabel="AUTHORIZE IMPORT"
+        variant="danger"
+      />
     </div>
   );
 }
