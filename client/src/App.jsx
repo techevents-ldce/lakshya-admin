@@ -6,7 +6,7 @@ import RoleLayout from './components/RoleLayout';
 import Login from './pages/Login';
 import RoleDashboard from './pages/RoleDashboard';
 
-// ── Admin pages (imported directly from admin folder) ──
+
 import Events from '@admin/pages/Events';
 import EventForm from '@admin/pages/EventForm';
 import Coordinators from '@admin/pages/Coordinators';
