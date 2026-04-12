@@ -43,7 +43,7 @@ export default function BulkEmailJobDetail() {
     try {
       const { data } = await api.get(`/mail/jobs/${jobId}`);
       setJob(data.data.job);
-      setRecipients(data.data.recipients);
+      setRecipients(data.data.recipients || data.data.recentFailures || []);
     } catch {
       toast.error('Failed to resolve job node');
       navigate('/bulk-email/jobs');
@@ -62,7 +62,7 @@ export default function BulkEmailJobDetail() {
     return () => clearInterval(interval);
   }, [jobId, job?.status]);
 
-  if (loading && !job) {
+  if (!job) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <HiOutlineRefresh className="w-10 h-10 text-primary-500 animate-spin" />
@@ -167,11 +167,11 @@ export default function BulkEmailJobDetail() {
                       <div className="min-w-0 pr-4">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="text-[11px] font-bold text-white uppercase truncate tracking-tight group-hover:text-primary-400 transition-colors">
-                            {r.recipientName || r.recipientEmail.split('@')[0]}
+                            {r.recipientName || r.recipientEmail?.split('@')[0] || 'Unknown'}
                           </p>
                           {r.clubName && <span className="text-[8px] font-bold text-primary-400 uppercase tracking-tight">· {r.clubName}</span>}
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight truncate">{r.recipientEmail}</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight truncate">{r.recipientEmail || 'Unknown Email'}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <span className={`px-2 py-0.5 rounded-lg text-[8px] font-bold uppercase tracking-wider border ${rCfg.bg} ${rCfg.color}`}>
