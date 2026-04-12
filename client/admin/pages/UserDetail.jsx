@@ -59,6 +59,23 @@ export default function UserDetail() {
       </div>
     );
   }
+  const handleDelete = () => {
+    setConfirmModal({
+      open: true,
+      title: 'Delete User Permanently',
+      message: `Are you sure you want to PERMANENTLY DELETE "${user.name}"? This will also remove their registrations, tickets, and team memberships. THIS ACTION CANNOT BE UNDONE.`,
+      confirmLabel: 'Permanently Delete',
+      variant: 'danger',
+      action: async (pw) => {
+        await api.delete(`/users/${id}`, { data: { adminPassword: pw } });
+        toast.success('User deleted permanently');
+        navigate('/users');
+      },
+    });
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div></div>;
+  if (!user) return <div className="text-center py-12 text-gray-400">User not found</div>;
 
   if (!userData) return null;
 

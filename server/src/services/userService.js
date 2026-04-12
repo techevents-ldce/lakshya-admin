@@ -143,6 +143,57 @@ const deactivateUser = async (userId, adminId, reqMeta = {}) => {
   return user;
 };
 
+const deleteUser = async (userId, adminId, reqMeta = {}) => {
+  const user = await User.findById(userId);
+  if (!user) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+
+  // Prevent deleting the last superadmin
+  if (user.role === 'superadmin') {
+    const superadminCount = await User.countDocuments({ role: 'superadmin' });
+    if (superadminCount <= 1) {
+      throw new AppError('Cannot delete the last superadmin', 400, 'DELETE_LAST_SUPERADMIN');
+    }
+  }
+
+  const Registration = require('../models/Registration');
+  const Ticket = require('../models/Ticket');
+  const TeamMember = require('../models/TeamMember');
+  const Event = require('../models/Event');
+
+  // Cleanup related data
+  // 1. Remove from all event coordinators list
+  await Event.updateMany(
+    { coordinators: userId },
+    { $pull: { coordinators: userId } }
+  );
+
+  // 2. Delete registrations
+  await Registration.deleteMany({ userId });
+
+  // 3. Delete tickets
+  await Ticket.deleteMany({ userId });
+
+  // 4. Delete team memberships
+  await TeamMember.deleteMany({ userId });
+
+  // Write audit log before deleting the user
+  await writeAuditLog({
+    adminId,
+    action: 'DELETE_USER',
+    entityType: 'User',
+    entityId: user._id,
+    before: user.toObject(),
+    after: null,
+    ip: reqMeta.ip,
+    userAgent: reqMeta.userAgent,
+  });
+
+  // Finally, delete the user
+  await User.findByIdAndDelete(userId);
+
+  return { message: 'User and related data deleted successfully' };
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -154,4 +205,5 @@ module.exports = {
   resetUserPassword,
   getUserDetail,
   deactivateUser,
+  deleteUser,
 };

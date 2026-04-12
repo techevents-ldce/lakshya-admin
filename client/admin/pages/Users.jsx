@@ -89,6 +89,21 @@ export default function Users() {
     });
   };
 
+  const handleDelete = (id, name) => {
+    setConfirmModal({
+      open: true,
+      title: 'Delete User',
+      message: `PERMANENTLY DELETE user "${name}"? This will also remove their registrations, tickets, and team memberships. THIS ACTION CANNOT BE UNDONE.`,
+      confirmLabel: 'Permanently Delete',
+      variant: 'danger',
+      action: async (password) => {
+        await api.delete(`/users/${id}`, { data: { adminPassword: password } });
+        toast.success('User deleted permanently');
+        fetchUsers();
+      },
+    });
+  };
+
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
 
   return (

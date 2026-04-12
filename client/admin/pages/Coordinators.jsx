@@ -88,6 +88,21 @@ export default function Coordinators() {
     });
   };
 
+  const handleDelete = (id, name) => {
+    setConfirmModal({
+      open: true,
+      title: 'Delete Coordinator',
+      message: `PERMANENTLY DELETE "${name}"? This will also remove them from all assigned events. THIS ACTION CANNOT BE UNDONE.`,
+      confirmLabel: 'Permanently Delete',
+      variant: 'danger',
+      action: async (password) => {
+        await api.delete(`/users/${id}`, { data: { adminPassword: password } });
+        toast.success('Coordinator deleted permanently');
+        fetchCoordinators();
+      },
+    });
+  };
+
   return (
     <div className="animate-fade-in space-y-8">
       {/* Header */}

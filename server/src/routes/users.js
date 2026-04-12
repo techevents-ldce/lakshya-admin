@@ -29,4 +29,7 @@ router.get('/:id/detail', protect, authorize('admin'), userController.getDetail)
 // Deactivate user
 router.patch('/:id/deactivate', protect, authorize('admin'), readOnlyAdmin, verifyAdminPassword, auditLog('DEACTIVATE_USER', 'User'), userController.deactivate);
 
+// Permanent delete (Superadmin only)
+router.delete('/:id', protect, authorize('superadmin'), readOnlyAdmin, verifyAdminPassword, auditLog('DELETE_USER', 'User'), userController.remove);
+
 module.exports = router;

@@ -62,3 +62,12 @@ exports.deactivate = asyncHandler(async (req, res) => {
   });
   res.json({ success: true, data: user });
 });
+
+exports.remove = asyncHandler(async (req, res) => {
+  const result = await userService.deleteUser(req.params.id, req.user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json({ success: true, ...result });
+});
+
