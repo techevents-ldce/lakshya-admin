@@ -41,6 +41,7 @@ const getDashboardStats = async (filters = {}) => {
       const Order = require('../models/Order');
       const orderMatch = {};
       if (hasDateFilter) orderMatch.createdAt = dateMatch;
+      if (eventId) orderMatch['itemsSnapshot.eventId'] = require('mongoose').Types.ObjectId.createFromHexString(eventId);
 
       const [orderRev, orderStatuses] = await Promise.all([
         Order.aggregate([

@@ -9,6 +9,8 @@ const AppError = require('../middleware/AppError');
 const { writeAuditLog } = require('../middleware/auditLog');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
+const mongoose = require('mongoose');
+const Transaction = require('../models/Transaction');
 
 const getOrders = async (query = {}) => {
   const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, sortBy = 'createdAt', sortOrder = 'desc' } = query;
@@ -155,106 +157,320 @@ const markRefunded = async (orderId, adminId, reqMeta = {}) => {
   return order;
 };
 
+/**
+ * Read-only reconciliation view for admin support.
+ * Surfaces:
+ * - Orders NOT success that have a matching SUCCESS Transaction (captured but unfulfilled)
+ * - SUCCESS Transactions that have no matching Order
+ *
+ * This uses the portal's Transaction mirror since this service does not call Razorpay APIs.
+ */
+const getReconciliationReport = async (query = {}) => {
+  const { limit = 50 } = query;
+  const lim = Math.min(Math.max(Number(limit) || 50, 1), 500);
+
+  const [stuckOrders, orphanTransactions] = await Promise.all([
+    Order.aggregate([
+      { $match: { status: { $ne: 'success' }, $or: [{ razorpayOrderId: { $ne: null } }, { razorpayPaymentId: { $ne: null } }] } },
+      {
+        $lookup: {
+          from: 'transactions',
+          let: { rpo: '$razorpayOrderId', rpp: '$razorpayPaymentId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$status', 'SUCCESS'] },
+                    {
+                      $or: [
+                        { $and: [{ $ne: ['$$rpp', null] }, { $eq: ['$razorpay_payment_id', '$$rpp'] }] },
+                        { $and: [{ $ne: ['$$rpo', null] }, { $eq: ['$razorpay_order_id', '$$rpo'] }] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $project: { _id: 1, transaction_id: 1, razorpay_order_id: 1, razorpay_payment_id: 1, amount: 1, currency: 1, status: 1, created_at: 1, user_id: 1, event_ids: 1 } },
+          ],
+          as: 'matchingTransactions',
+        },
+      },
+      { $match: { 'matchingTransactions.0': { $exists: true } } },
+      { $sort: { updatedAt: -1 } },
+      { $limit: lim },
+      {
+        $project: {
+          _id: 1,
+          userId: 1,
+          status: 1,
+          totalAmount: 1,
+          currency: 1,
+          razorpayOrderId: 1,
+          razorpayPaymentId: 1,
+          fulfillmentError: 1,
+          fulfillmentStartedAt: 1,
+          fulfillmentFailedAt: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          matchingTransactions: 1,
+        },
+      },
+    ]),
+    Transaction.aggregate([
+      { $match: { status: 'SUCCESS', $or: [{ razorpay_order_id: { $ne: null } }, { razorpay_payment_id: { $ne: null } }] } },
+      {
+        $lookup: {
+          from: 'orders',
+          let: { rpo: '$razorpay_order_id', rpp: '$razorpay_payment_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $and: [{ $ne: ['$$rpp', null] }, { $eq: ['$razorpayPaymentId', '$$rpp'] }] },
+                    { $and: [{ $ne: ['$$rpo', null] }, { $eq: ['$razorpayOrderId', '$$rpo'] }] },
+                  ],
+                },
+              },
+            },
+            { $project: { _id: 1, status: 1, totalAmount: 1, razorpayOrderId: 1, razorpayPaymentId: 1, userId: 1, createdAt: 1 } },
+          ],
+          as: 'matchingOrders',
+        },
+      },
+      { $match: { matchingOrders: { $eq: [] } } },
+      { $sort: { created_at: -1 } },
+      { $limit: lim },
+      { $project: { _id: 1, transaction_id: 1, razorpay_order_id: 1, razorpay_payment_id: 1, amount: 1, currency: 1, status: 1, created_at: 1, user_id: 1, event_ids: 1 } },
+    ]),
+  ]);
+
+  return { stuckOrders, orphanTransactions, limit: lim };
+};
+
 const forceFulfillOrder = async (orderId, adminId, reqMeta = {}) => {
-  const order = await Order.findById(orderId).populate('userId');
-  if (!order) throw new AppError('Order not found', 404, 'ORDER_NOT_FOUND');
-  if (order.status === 'success') throw new AppError('Order is already successful', 400, 'ORDER_ALREADY_SUCCESS');
+  // Acquire an atomic lock (prevents repeated-click + concurrent runs)
+  const locked = await Order.findOneAndUpdate(
+    { _id: orderId, status: { $nin: ['success', 'refunded', 'fulfilling'] } },
+    { $set: { status: 'fulfilling', fulfillmentStartedAt: new Date(), fulfillmentError: null } },
+    { new: true }
+  ).populate('userId');
 
-  const before = order.toObject();
+  if (!locked) {
+    const existing = await Order.findById(orderId).select('status').lean();
+    if (!existing) throw new AppError('Order not found', 404, 'ORDER_NOT_FOUND');
+    if (existing.status === 'success') throw new AppError('Order is already successful', 400, 'ORDER_ALREADY_SUCCESS');
+    if (existing.status === 'fulfilling') throw new AppError('Order fulfillment is already in progress', 409, 'FULFILLMENT_IN_PROGRESS');
+    throw new AppError(`Cannot force fulfill order in "${existing.status}" status`, 400, 'INVALID_ORDER_STATUS');
+  }
 
-  // 1. Mark as fulfilling to prevent race conditions
-  order.status = 'fulfilling';
-  order.fulfillmentStartedAt = new Date();
-  await order.save();
+  const before = locked.toObject();
 
-  const registrationIds = [];
+  // Validate captured/success payment using Transaction mirror (this service does not integrate Razorpay API)
+  // Require a SUCCESS transaction matching this order's Razorpay references and amount.
+  if (!locked.razorpayOrderId && !locked.razorpayPaymentId) {
+    // Free orders can still be fulfilled if explicitly marked free
+    if (!locked.isFreeOrder && Number(locked.totalAmount || 0) > 0) {
+      throw new AppError('Missing Razorpay references on order (cannot validate captured payment)', 400, 'MISSING_RAZORPAY_REFERENCES');
+    }
+  } else if (!locked.isFreeOrder && Number(locked.totalAmount || 0) > 0) {
+    const tx = await Transaction.findOne({
+      status: 'SUCCESS',
+      ...(locked.razorpayPaymentId ? { razorpay_payment_id: locked.razorpayPaymentId } : {}),
+      ...(locked.razorpayOrderId ? { razorpay_order_id: locked.razorpayOrderId } : {}),
+    }).lean();
 
+    if (!tx) {
+      throw new AppError(
+        'No successful/captured transaction found for this order in portal records. Use reconciliation to locate captured payments before force fulfilling.',
+        400,
+        'CAPTURED_PAYMENT_NOT_FOUND'
+      );
+    }
+
+    const orderAmount = Number(locked.totalAmount || 0);
+    const txAmount = Number(tx.amount || 0);
+    if (Number.isFinite(orderAmount) && Number.isFinite(txAmount) && orderAmount !== txAmount) {
+      throw new AppError(
+        `Amount mismatch (order=${orderAmount}, transaction=${txAmount}). Refusing to force fulfill.`,
+        400,
+        'AMOUNT_MISMATCH'
+      );
+    }
+  }
+
+  const session = await mongoose.startSession();
   try {
-    // 2. Iterate through items snapshot and create registrations
-    for (const item of order.itemsSnapshot) {
-      const eventId = item.eventId;
-      const userId = order.userId._id;
+    let finalOrder;
+    await session.withTransaction(async () => {
+      const order = await Order.findById(orderId).session(session).populate('userId');
+      if (!order) throw new AppError('Order not found', 404, 'ORDER_NOT_FOUND');
+      if (order.status === 'success') throw new AppError('Order is already successful', 400, 'ORDER_ALREADY_SUCCESS');
 
-      // Check for existing registration to avoid duplicates
-      let reg = await Registration.findOne({ userId, eventId, orderId: order._id });
-      
-      if (!reg) {
-        let teamId = null;
-        if (item.registrationMode === 'team') {
-          const team = await Team.create({
+      const registrationIds = new Set((order.registrationIds || []).map((id) => id.toString()));
+
+      for (const item of order.itemsSnapshot || []) {
+        const eventId = item.eventId;
+        const userId = order.userId._id;
+
+        // Ensure event exists (guards against corrupted snapshots)
+        const ev = await Event.findById(eventId).select('_id eventType').session(session).lean();
+        if (!ev) throw new AppError('Event not found for order item', 400, 'EVENT_NOT_FOUND_FOR_ITEM');
+
+        const isTeamItem = item.registrationMode === 'team' || ev.eventType === 'team';
+
+        // Leader registration: idempotent under unique index (userId+eventId)
+        let leaderReg = await Registration.findOne({ userId, eventId }).session(session);
+
+        // Team resolution (prefer existing registration.teamId)
+        let teamId = leaderReg?.teamId || null;
+        if (isTeamItem && !teamId) {
+          const team = await Team.create([{
             eventId,
             leaderId: userId,
-            teamName: (item.teamName || `Team-${userId}`).trim()
-          });
-          teamId = team._id;
-          await TeamMember.create({ teamId: team._id, userId, status: 'accepted' });
+            teamName: String(item.teamName || `Team-${userId}`).trim(),
+          }], { session });
+          teamId = team[0]._id;
 
-          // Register members if any
-          if (item.members && Array.isArray(item.members)) {
-            for (const memberId of item.members) {
-              await TeamMember.create({ teamId: team._id, userId: memberId, status: 'accepted' });
-              const mReg = await Registration.create({
+          // Upsert leader membership
+          await TeamMember.findOneAndUpdate(
+            { teamId, userId },
+            { $set: { status: 'accepted' } },
+            { upsert: true, new: true, session }
+          );
+        }
+
+        if (!leaderReg) {
+          leaderReg = await Registration.create([{
+            userId,
+            eventId,
+            teamId,
+            registrationMode: isTeamItem ? 'team' : 'individual',
+            orderId: order._id,
+            registrationData: item.extraFields || {},
+            status: 'confirmed',
+            pricingSnapshot: item,
+          }], { session }).then((r) => r[0]);
+        } else {
+          // Ensure confirmed + link back to this order if missing
+          leaderReg.status = 'confirmed';
+          if (!leaderReg.orderId) leaderReg.orderId = order._id;
+          if (isTeamItem && !leaderReg.teamId && teamId) leaderReg.teamId = teamId;
+          await leaderReg.save({ session });
+        }
+
+        registrationIds.add(leaderReg._id.toString());
+
+        // Leader ticket: idempotent by (userId,eventId)
+        const existingLeaderTicket = await Ticket.findOne({ userId, eventId }).session(session);
+        if (!existingLeaderTicket) {
+          const ticketId = uuidv4();
+          const qrData = await QRCode.toDataURL(ticketId);
+          await Ticket.create([{
+            ticketId,
+            userId,
+            eventId,
+            registrationId: leaderReg._id,
+            teamId: leaderReg.teamId || null,
+            qrData,
+            status: 'valid',
+          }], { session });
+        } else if (!existingLeaderTicket.registrationId) {
+          existingLeaderTicket.registrationId = leaderReg._id;
+          if (leaderReg.teamId && !existingLeaderTicket.teamId) existingLeaderTicket.teamId = leaderReg.teamId;
+          await existingLeaderTicket.save({ session });
+        }
+
+        // Team members (if provided): idempotent
+        if (isTeamItem && teamId && Array.isArray(item.members)) {
+          for (const memberIdRaw of item.members) {
+            const memberId = memberIdRaw;
+            if (!memberId) continue;
+
+            await TeamMember.findOneAndUpdate(
+              { teamId, userId: memberId },
+              { $set: { status: 'accepted' } },
+              { upsert: true, new: true, session }
+            );
+
+            let mReg = await Registration.findOne({ userId: memberId, eventId }).session(session);
+            if (!mReg) {
+              mReg = await Registration.create([{
                 userId: memberId,
                 eventId,
-                teamId: team._id,
+                teamId,
                 registrationMode: 'team',
                 orderId: order._id,
-                status: 'confirmed'
-              });
-              registrationIds.push(mReg._id);
-              
-              // Issue ticket for member
+                status: 'confirmed',
+                pricingSnapshot: item,
+              }], { session }).then((r) => r[0]);
+            } else {
+              mReg.status = 'confirmed';
+              if (!mReg.orderId) mReg.orderId = order._id;
+              if (!mReg.teamId) mReg.teamId = teamId;
+              await mReg.save({ session });
+            }
+
+            registrationIds.add(mReg._id.toString());
+
+            const existingMemberTicket = await Ticket.findOne({ userId: memberId, eventId }).session(session);
+            if (!existingMemberTicket) {
               const ticketId = uuidv4();
               const qrData = await QRCode.toDataURL(ticketId);
-              await Ticket.create({ ticketId, userId: memberId, eventId, registrationId: mReg._id, teamId, qrData, status: 'active' });
+              await Ticket.create([{
+                ticketId,
+                userId: memberId,
+                eventId,
+                registrationId: mReg._id,
+                teamId,
+                qrData,
+                status: 'valid',
+              }], { session });
+            } else if (!existingMemberTicket.registrationId) {
+              existingMemberTicket.registrationId = mReg._id;
+              if (!existingMemberTicket.teamId) existingMemberTicket.teamId = teamId;
+              await existingMemberTicket.save({ session });
             }
           }
         }
-
-        reg = await Registration.create({
-          userId,
-          eventId,
-          teamId,
-          registrationMode: item.registrationMode,
-          orderId: order._id,
-          registrationData: item.extraFields || {},
-          status: 'confirmed',
-          pricingSnapshot: item
-        });
-        
-        // Issue ticket for leader/solo
-        const ticketId = uuidv4();
-        const qrData = await QRCode.toDataURL(ticketId);
-        await Ticket.create({ ticketId, userId, eventId, registrationId: reg._id, teamId, qrData, status: 'active' });
       }
-      
-      registrationIds.push(reg._id);
-    }
 
-    // 3. Finalize order
-    order.status = 'success';
-    order.registrationIds = registrationIds;
-    order.fulfilledAt = new Date();
-    await order.save();
+      order.status = 'success';
+      order.registrationIds = [...registrationIds].map((id) => new mongoose.Types.ObjectId(id));
+      order.fulfillmentCompletedAt = new Date();
+      order.fulfillmentError = null;
+      await order.save({ session });
+
+      finalOrder = order;
+    });
 
     await writeAuditLog({
       adminId,
       action: 'FORCE_FULFILL_ORDER',
       entityType: 'Order',
-      entityId: order._id,
+      entityId: orderId,
       before,
-      after: order.toObject(),
+      after: (await Order.findById(orderId).lean()),
       ip: reqMeta.ip,
       userAgent: reqMeta.userAgent,
     });
 
-    return order;
+    return finalOrder;
   } catch (err) {
-    order.status = 'failed';
-    order.fulfillmentError = err.message;
-    await order.save();
+    // Best-effort: mark failed (outside transaction) so admins can see the error
+    await Order.findByIdAndUpdate(orderId, {
+      $set: {
+        status: 'failed',
+        fulfillmentError: err?.message || 'Force fulfill failed',
+        fulfillmentFailedAt: new Date(),
+      },
+    });
     throw err;
+  } finally {
+    session.endSession();
   }
 };
 
-module.exports = { getOrders, getOrderById, retryFulfillment, forceFulfillOrder, markRefunded };
+module.exports = { getOrders, getOrderById, retryFulfillment, forceFulfillOrder, markRefunded, getReconciliationReport };

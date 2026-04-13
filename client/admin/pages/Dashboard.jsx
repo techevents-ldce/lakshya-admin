@@ -16,6 +16,7 @@ import {
   HiOutlineFilter,
   HiOutlineArrowRight,
   HiOutlineGlobeAlt,
+  HiOutlineInformationCircle,
 } from 'react-icons/hi';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler);
@@ -62,6 +63,10 @@ export default function Dashboard() {
   const [dateTo, setDateTo] = useState('');
   const [eventId, setEventId] = useState('');
   const [events, setEvents] = useState([]);
+  const [reconOpen, setReconOpen] = useState(false);
+  const [reconLoading, setReconLoading] = useState(false);
+  const [reconData, setReconData] = useState(null);
+  const [reconError, setReconError] = useState('');
 
   useEffect(() => {
     api.get('/events', { params: { limit: 200 } }).then(({ data }) => setEvents(data.events || [])).catch(() => {});
@@ -80,6 +85,21 @@ export default function Dashboard() {
   };
 
   useEffect(() => { fetchStats(); }, [dateFrom, dateTo, eventId]);
+
+  const openReconciliation = async () => {
+    setReconOpen(true);
+    if (reconData || reconLoading) return;
+    setReconLoading(true);
+    setReconError('');
+    try {
+      const { data } = await api.get('/orders/reconcile/report', { params: { limit: 50 } });
+      setReconData(data.data);
+    } catch (err) {
+      setReconError(err?.response?.data?.message || 'Failed to load reconciliation report');
+    } finally {
+      setReconLoading(false);
+    }
+  };
 
   if (loading && !stats) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -327,12 +347,173 @@ export default function Dashboard() {
              <p className="text-xs text-slate-400 font-medium leading-relaxed">
                 Security metrics are within normal parameters. Last synchronization completed successfully at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
              </p>
-             <button className="flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-white transition-colors">
+             <div className="flex items-center justify-between gap-4">
+               <button className="flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-white transition-colors">
                 View audit logs <HiOutlineArrowRight className="w-4 h-4" />
-             </button>
+               </button>
+               <button
+                 onClick={openReconciliation}
+                 className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-400 hover:text-white transition-colors"
+                 title="Open reconciliation report (captured but not fulfilled)"
+               >
+                 Reconcile <HiOutlineArrowRight className="w-4 h-4" />
+               </button>
+             </div>
           </div>
         </div>
       </div>
+
+      {reconOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-950/95 shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-800 flex items-start justify-between gap-6">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <HiOutlineInformationCircle className="w-5 h-5 text-amber-400" />
+                  Reconciliation Report
+                </h3>
+                <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                  Captured payments (SUCCESS) that are not fulfilled, and successful transactions missing an order.
+                </p>
+              </div>
+              <button
+                onClick={() => setReconOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold uppercase tracking-wider hover:text-white hover:border-slate-700 transition-all"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-auto">
+              {reconLoading && (
+                <div className="flex items-center justify-center py-12 gap-3">
+                  <HiOutlineRefresh className="w-6 h-6 text-amber-400 animate-spin" />
+                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Loading report...</p>
+                </div>
+              )}
+
+              {!reconLoading && reconError && (
+                <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
+                  <p className="text-xs font-bold text-red-400 uppercase tracking-wider">{reconError}</p>
+                </div>
+              )}
+
+              {!reconLoading && !reconError && reconData && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                      <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">
+                        Stuck Orders (paid but not fulfilled)
+                      </p>
+                      <p className="text-2xl font-bold text-white tabular-nums">
+                        {reconData.stuckOrders?.length || 0}
+                      </p>
+                    </div>
+                    <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/20">
+                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">
+                        Orphan Transactions (paid, missing order)
+                      </p>
+                      <p className="text-2xl font-bold text-white tabular-nums">
+                        {reconData.orphanTransactions?.length || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Stuck Orders (latest {reconData.limit})
+                    </p>
+                    <div className="overflow-x-auto rounded-2xl border border-slate-800">
+                      <table className="w-full text-left">
+                        <thead className="bg-white/[0.02]">
+                          <tr>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Order</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Razorpay IDs</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                          {(reconData.stuckOrders || []).map((o) => (
+                            <tr key={o._id} className="hover:bg-white/[0.02]">
+                              <td className="px-5 py-4">
+                                <a href={`/orders/${o._id}`} className="text-xs font-bold text-white hover:text-amber-400 transition-colors">
+                                  {o._id}
+                                </a>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{o.status}</span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="text-[11px] font-bold text-white tabular-nums">₹{Number(o.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="text-[10px] font-mono text-slate-500 space-y-1">
+                                  <div>order: {o.razorpayOrderId || '—'}</div>
+                                  <div>payment: {o.razorpayPaymentId || '—'}</div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {(reconData.stuckOrders || []).length === 0 && (
+                            <tr>
+                              <td colSpan="4" className="px-5 py-10 text-center text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                                No stuck orders found
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Orphan Transactions (latest {reconData.limit})
+                    </p>
+                    <div className="overflow-x-auto rounded-2xl border border-slate-800">
+                      <table className="w-full text-left">
+                        <thead className="bg-white/[0.02]">
+                          <tr>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Transaction</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Razorpay IDs</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                          {(reconData.orphanTransactions || []).map((t) => (
+                            <tr key={t._id} className="hover:bg-white/[0.02]">
+                              <td className="px-5 py-4">
+                                <span className="text-[11px] font-bold text-white font-mono">{t.transaction_id}</span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="text-[11px] font-bold text-white tabular-nums">₹{Number(t.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="text-[10px] font-mono text-slate-500 space-y-1">
+                                  <div>order: {t.razorpay_order_id || '—'}</div>
+                                  <div>payment: {t.razorpay_payment_id || '—'}</div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {(reconData.orphanTransactions || []).length === 0 && (
+                            <tr>
+                              <td colSpan="3" className="px-5 py-10 text-center text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                                No orphan transactions found
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

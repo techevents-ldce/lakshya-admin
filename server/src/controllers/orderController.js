@@ -34,3 +34,8 @@ exports.markRefunded = asyncHandler(async (req, res) => {
   });
   res.json({ success: true, data: order });
 });
+
+exports.getReconciliation = asyncHandler(async (req, res) => {
+  const report = await orderService.getReconciliationReport(req.query);
+  res.json({ success: true, data: report });
+});

@@ -7,6 +7,7 @@ const readOnlyAdmin = require('../middleware/readOnlyAdmin');
 const verifyAdminPassword = require('../middleware/verifyAdminPassword');
 const auditLog = require('../middleware/auditLog');
 
+router.get('/reconcile/report', protect, authorize('admin'), orderController.getReconciliation);
 router.get('/', protect, authorize('admin'), orderController.getAll);
 router.get('/:id', protect, authorize('admin'), orderController.getOne);
 router.post('/:id/retry-fulfillment', protect, authorize('admin'), readOnlyAdmin, verifyAdminPassword, auditLog('RETRY_FULFILLMENT', 'Order'), orderController.retryFulfillment);
