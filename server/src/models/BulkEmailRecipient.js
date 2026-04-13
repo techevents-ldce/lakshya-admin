@@ -13,6 +13,8 @@ const bulkEmailRecipientSchema = new mongoose.Schema(
     college: { type: String, default: '' },
     department: { type: String, default: '' },
     clubName: { type: String, default: '' },
+    teamName: { type: String, default: '' },
+    password: { type: String, default: '' },
     status: {
       type: String,
       enum: ['pending', 'processing', 'sent', 'failed'],

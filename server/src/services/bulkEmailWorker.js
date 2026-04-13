@@ -149,7 +149,9 @@ async function processRecipient(recipient, subject, body, template, senderIdenti
         name: recipient.name,
         college: recipient.college,
         department: recipient.department,
-        clubName: recipient.clubName
+        clubName: recipient.clubName,
+        teamName: recipient.teamName,
+        password: recipient.password
       },
       subject,
       body,

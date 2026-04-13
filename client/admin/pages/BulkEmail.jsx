@@ -19,6 +19,7 @@ import {
   HiOutlineInformationCircle,
   HiOutlineSpeakerphone,
   HiOutlineUserGroup,
+  HiOutlineKey,
 } from 'react-icons/hi';
 
 
@@ -30,6 +31,7 @@ const TEMPLATE_OPTIONS = [
   { id: 'formal', label: 'Institutional', icon: HiOutlineShieldCheck, desc: 'Professional administrative theme' },
   { id: 'marketing', label: 'External Lead', icon: HiOutlineSpeakerphone, desc: 'Institutional outreach theme' },
   { id: 'club', label: 'Entity Invite', icon: HiOutlineUserGroup, desc: 'Professional cluster theme' },
+  { id: 'team_login', label: 'Team Login', icon: HiOutlineKey, desc: 'Login credentials and team welcome' },
 ];
 
 
@@ -195,7 +197,8 @@ export default function BulkEmail() {
     `;
 
     let headerHtml = '';
-    const sampleRecipient = uploadPreview?.validEmails?.find(e => e.name || e.department || e.college || e.clubName);
+    let credentialsHtml = '';
+    const sampleRecipient = uploadPreview?.validEmails?.find(e => e.name || e.department || e.college || e.clubName || e.teamName || e.password) || uploadPreview?.validEmails?.[0];
     
     if (template === 'club') {
       const hasUpload = uploadPreview?.validEmails?.length > 0;
@@ -215,12 +218,62 @@ export default function BulkEmail() {
       } else if (!uploadPreview?.validEmails?.length) {
         headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Auto-generated] Dear Head of Department,<br>{College / Institution Name}</p>`;
       }
+    } else if (template === 'team_login') {
+      const emailObj = sampleRecipient?.email || '{Recipient Email}';
+      const passObj = sampleRecipient?.password || '{Generated Password}';
+      const teamGreeting = (sampleRecipient?.teamName || sampleRecipient?.name) ? (sampleRecipient.teamName ? sampleRecipient.teamName : sampleRecipient.name) : '{Team Name}';
+      
+      const hardcodedHtml = `
+      <div style="text-align: left;">
+        <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 15px;">Hello <strong>${teamGreeting}</strong>,</p>
+        <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 15px;">Welcome to <strong>Tark Shaastra 2K26</strong>, the official hackathon of Lakshya 2.0 &mdash; the Annual Tech Festival of LDCE. Your team has been successfully registered and your portal access is now ready.</p>
+
+        <div style="margin: 32px 0; padding: 24px; background: linear-gradient(to bottom right, #f8fafc, #f1f5f9); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+          <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em;">Your Login Credentials</h3>
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <p style="margin: 0 0 12px 0; font-size: 14px; color: #334155;"><strong>Team Name:</strong> <span style="color: #0f172a; font-weight: 600;">${teamGreeting}</span></p>
+            <p style="margin: 0 0 12px 0; font-size: 14px; color: #334155;"><strong>Email:</strong> <span style="color: #0f172a; font-weight: 500;">${emailObj}</span></p>
+            <p style="margin: 0; font-size: 14px; color: #334155;"><strong>Default Password:</strong> <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #0f172a; letter-spacing: 0.05em;">${passObj}</span></p>
+          </div>
+          <div style="text-align: center;">
+            <a href="https://www.lakshyaldce.in/" target="_blank" style="display: inline-block; padding: 12px 28px; background-color: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s;">Access Portal &rarr;</a>
+          </div>
+        </div>
+
+        <div style="border-left: 4px solid #f59e0b; margin: 24px 0; background-color: #fffbeb; padding: 16px 20px; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0; color: #b45309; font-size: 14px; font-weight: 600; line-height: 1.6;">
+            <strong>IMPORTANT:</strong> You are required to log in and change your default password immediately upon first login. Access to event resources and updates will only be available through the portal, so please ensure your account is set up at the earliest.
+          </p>
+        </div>
+
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #0f172a; font-weight: 700;">Steps to get started:</h3>
+        <ol style="margin: 0 0 24px 0; padding-left: 20px; color: #334155; line-height: 1.7; font-size: 15px;">
+          <li>Visit <a href="https://www.lakshyaldce.in/" style="color: #4f46e5; text-decoration: underline; font-weight: 600;" target="_blank">lakshyaldce.in</a></li>
+          <li>Log in using the credentials and your email above.</li>
+          <li>Navigate to Account Settings and update your password.</li>
+          <li>Complete your profile if prompted.</li>
+        </ol>
+
+        <p style="margin: 0 0 24px 0; line-height: 1.6; color: #334155; font-size: 15px;">Please note that these credentials are personal and must not be shared. All official communications, problem statements, schedules, and announcements for <strong>Tark Shaastra 2K26</strong> will be accessible through this portal.</p>
+
+        <p style="margin: 0 0 32px 0; line-height: 1.6; color: #334155; font-weight: 600; font-size: 15px;">We look forward to seeing your ideas come to life.</p>
+
+        <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 4px 0; line-height: 1.6; color: #334155; font-size: 15px;">Warm regards,</p>
+          <p style="margin: 0; line-height: 1.6; color: #0f172a; font-weight: 700; font-size: 15px;">Tark Shaastra 2K26 Team Committee</p>
+          <p style="margin: 0; line-height: 1.6; color: #64748b; font-size: 13px;">Lakshya 2.0 &mdash; Annual Tech Festival<br>L.D. College of Engineering, Ahmedabad</p>
+        </div>
+      </div>
+      `;
+      credentialsHtml = hardcodedHtml;
+      headerHtml = '';
     } else {
       if (sampleRecipient) {
         if (template === 'formal') {
-          if (sampleRecipient.name) {
+          const primaryName = sampleRecipient.name || sampleRecipient.teamName;
+          if (primaryName) {
             const collegeText = sampleRecipient.college ? `<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span>` : '';
-            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${sampleRecipient.name},${collegeText}</p>`;
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${primaryName},${collegeText}</p>`;
           } else if (sampleRecipient.clubName) {
             const collegeText = sampleRecipient.college ? `<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span>` : '';
             headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Dear ${sampleRecipient.clubName} Team,${collegeText}</p>`;
@@ -232,14 +285,17 @@ export default function BulkEmail() {
           } else {
             headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir/Ma'am,</p>`;
           }
-        } else if (sampleRecipient.clubName) {
-          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${sampleRecipient.clubName} Team,</p>`;
-        } else if (sampleRecipient.department) {
-          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>Department of ${sampleRecipient.department}</p>`;
-        } else if (sampleRecipient.name) {
-          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${sampleRecipient.name},</p>`;
         } else {
-          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
+          const primaryName = sampleRecipient.name || sampleRecipient.teamName;
+          if (sampleRecipient.clubName) {
+            headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${sampleRecipient.clubName} Team,</p>`;
+          } else if (sampleRecipient.department) {
+            headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>Department of ${sampleRecipient.department}</p>`;
+          } else if (primaryName) {
+            headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${primaryName},</p>`;
+          } else {
+            headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
+          }
         }
       } else if (!uploadPreview?.validEmails?.length) {
         if (template === 'formal') {
@@ -253,7 +309,7 @@ export default function BulkEmail() {
     const pb = processBody(body);
     const standardContent = headerHtml + pb;
     const s = subject || '(subject)';
-    
+
     const templateMap = {
       raw: baseLayout(`<div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
       success: baseLayout(`<h2 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px; font-weight: 700;">${s}</h2><div style="margin: 0; line-height: 1.7;">${standardContent}</div>`),
@@ -265,6 +321,7 @@ export default function BulkEmail() {
       })(),
       marketing: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${standardContent}</div>`),
       club: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${headerHtml}${pb}</div>`),
+      team_login: baseLayout(`<h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${s}</h2><div style="margin: 0 0 32px 0; line-height: 1.7;">${template === 'team_login' ? credentialsHtml : `${headerHtml}${pb}${credentialsHtml}`}</div>`),
     };
     return templateMap[template] || templateMap.raw;
   };
@@ -277,8 +334,8 @@ export default function BulkEmail() {
       const manualList = manualEmails.split(',').map((e) => e.trim()).filter(Boolean);
 
       const recipients = [
-        ...selectedUsers.map((u) => ({ email: u.email, name: u.name, college: '', department: '', clubName: '' })),
-        ...manualList.map((email) => ({ email, name: '', college: '', department: '', clubName: '' })),
+        ...selectedUsers.map((u) => ({ email: u.email, name: u.name, college: '', department: '', clubName: '', teamName: '', password: '' })),
+        ...manualList.map((email) => ({ email, name: '', college: '', department: '', clubName: '', teamName: '', password: '' })),
         ...(uploadPreview?.validEmails || []),
       ];
 
@@ -315,7 +372,7 @@ export default function BulkEmail() {
   const uploadCount = uploadPreview?.validCount || 0;
   const individualCount = selectedUsers.length + manualCount + uploadCount;
   const hasRecipients = selectedRoles.length > 0 || individualCount > 0;
-  const canSend = hasRecipients && subject.trim() && body.trim();
+  const canSend = hasRecipients && subject.trim() && (template === 'team_login' ? true : body.trim());
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -500,6 +557,7 @@ export default function BulkEmail() {
                             {(item.name || item.clubName || item.college) && (
                               <div className="flex items-center gap-1.5 mb-0.5">
                                 {item.name && <span className="text-[9px] font-bold text-white uppercase truncate">{item.name}</span>}
+                                {item.teamName && <span className="text-[8px] font-bold text-indigo-400 uppercase truncate">· {item.teamName}</span>}
                                 {item.clubName && <span className="text-[8px] font-bold text-primary-400 uppercase truncate">· {item.clubName}</span>}
                                 {item.college && <span className="text-[7px] text-slate-600 font-bold uppercase truncate">@ {item.college}</span>}
                               </div>
@@ -594,15 +652,16 @@ export default function BulkEmail() {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-0.5 block">Message Content</label>
               <textarea
-                value={body}
+                value={template === 'team_login' ? 'This template uses a fixed, hardcoded message specific for Tark Shaastra team portal distribution.' : body}
                 onChange={(e) => setBody(e.target.value)}
+                disabled={template === 'team_login'}
                 placeholder={
                   (template === 'club' || template === 'marketing')
                     ? 'Write your message... (Salutation handled automatically)'
                     : 'Write your message...'
                 }
                 rows={10}
-                className="input-field py-4 text-sm font-medium bg-slate-900/50 border-slate-800 resize-none custom-scrollbar"
+                className={`input-field py-4 text-sm font-medium border-slate-800 resize-none custom-scrollbar ${template === 'team_login' ? 'bg-slate-900/30 text-slate-500/50 cursor-not-allowed' : 'bg-slate-900/50'}`}
               />
               
               <div className="animate-fade-in pt-1">
@@ -622,6 +681,14 @@ export default function BulkEmail() {
                     </p>
                   </div>
                 )}
+                {template === 'team_login' && !uploadPreview && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <HiOutlineExclamation className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
+                    <p className="text-[11px] font-medium text-amber-200 tracking-wide leading-relaxed">
+                      <strong>Personalization required:</strong> Import a recipient list to automatically inject unique team names and passwords for each team.
+                    </p>
+                  </div>
+                )}
                 {template === 'formal' && (
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
                     <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0 text-indigo-400 mt-0.5" />
@@ -638,7 +705,7 @@ export default function BulkEmail() {
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
             <button
               onClick={() => setPreviewOpen(true)}
-              disabled={!body.trim()}
+              disabled={template !== 'team_login' && !body.trim()}
               className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-widest disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
               <HiOutlineEye className="w-5 h-5" /> Dispatch Preview
@@ -691,7 +758,7 @@ export default function BulkEmail() {
               </button>
             </div>
 
-            <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar bg-slate-200/50 flex items-center justify-center min-h-[400px]">
+            <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar bg-slate-200/50 flex items-start justify-center min-h-[400px]">
               <div className="w-full max-w-[600px] shadow-2xl rounded-xl overflow-hidden bg-white">
                 <div dangerouslySetInnerHTML={{ __html: getPreviewHtml() }} />
               </div>

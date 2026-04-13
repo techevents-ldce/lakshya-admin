@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAll = asyncHandler(async (req, res) => {
   const result = await teamService.getTeams(req.query);
-  res.json({ success: true, ...result });
+  res.json({ success: true, data: result });
 });
 
 exports.getOne = asyncHandler(async (req, res) => {

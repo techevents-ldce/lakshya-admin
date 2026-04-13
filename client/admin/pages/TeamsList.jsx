@@ -46,9 +46,9 @@ export default function TeamsList() {
       if (eventFilter) params.eventId = eventFilter;
       if (search) params.search = search;
       const { data } = await api.get('/teams', { params });
-      setTeams(data.teams || []);
-      setTotal(data.total || 0);
-      setPages(data.pages || 0);
+      setTeams(data.data.teams || []);
+      setTotal(data.data.total || 0);
+      setPages(data.data.pages || 0);
     } catch { toast.error('Failed to load team list'); }
     finally { setLoading(false); }
   };

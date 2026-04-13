@@ -112,10 +112,16 @@ const getPersonalizedHeader = (recipient, templateMode = 'default') => {
     return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>${deptText}${collegeText}</p>`;
   }
 
+  if (templateMode === 'team_login') {
+    const teamGreeting = recipient.teamName ? recipient.teamName : (recipient.name ? recipient.name : 'Team');
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Hello <strong>${teamGreeting}</strong>,</p>`;
+  }
+
   if (templateMode === 'formal') {
-    if (recipient.name) {
+    const primaryName = recipient.name || recipient.teamName;
+    if (primaryName) {
       const collegeText = recipient.college ? `<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span>` : '';
-      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${recipient.name},${collegeText}</p>`;
+      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear ${primaryName},${collegeText}</p>`;
     }
     if (recipient.clubName) {
       const collegeText = recipient.college ? `<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span>` : '';
@@ -139,8 +145,9 @@ const getPersonalizedHeader = (recipient, templateMode = 'default') => {
     return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear Head of Department,<br>Department of ${recipient.department}</p>`;
   }
   
-  if (recipient.name) {
-    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${recipient.name},</p>`;
+  const defaultName = recipient.name || recipient.teamName;
+  if (defaultName) {
+    return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${defaultName},</p>`;
   }
   
   return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
@@ -187,6 +194,59 @@ const templates = {
     <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${subject}</h2>
     <div style="margin: 0 0 32px 0; line-height: 1.7;">${getPersonalizedHeader(recipient, 'club')}${processBody(body)}</div>
   `, '#334155', 'club'),
+
+  team_login: ({ subject, recipient }) => {
+    const teamNameStr = recipient.teamName ? recipient.teamName : (recipient.name ? recipient.name : 'Team');
+    const passObj = recipient.password || '{Generated Password}';
+
+    const hardcodedBody = `
+      <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 15px;">Welcome to <strong>Tark Shaastra 2K26</strong>, the official hackathon of Lakshya 2.0 &mdash; the Annual Tech Festival of LDCE. Your team has been successfully registered and your portal access is now ready.</p>
+
+      <div style="margin: 32px 0; padding: 24px; background: linear-gradient(to bottom right, #f8fafc, #f1f5f9); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em;">Your Login Credentials</h3>
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #334155;"><strong>Team Name:</strong> <span style="color: #0f172a; font-weight: 600;">${teamNameStr}</span></p>
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #334155;"><strong>Email:</strong> <span style="color: #0f172a; font-weight: 500;">${recipient.email}</span></p>
+          <p style="margin: 0; font-size: 14px; color: #334155;"><strong>Default Password:</strong> <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #0f172a; letter-spacing: 0.05em;">${passObj}</span></p>
+        </div>
+        <div style="text-align: center;">
+          <a href="https://www.lakshyaldce.in/" target="_blank" style="display: inline-block; padding: 12px 28px; background-color: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s;">Access Portal &rarr;</a>
+        </div>
+      </div>
+
+      <div style="border-left: 4px solid #f59e0b; margin: 24px 0; background-color: #fffbeb; padding: 16px 20px; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; color: #b45309; font-size: 14px; font-weight: 600; line-height: 1.6;">
+          <strong>IMPORTANT:</strong> You are required to log in and change your default password immediately upon first login. Access to event resources and updates will only be available through the portal, so please ensure your account is set up at the earliest.
+        </p>
+      </div>
+
+      <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #0f172a; font-weight: 700;">Steps to get started:</h3>
+      <ol style="margin: 0 0 24px 0; padding-left: 20px; color: #334155; line-height: 1.7; font-size: 15px;">
+        <li>Visit <a href="https://www.lakshyaldce.in/" style="color: #4f46e5; text-decoration: underline; font-weight: 600;" target="_blank">lakshyaldce.in</a></li>
+        <li>Log in using the credentials and your email above.</li>
+        <li>Navigate to Account Settings and update your password.</li>
+        <li>Complete your profile if prompted.</li>
+      </ol>
+
+      <p style="margin: 0 0 24px 0; line-height: 1.6; color: #334155; font-size: 15px;">Please note that these credentials are personal and must not be shared. All official communications, problem statements, schedules, and announcements for <strong>Tark Shaastra 2K26</strong> will be accessible through this portal.</p>
+
+      <p style="margin: 0 0 32px 0; line-height: 1.6; color: #334155; font-weight: 600; font-size: 15px;">We look forward to seeing your ideas come to life.</p>
+
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0 0 4px 0; line-height: 1.6; color: #334155; font-size: 15px;">Warm regards,</p>
+        <p style="margin: 0; line-height: 1.6; color: #0f172a; font-weight: 700; font-size: 15px;">Tark Shaastra 2K26 Team Committee</p>
+        <p style="margin: 0; line-height: 1.6; color: #64748b; font-size: 13px;">Lakshya 2.0 &mdash; Annual Tech Festival<br>L.D. College of Engineering, Ahmedabad</p>
+      </div>
+    `;
+
+    return baseLayout(`
+      <h2 style="margin: 0 0 24px 0; color: #0f172a; font-size: 22px; font-weight: 700; text-align: center;">${subject}</h2>
+      <div style="margin: 0 0 32px 0; text-align: left;">
+        <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 15px;">Hello <strong>${teamNameStr}</strong>,</p>
+        ${hardcodedBody}
+      </div>
+    `, '#3b82f6', 'team_login');
+  },
 };
 
 // ─── Single Email Send (with retry + backoff) ─────────────────────────────────

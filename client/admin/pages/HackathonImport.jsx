@@ -83,6 +83,7 @@ export default function HackathonImport() {
   const [batches, setBatches] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [totalTeams, setTotalTeams] = useState(0);
+  const [teamPages, setTeamPages] = useState(0);
   const [teamPage, setTeamPage] = useState(1);
   const [teamSearch, setTeamSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -99,8 +100,9 @@ export default function HackathonImport() {
       if (batchFilter) params.importBatch = batchFilter;
       
       const { data } = await api.get('/hackathon/teams', { params });
-      setTeams(data.teams || []);
-      setTotalTeams(data.total || 0);
+      setTeams(data.data.teams || []);
+      setTotalTeams(data.data.total || 0);
+      setTeamPages(data.data.pages || 0);
     } catch { toast.error('Failed to load hackathon teams'); }
     finally { setLoadingTeams(false); }
   };
@@ -485,6 +487,19 @@ export default function HackathonImport() {
                    </tbody>
                  </table>
                </div>
+               {teamPages > 1 && (
+                 <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
+                   {[...Array(teamPages)].map((_, i) => (
+                     <button 
+                       key={i} 
+                       onClick={() => setTeamPage(i + 1)} 
+                       className={`w-10 h-10 rounded-xl text-[10px] font-bold transition-all ${teamPage === i + 1 ? 'bg-primary-500 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
+                     >
+                       {(i + 1).toString().padStart(2, '0')}
+                     </button>
+                   ))}
+                 </div>
+               )}
              </div>
            )}
         </div>

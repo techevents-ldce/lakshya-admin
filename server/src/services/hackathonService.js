@@ -517,14 +517,16 @@ const listTeams = async (query = {}) => {
   }
 
   const skip = (Number(page) - 1) * Number(limit);
-  const [hackathonTeams, total] = await Promise.all([
-    HackathonTeam.find(filter)
-      .skip(skip).limit(Number(limit)).sort({ createdAt: -1 })
-      .populate('eventId',  'title slug')
-      .populate('leaderId', 'name email phone college branch year isActive')
-      .lean(),
-    HackathonTeam.countDocuments(filter),
-  ]);
+  const findQuery = HackathonTeam.find(filter).sort({ createdAt: -1 })
+    .populate('eventId',  'title slug')
+    .populate('leaderId', 'name email phone college branch year isActive');
+
+  // If filtering by payment status, we must fetch more to filter in-memory since isPaid is derived
+  const hackathonTeams = (paymentStatus === 'paid' || paymentStatus === 'unpaid')
+    ? await findQuery.lean() // Fetch all for in-memory filtering (safe for typical hackathon sizes)
+    : await findQuery.skip(skip).limit(Number(limit)).lean();
+
+  const totalRaw = await HackathonTeam.countDocuments(filter);
 
   if (hackathonTeams.length > 0) {
     const regIds   = hackathonTeams.map((t) => t.registrationId).filter(Boolean);
@@ -550,16 +552,20 @@ const listTeams = async (query = {}) => {
     });
 
     if (paymentStatus === 'paid') {
-      const paid = hackathonTeams.filter((t) => t.isPaid);
-      return { teams: paid, total: paid.length, page: Number(page), pages: 1 };
+      const filtered = hackathonTeams.filter((t) => t.isPaid);
+      const totalFiltered = filtered.length;
+      const paginated = filtered.slice(skip, skip + Number(limit));
+      return { teams: paginated, total: totalFiltered, page: Number(page), pages: Math.ceil(totalFiltered / Number(limit)) };
     }
     if (paymentStatus === 'unpaid') {
-      const unpaid = hackathonTeams.filter((t) => !t.isPaid);
-      return { teams: unpaid, total: unpaid.length, page: Number(page), pages: 1 };
+      const filtered = hackathonTeams.filter((t) => !t.isPaid);
+      const totalFiltered = filtered.length;
+      const paginated = filtered.slice(skip, skip + Number(limit));
+      return { teams: paginated, total: totalFiltered, page: Number(page), pages: Math.ceil(totalFiltered / Number(limit)) };
     }
   }
 
-  return { teams: hackathonTeams, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
+  return { teams: hackathonTeams, total: totalRaw, page: Number(page), pages: Math.ceil(totalRaw / Number(limit)) };
 };
 
 // ─── Get one team detail ──────────────────────────────────────────────────────

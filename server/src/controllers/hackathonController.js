@@ -64,7 +64,7 @@ exports.importExecute = asyncHandler(async (req, res) => {
 /** GET /api/hackathon/teams  — list with filters */
 exports.listTeams = asyncHandler(async (req, res) => {
   const result = await hackathonService.listTeams(req.query);
-  res.json({ success: true, ...result });
+  res.json({ success: true, data: result });
 });
 
 /** GET /api/hackathon/teams/:id  — detail */
