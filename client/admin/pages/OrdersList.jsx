@@ -78,7 +78,7 @@ export default function OrdersList() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Orders</h1>
-          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} total transactions cataloged</p>
+          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} total orders recorded</p>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ export default function OrdersList() {
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search by Order ID or name..." 
+            placeholder="Search by name, email, or order ID..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
             className="input-field pl-12" 

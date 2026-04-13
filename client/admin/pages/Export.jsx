@@ -140,15 +140,15 @@ export default function Export() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pb-10 border-b border-white/[0.05]">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Data Export Nexus</h1>
-          <p className="text-slate-500 font-medium text-sm">Configure and download participant data for external audit</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Export Data</h1>
+          <p className="text-slate-500 font-medium text-sm">Download data and reports</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Export Type Selection */}
         <div className="lg:col-span-1 space-y-4">
-          <h3 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest pl-2 mb-4">Export Target Specification</h3>
+          <h3 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest pl-2 mb-4">Select Export Type</h3>
           <div className="space-y-3">
             {EXPORT_TYPES.map((type) => {
               const Icon = type.icon;
@@ -289,10 +289,10 @@ export default function Export() {
                 <div className="bg-slate-950 rounded-2xl p-8 mb-10 border border-white/[0.05]">
                    <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-6">Execution Summary</h4>
                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-[10px]">
-                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Object Type</span><span className="text-white font-bold uppercase tracking-tight">{selectedType.label}</span></div>
-                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Target Scope</span><span className="text-white font-bold uppercase tracking-tight truncate max-w-[100px] block">{selectedEvent ? events.find((e) => e._id === selectedEvent)?.title : 'Global Alpha'}</span></div>
-                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Audit Status</span><span className="text-white font-bold uppercase tracking-tight capitalize">{status || 'Unfiltered'}</span></div>
-                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Temporal Range</span><span className="text-white font-bold uppercase tracking-tight">{dateFrom || dateTo ? `${dateFrom || '...'} → ${dateTo || '...'}` : 'Archival History'}</span></div>
+                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Type</span><span className="text-white font-bold uppercase tracking-tight">{selectedType.label}</span></div>
+                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Scope</span><span className="text-white font-bold uppercase tracking-tight truncate max-w-[100px] block">{selectedEvent ? events.find((e) => e._id === selectedEvent)?.title : 'All Events'}</span></div>
+                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Status</span><span className="text-white font-bold uppercase tracking-tight capitalize">{status || 'All Status'}</span></div>
+                     <div className="space-y-1.5"><span className="text-slate-700 font-bold uppercase block tracking-widest">Date Range</span><span className="text-white font-bold uppercase tracking-tight">{dateFrom || dateTo ? `${dateFrom || '...'} → ${dateTo || '...'}` : 'Full History'}</span></div>
                    </div>
                 </div>
                 <button
@@ -301,9 +301,9 @@ export default function Export() {
                   className="btn-primary w-full py-5 text-[11px] font-bold uppercase tracking-[0.2em] shadow-2xl shadow-indigo-900/40 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   {downloading ? (
-                    <><HiOutlineClock className="w-5 h-5 animate-spin" /> EXECUTING EXPORT...</>
+                    <><HiOutlineClock className="w-5 h-5 animate-spin" /> EXPORTING DATA...</>
                   ) : (
-                    <><HiOutlineDocumentDownload className="w-6 h-6" /> Download {selectedType.label} Nexus (.{format === 'excel' ? 'xlsx' : 'csv'})</>
+                    <><HiOutlineDocumentDownload className="w-6 h-6" /> Download {selectedType.label} (.{format === 'excel' ? 'xlsx' : 'csv'})</>
                   )}
                 </button>
               </div>

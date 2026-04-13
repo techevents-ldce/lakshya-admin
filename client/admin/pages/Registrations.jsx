@@ -152,8 +152,8 @@ export default function Registrations() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Registration Registry</h1>
-          <p className="text-slate-500 font-medium text-sm">Monitor, audit, and manage participant deployment profiles</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Registrations</h1>
+          <p className="text-slate-500 font-medium">Manage participant registrations and statuses</p>
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export default function Registrations() {
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search participant registry..." 
+            placeholder="Search by name, email, or order ID..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
             className="input-field pl-12" 
@@ -223,10 +223,10 @@ export default function Registrations() {
             <thead>
               <tr className="bg-white/[0.01]">
                 <th className="px-6 py-5 w-16 text-center border-b border-white/[0.05]"></th>
-                <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Participant Profile</th>
-                <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] hidden sm:table-cell">Institutional Alpha</th>
-                <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Deployment Spec</th>
-                <th className="px-4 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Audit Status</th>
+                <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">User Info</th>
+                <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] hidden sm:table-cell">College</th>
+                <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Event</th>
+                <th className="px-4 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Status</th>
                 <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] hidden md:table-cell">Timestamp</th>
               </tr>
             </thead>
@@ -372,7 +372,7 @@ export default function Registrations() {
                                     onClick={(e) => { e.stopPropagation(); handleDelete(r._id); }}
                                     className="btn-danger text-[10px] font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 active:scale-95 transition-all"
                                   >
-                                    <HiOutlineTrash className="w-4 h-4" /> Purge Entity
+                                    <HiOutlineTrash className="w-4 h-4" /> Delete Record
                                   </button>
                                 )}
                              </div>
@@ -418,7 +418,7 @@ export default function Registrations() {
         title={confirmModal.title}
         message={confirmModal.message}
         confirmLabel={confirmModal.confirmLabel}
-        variant={confirmModal.variant}
+        variant="danger"
       />
     </div>
   );

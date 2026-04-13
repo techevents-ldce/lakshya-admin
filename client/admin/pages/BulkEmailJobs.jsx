@@ -68,9 +68,9 @@ export default function BulkEmailJobs() {
             <div className="p-2 rounded-xl bg-primary-500/10 border border-primary-500/20">
               <HiOutlineClipboardList className="w-6 h-6 text-primary-400" />
             </div>
-            Transmission Log
+            Email Logs
           </h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-1 ml-11">Nodal Communication History</p>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-1 ml-11">History of sent bulk emails</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => fetchJobs(page)} className="btn-outline flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-4 py-2.5">
@@ -79,7 +79,7 @@ export default function BulkEmailJobs() {
           </button>
           <button onClick={() => navigate('/bulk-email')} className="btn-primary flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-6 py-2.5 shadow-lg shadow-primary-900/20">
             <HiOutlinePlus className="w-4 h-4" />
-            New Transmission
+            New Email
           </button>
         </div>
       </div>
@@ -89,15 +89,15 @@ export default function BulkEmailJobs() {
           <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4">
             <HiOutlineRefresh className="w-6 h-6 text-primary-500 animate-spin" />
           </div>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Synchronizing nodes...</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Loading logs...</p>
         </div>
       ) : jobs.length === 0 ? (
         <div className="card py-24 flex flex-col items-center justify-center border-slate-700/30">
           <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4">
             <HiOutlineMail className="w-8 h-8 text-slate-700" />
           </div>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">No transmissions identified</p>
-          <p className="text-[9px] text-slate-600 font-bold uppercase mt-2 tracking-tight">Initiate your first broadcast to populate the log.</p>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">No emails found</p>
+          <p className="text-[9px] text-slate-600 font-bold uppercase mt-2 tracking-tight">Send an email to see it here.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -106,11 +106,11 @@ export default function BulkEmailJobs() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/[0.05] bg-white/[0.02]">
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Identity / Subject</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status Matrix</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Payload</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nodal Origin</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Timestamp</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Subject</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Recipients</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sent By</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-4"></th>
                   </tr>
                 </thead>
@@ -162,7 +162,7 @@ export default function BulkEmailJobs() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{job.createdBy?.name || 'SYSTEM'}</p>
-                          <p className="text-[9px] text-slate-600 font-bold uppercase mt-0.5">Primary Admin</p>
+                          <p className="text-[9px] text-slate-600 font-bold uppercase mt-0.5">Admin</p>
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{formatDate(job.createdAt)}</p>
@@ -191,7 +191,7 @@ export default function BulkEmailJobs() {
                 <HiOutlineChevronRight className="w-5 h-5 rotate-180" />
               </button>
               <div className="px-6 py-2 rounded-xl bg-slate-900/50 border border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-                Matrix Page <span className="text-white mx-1">{page}</span> of <span className="text-white mx-1">{totalPages}</span>
+                Page <span className="text-white mx-1">{page}</span> of <span className="text-white mx-1">{totalPages}</span>
               </div>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
