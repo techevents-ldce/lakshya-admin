@@ -419,6 +419,15 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  <div className="p-6 rounded-2xl bg-slate-500/5 border border-slate-500/20">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Orders Missing SUCCESS Transaction (likely sync issue)
+                    </p>
+                    <p className="text-2xl font-bold text-white tabular-nums">
+                      {reconData.ordersMissingSuccessTx?.length || 0}
+                    </p>
+                  </div>
+
                   <div className="space-y-3">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Stuck Orders (latest {reconData.limit})
@@ -501,6 +510,54 @@ export default function Dashboard() {
                             <tr>
                               <td colSpan="3" className="px-5 py-10 text-center text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                                 No orphan transactions found
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Orders Missing SUCCESS Transaction (latest {reconData.limit})
+                    </p>
+                    <div className="overflow-x-auto rounded-2xl border border-slate-800">
+                      <table className="w-full text-left">
+                        <thead className="bg-white/[0.02]">
+                          <tr>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Order</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount</th>
+                            <th className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Razorpay IDs</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                          {(reconData.ordersMissingSuccessTx || []).map((o) => (
+                            <tr key={o._id} className="hover:bg-white/[0.02]">
+                              <td className="px-5 py-4">
+                                <a href={`/orders/${o._id}`} className="text-xs font-bold text-white hover:text-slate-300 transition-colors">
+                                  {o._id}
+                                </a>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{o.status}</span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="text-[11px] font-bold text-white tabular-nums">₹{Number(o.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="text-[10px] font-mono text-slate-500 space-y-1">
+                                  <div>order: {o.razorpayOrderId || '—'}</div>
+                                  <div>payment: {o.razorpayPaymentId || '—'}</div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {(reconData.ordersMissingSuccessTx || []).length === 0 && (
+                            <tr>
+                              <td colSpan="4" className="px-5 py-10 text-center text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                                No orders missing SUCCESS transaction found
                               </td>
                             </tr>
                           )}

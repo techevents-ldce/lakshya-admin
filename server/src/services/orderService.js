@@ -169,7 +169,7 @@ const getReconciliationReport = async (query = {}) => {
   const { limit = 50 } = query;
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 500);
 
-  const [stuckOrders, orphanTransactions] = await Promise.all([
+  const [stuckOrders, orphanTransactions, ordersMissingSuccessTx] = await Promise.all([
     Order.aggregate([
       { $match: { status: { $ne: 'success' }, $or: [{ razorpayOrderId: { $ne: null } }, { razorpayPaymentId: { $ne: null } }] } },
       {
@@ -245,9 +245,56 @@ const getReconciliationReport = async (query = {}) => {
       { $limit: lim },
       { $project: { _id: 1, transaction_id: 1, razorpay_order_id: 1, razorpay_payment_id: 1, amount: 1, currency: 1, status: 1, created_at: 1, user_id: 1, event_ids: 1 } },
     ]),
+    Order.aggregate([
+      { $match: { status: { $ne: 'success' }, $or: [{ razorpayOrderId: { $ne: null } }, { razorpayPaymentId: { $ne: null } }] } },
+      {
+        $lookup: {
+          from: 'transactions',
+          let: { rpo: '$razorpayOrderId', rpp: '$razorpayPaymentId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$status', 'SUCCESS'] },
+                    {
+                      $or: [
+                        { $and: [{ $ne: ['$$rpp', null] }, { $eq: ['$razorpay_payment_id', '$$rpp'] }] },
+                        { $and: [{ $ne: ['$$rpo', null] }, { $eq: ['$razorpay_order_id', '$$rpo'] }] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $project: { _id: 1 } },
+          ],
+          as: 'successTx',
+        },
+      },
+      { $match: { successTx: { $eq: [] } } },
+      { $sort: { updatedAt: -1 } },
+      { $limit: lim },
+      {
+        $project: {
+          _id: 1,
+          userId: 1,
+          status: 1,
+          totalAmount: 1,
+          currency: 1,
+          razorpayOrderId: 1,
+          razorpayPaymentId: 1,
+          fulfillmentError: 1,
+          fulfillmentStartedAt: 1,
+          fulfillmentFailedAt: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+    ]),
   ]);
 
-  return { stuckOrders, orphanTransactions, limit: lim };
+  return { stuckOrders, orphanTransactions, ordersMissingSuccessTx, limit: lim };
 };
 
 const forceFulfillOrder = async (orderId, adminId, reqMeta = {}) => {
