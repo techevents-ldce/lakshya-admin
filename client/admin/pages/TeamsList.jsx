@@ -94,8 +94,8 @@ export default function TeamsList() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Team Governance</h1>
-          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} institutional teams cataloged</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Teams</h1>
+          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} teams registered</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-900 border border-white/[0.05] p-3 rounded-xl shadow-lg">
@@ -103,7 +103,7 @@ export default function TeamsList() {
              <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
              <input 
                type="text" 
-               placeholder="Search registry (Team, Leader)..." 
+               placeholder="Search teams (name, leader, email)..." 
                value={search} 
                onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
                className="input-field pl-12" 
@@ -138,10 +138,11 @@ export default function TeamsList() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-white/[0.01]">
-                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Team Entity</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] hidden sm:table-cell">Event Attribution</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Lead Personnel</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Deployment</th>
+                      <th className="px-6 py-5 w-16 text-center border-b border-white/[0.05]"></th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Team Name</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Leader</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">College</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-center">Status</th>
                       <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Actions</th>
                     </tr>
                   </thead>
@@ -153,24 +154,23 @@ export default function TeamsList() {
                         onClick={() => viewTeamDetail(t._id)}
                       >
                         <td className="px-6 py-6 border-b border-white/[0.02]">
-                          <p className="text-sm font-bold text-white tracking-tight group-hover:text-indigo-400 transition-colors leading-none uppercase">{t.teamName}</p>
-                          <span className={`inline-flex mt-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${(STATUS_CONFIG[t.status] || STATUS_CONFIG.withdrawn).bg} ${(STATUS_CONFIG[t.status] || STATUS_CONFIG.withdrawn).color}`}>
-                             {t.status}
-                          </span>
+                          <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:border-indigo-500 group-hover:text-indigo-400 transition-all shadow-lg">
+                             <HiOutlineUserGroup className="w-4 h-4" />
+                          </div>
                         </td>
-                        <td className="px-6 py-6 border-b border-white/[0.02] hidden sm:table-cell">
-                          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[120px]">{t.eventId?.title || 'General Entry'}</p>
+                        <td className="px-6 py-6 border-b border-white/[0.02]">
+                          <p className="text-sm font-bold text-white tracking-tight group-hover:text-indigo-400 transition-colors leading-none uppercase">{t.teamName}</p>
                         </td>
                         <td className="px-6 py-6 border-b border-white/[0.02]">
                           <p className="text-xs font-bold text-slate-300 tracking-tight leading-none">{t.leaderId?.name || 'Institutional Host'}</p>
                         </td>
                         <td className="px-6 py-6 border-b border-white/[0.02]">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:border-indigo-500 group-hover:text-indigo-400 transition-all shadow-lg">
-                               <HiOutlineUserGroup className="w-4 h-4" />
-                             </div>
-                             <span className="text-xs font-bold text-white tabular-nums">{t.memberCount || 0}</span>
-                          </div>
+                          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[120px]">{t.college || 'N/A'}</p>
+                        </td>
+                        <td className="px-6 py-6 border-b border-white/[0.02] text-center">
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${(STATUS_CONFIG[t.status] || STATUS_CONFIG.withdrawn).bg} ${(STATUS_CONFIG[t.status] || STATUS_CONFIG.withdrawn).color}`}>
+                             {t.status}
+                          </span>
                         </td>
                         <td className="px-6 py-6 border-b border-white/[0.02] text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
@@ -246,8 +246,8 @@ export default function TeamsList() {
 
               <div className="space-y-6">
                   <div className="flex items-center justify-between px-1">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                       Personnel Hierarchy ({selectedTeam.members?.length || 0})
+                    <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <HiOutlineUserGroup className="w-4 h-4 text-indigo-400" /> Team Members ({selectedTeam.members?.length || 0})
                     </h4>
                   </div>
                   <div className="space-y-2">

@@ -112,8 +112,8 @@ export default function Users() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Users</h1>
-          <p className="text-slate-500 font-medium text-sm">Manage user accounts, institutional roles, and access credentials</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">User Archive</h1>
+          <p className="text-slate-500 font-medium text-sm">Manage user accounts and status</p>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ export default function Users() {
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-5 h-5 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search by name or email..." 
+            placeholder="Search users (name, email, phone)..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
             className="input-field pl-12" 
@@ -167,14 +167,12 @@ export default function Users() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-white/[0.01]">
-                <tr className="bg-white/[0.01]">
                   <th className="px-6 py-5 w-16 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Expand</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">User Identification</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">User Archive</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] hidden sm:table-cell">Institution</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] hidden sm:table-cell">Role</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Status</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Actions</th>
-                </tr>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.02]">
@@ -218,8 +216,8 @@ export default function Users() {
                               <button onClick={() => setResetModal(u)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white hover:border-slate-600 transition-all active:scale-95" title="Reset Password">
                                 <HiOutlineKey className="w-4 h-4" />
                               </button>
-                              <button onClick={() => handleDelete(u._id, u.name)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-600/10 border border-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-all active:scale-95" title="Delete User">
-                                <HiOutlineTrash className="w-4 h-4" />
+                              <button onClick={() => handleDelete(u._id, u.name)} className="px-8 py-3 rounded-xl bg-red-600/10 border border-red-600/20 text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all active:scale-95 flex items-center gap-2" title="Delete Account">
+                                <HiOutlineTrash className="w-4 h-4" /> Delete Account
                               </button>
                             </>
                           )}

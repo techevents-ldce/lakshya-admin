@@ -88,6 +88,7 @@ export default function HackathonImport() {
   const [teamSearch, setTeamSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [batchFilter, setBatchFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
   const [expandedTeam, setExpandedTeam] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
 
@@ -98,6 +99,7 @@ export default function HackathonImport() {
       const params = { page: teamPage, limit: 15, search: teamSearch };
       if (statusFilter) params.selectionStatus = statusFilter;
       if (batchFilter) params.importBatch = batchFilter;
+      if (paymentFilter) params.paymentStatus = paymentFilter;
       
       const { data } = await api.get('/hackathon/teams', { params });
       setTeams(data.data.teams || []);
@@ -119,7 +121,7 @@ export default function HackathonImport() {
       fetchTeams();
       fetchBatches();
     }
-  }, [viewMode, teamPage, teamSearch, statusFilter, batchFilter]);
+  }, [viewMode, teamPage, teamSearch, statusFilter, batchFilter, paymentFilter]);
 
   const handleAction = (teamId, teamName, actionType) => {
     let title, message, confirmLabel, variant, endpoint, method = 'PATCH';
@@ -286,8 +288,8 @@ export default function HackathonImport() {
     <div className="animate-fade-in space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Hackathon Management</h1>
-          <p className="text-slate-500 font-medium">Manage team selections and import participant data</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Hackathon</h1>
+          <p className="text-slate-500 font-medium">Manage teams and data imports</p>
         </div>
 
         <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-2xl border border-slate-700/30 backdrop-blur-xl">
@@ -340,6 +342,16 @@ export default function HackathonImport() {
                      {batches.map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
                    </select>
                 </div>
+
+                <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+                <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
+                   <HiOutlineRefresh className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+                   <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer">
+                     <option value="" className="bg-slate-900">Payment: All</option>
+                     <option value="paid" className="bg-slate-900">Paid Only</option>
+                     <option value="unpaid" className="bg-slate-900">Unpaid Only</option>
+                   </select>
+                </div>
               </div>
            </div>
 
@@ -355,7 +367,7 @@ export default function HackathonImport() {
                    <thead>
                      <tr className="bg-white/[0.01]">
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Information</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Members</th>
+                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Members</th>
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-center">Status</th>
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Payment</th>
                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Batch</th>

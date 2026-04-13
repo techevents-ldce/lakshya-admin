@@ -45,7 +45,7 @@ export default function BulkEmailJobDetail() {
       setJob(data.data.job);
       setRecipients(data.data.recipients || data.data.recentFailures || []);
     } catch {
-      toast.error('Failed to resolve job node');
+      toast.error('Failed to load details');
       navigate('/bulk-email/jobs');
     } finally {
       setLoading(false);
@@ -66,7 +66,7 @@ export default function BulkEmailJobDetail() {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <HiOutlineRefresh className="w-10 h-10 text-primary-500 animate-spin" />
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-4">Analyzing job node...</p>
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-4">Loading details...</p>
       </div>
     );
   }
@@ -94,8 +94,8 @@ export default function BulkEmailJobDetail() {
             <HiOutlineChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-white uppercase tracking-tight">Transmission Detail</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Nodal ID: <span className="text-slate-400">{job._id}</span></p>
+            <h1 className="text-xl font-bold text-white uppercase tracking-tight">Email Details</h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Log ID: <span className="text-slate-400">{job._id}</span></p>
           </div>
         </div>
         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider border ${cfg.bg} ${cfg.color}`}>
@@ -112,7 +112,7 @@ export default function BulkEmailJobDetail() {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="space-y-1">
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Nodes</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Recipients</p>
                 <p className="text-2xl font-bold text-white">{job.totalRecipients}</p>
               </div>
               <div className="space-y-1">
@@ -139,7 +139,7 @@ export default function BulkEmailJobDetail() {
             <div className="pt-6 border-t border-white/[0.05] space-y-4">
                <div>
                   <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                    <HiOutlineDocumentText className="w-4 h-4 text-primary-400" /> Transmission Payload
+                    <HiOutlineDocumentText className="w-4 h-4 text-primary-400" /> Message Content
                   </h3>
                   <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
                     <p className="text-sm font-bold text-white mb-2 uppercase tracking-tight">{job.subject}</p>
@@ -154,9 +154,9 @@ export default function BulkEmailJobDetail() {
           <div className="card space-y-4 border-slate-700/30">
             <div className="flex items-center justify-between mb-2">
                <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                 <HiOutlineUserGroup className="w-4 h-4 text-primary-400" /> Nodal Recipient List
+                 <HiOutlineUserGroup className="w-4 h-4 text-primary-400" /> Recipient List
                </h3>
-               <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{recipients.length} Identified Units</span>
+               <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{recipients.length} Recipients</span>
             </div>
             <div className="overflow-hidden rounded-2xl border border-white/[0.05]">
               <div className="max-h-[500px] overflow-y-auto custom-scrollbar divide-y divide-white/[0.02]">
@@ -198,32 +198,32 @@ export default function BulkEmailJobDetail() {
         <div className="space-y-6">
           <div className="card space-y-6 border-slate-700/30">
             <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-              <HiOutlineShieldCheck className="w-4 h-4 text-primary-400" /> Nodal Metadata
+              <HiOutlineShieldCheck className="w-4 h-4 text-primary-400" /> Metadata
             </h3>
             
             <div className="space-y-4">
               <div className="space-y-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Protocol Type</p>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Template</p>
                 <div className="flex items-center gap-2">
                    <div className="w-1.5 h-1.5 rounded-full bg-primary-500"></div>
-                   <p className="text-[11px] font-bold text-white uppercase tracking-tight">{job.template} Matrix</p>
+                   <p className="text-[11px] font-bold text-white uppercase tracking-tight">{job.template}</p>
                 </div>
               </div>
               
               <div className="space-y-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Transmission Time</p>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Sent At</p>
                 <p className="text-[11px] font-bold text-white uppercase tracking-tight">{formatDate(job.createdAt)}</p>
               </div>
 
               <div className="space-y-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Sender Identity</p>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Sender</p>
                 <p className="text-[11px] font-bold text-white uppercase tracking-tight">{job.senderIdentity || 'Lakshya Updates'}</p>
                 <p className="text-[9px] text-slate-500 font-bold tracking-tight lowercase">{job.senderEmail || 'updates@notify.lakshyaldce.in'}</p>
               </div>
 
               <div className="space-y-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Primary Origin</p>
-                <p className="text-[11px] font-bold text-white uppercase tracking-tight">{job.createdBy?.name || 'SYSTEM OVERRIDE'}</p>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Sent By</p>
+                <p className="text-[11px] font-bold text-white uppercase tracking-tight">{job.createdBy?.name || 'SYSTEM'}</p>
               </div>
             </div>
           </div>
@@ -233,10 +233,10 @@ export default function BulkEmailJobDetail() {
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
                    <HiOutlineExternalLink className="w-5 h-5" />
                 </div>
-                <h4 className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">Nodal Intelligence</h4>
+                <h4 className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">Delivery Info</h4>
              </div>
              <p className="text-[10px] text-indigo-300/60 font-medium leading-relaxed uppercase tracking-tight">
-               Background transmission threads are isolated. Multi-path delivery ensures 99.9% reach. Failures are automatically logged for re-transmission protocols.
+               Emails are sent in the background. Failures are automatically logged for review.
              </p>
           </div>
         </div>

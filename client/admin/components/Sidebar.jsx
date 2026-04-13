@@ -3,33 +3,33 @@ import { useAuth } from '../context/AuthContext';
 import { HiOutlineChartBar, HiOutlineCalendar, HiOutlineUsers, HiOutlineUserGroup, HiOutlineTicket, HiOutlineCreditCard, HiOutlineDocumentDownload, HiOutlineShieldCheck, HiOutlineMail, HiOutlineLogout, HiOutlineX, HiOutlineTag, HiOutlineInboxIn, HiOutlineReceiptTax, HiOutlineClipboardCheck, HiOutlineSparkles, HiOutlineLightningBolt } from 'react-icons/hi';
 
 const links = [
-  { type: 'divider', label: 'Systems Intelligence' },
-  { to: '/dashboard', label: 'Dashboard Control', icon: HiOutlineChartBar },
+  { type: 'divider', label: 'Main' },
+  { to: '/dashboard', label: 'Dashboard', icon: HiOutlineChartBar },
   
-  { type: 'divider', label: 'Personnel Registry' },
-  { to: '/users', label: 'User Directory', icon: HiOutlineUsers },
-  { to: '/coordinators', label: 'Coordinator Network', icon: HiOutlineUserGroup },
-  { to: '/alumni', label: 'Alumni Network', icon: HiOutlineSparkles },
+  { type: 'divider', label: 'Users' },
+  { to: '/users', label: 'Users', icon: HiOutlineUsers },
+  { to: '/coordinators', label: 'Coordinators', icon: HiOutlineUserGroup },
+  { to: '/alumni', label: 'Alumni', icon: HiOutlineSparkles },
   
-  { type: 'divider', label: 'Event Logistics' },
-  { to: '/events', label: 'Event Specifications', icon: HiOutlineCalendar },
-  { to: '/registrations', label: 'Participant Registry', icon: HiOutlineTicket },
-  { to: '/teams', label: 'Active Teams', icon: HiOutlineUserGroup },
-  { to: '/tickets-list', label: 'Credential List', icon: HiOutlineClipboardCheck },
+  { type: 'divider', label: 'Events' },
+  { to: '/events', label: 'Events', icon: HiOutlineCalendar },
+  { to: '/registrations', label: 'Registrations', icon: HiOutlineTicket },
+  { to: '/teams', label: 'Teams', icon: HiOutlineUserGroup },
+  { to: '/tickets-list', label: 'Tickets', icon: HiOutlineClipboardCheck },
   
-  { type: 'divider', label: 'Financial Audit' },
-  { to: '/payments', label: 'Payment Records', icon: HiOutlineCreditCard },
-  { to: '/orders', label: 'Transaction Nexus', icon: HiOutlineReceiptTax },
-  { to: '/referrals', label: 'Referral Alpha', icon: HiOutlineTag },
+  { type: 'divider', label: 'Finance' },
+  { to: '/payments', label: 'Payments', icon: HiOutlineCreditCard },
+  { to: '/orders', label: 'Orders', icon: HiOutlineReceiptTax },
+  { to: '/referrals', label: 'Referrals', icon: HiOutlineTag },
   
-  { type: 'divider', label: 'Communication Hub' },
-  { to: '/bulk-email', label: 'Institutional Dispatch', icon: HiOutlineMail, superadminOnly: true },
-  { to: '/bulk-email/jobs', label: 'Dispatch Logs', icon: HiOutlineInboxIn, superadminOnly: true },
+  { type: 'divider', label: 'Email' },
+  { to: '/bulk-email', label: 'Bulk Email', icon: HiOutlineMail, superadminOnly: true },
+  { to: '/bulk-email/jobs', label: 'Email Logs', icon: HiOutlineInboxIn, superadminOnly: true },
   
-  { type: 'divider', label: 'Security & Export' },
-  { to: '/audit-logs', label: 'System Audit Logs', icon: HiOutlineShieldCheck, superadminOnly: true },
-  { to: '/export', label: 'Data Export Nexus', icon: HiOutlineDocumentDownload },
-  { to: '/hackathon', label: 'Hackathon Core', icon: HiOutlineLightningBolt, superadminOnly: true },
+  { type: 'divider', label: 'System' },
+  { to: '/audit-logs', label: 'Audit Logs', icon: HiOutlineShieldCheck, superadminOnly: true },
+  { to: '/export', label: 'Export Data', icon: HiOutlineDocumentDownload },
+  { to: '/hackathon', label: 'Hackathon', icon: HiOutlineLightningBolt, superadminOnly: true },
 ];
 
 export default function Sidebar({ open, onClose }) {

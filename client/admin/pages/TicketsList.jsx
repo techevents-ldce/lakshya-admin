@@ -121,8 +121,8 @@ export default function TicketsList() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Gate Control</h1>
-          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} active access tokens verified</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Tickets</h1>
+          <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} active tickets</p>
         </div>
         <div className="flex items-center gap-1.5 bg-slate-900 border border-white/[0.05] p-1 rounded-xl shadow-lg">
           <button 
@@ -130,14 +130,14 @@ export default function TicketsList() {
             className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${viewMode === 'flat' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40' : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'}`}
           >
             <HiOutlineViewList className="w-4 h-4" /> 
-            <span>List Mode</span>
+            <span>List View</span>
           </button>
           <button 
             onClick={() => setViewMode('team')} 
             className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${viewMode === 'team' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40' : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'}`}
           >
             <HiOutlineViewBoards className="w-4 h-4" /> 
-            <span>Team Clusters</span>
+            <span>Team View</span>
           </button>
         </div>
       </div>
@@ -148,7 +148,7 @@ export default function TicketsList() {
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
           <input 
             type="text" 
-            placeholder="Auditing search (ID, name, email)..." 
+            placeholder="Search tickets (ID, name, email)..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
             className="input-field pl-12" 
@@ -198,12 +198,12 @@ export default function TicketsList() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-white/[0.01]">
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Verification ID</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Bearer Information</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Event Attribution</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Affiliation</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-center">Security Status</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Administrative Actions</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Ticket ID</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">User Info</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Event</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Team</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-center">Status</th>
+                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.02]">
@@ -225,11 +225,11 @@ export default function TicketsList() {
                         </div>
                       </td>
                       <td className="px-6 py-6">
-                        <p className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors tracking-tight leading-none mb-1.5">{t.userId?.name || 'Institutional Guest'}</p>
+                        <p className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors tracking-tight leading-none mb-1.5">{t.userId?.name || 'Guest User'}</p>
                         <p className="text-[10px] text-slate-500/70 font-medium uppercase tracking-widest">{t.userId?.email || 'N/A'}</p>
                       </td>
                       <td className="px-6 py-6">
-                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[120px] leading-none">{t.eventId?.title || 'System Core'}</p>
+                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[120px] leading-none">{t.eventId?.title || 'System core'}</p>
                       </td>
                       <td className="px-6 py-6 font-medium">
                         {t.team ? (
@@ -239,7 +239,7 @@ export default function TicketsList() {
                             </div>
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[100px]">{t.team.teamName}</span>
                           </div>
-                        ) : <span className="text-slate-700 text-[10px] font-bold uppercase tracking-widest opacity-30 italic leading-none">Solo Entry</span>}
+                        ) : <span className="text-slate-700 text-[10px] font-bold uppercase tracking-widest opacity-30 italic leading-none">Individual</span>}
                       </td>
                       <td className="px-6 py-6 text-center">
                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${cfg.bg} ${cfg.color} inline-flex items-center gap-1.5 leading-none`}>
@@ -251,16 +251,16 @@ export default function TicketsList() {
                         <div className="flex items-center justify-end gap-2.5">
                           {t.status === 'valid' && (
                             <>
-                              <button onClick={() => handleMarkUsed(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/40 transition-all shadow-lg active:scale-95" title="Mark as Validated">
+                              <button onClick={() => handleMarkUsed(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/40 transition-all shadow-lg active:scale-95" title="Mark Used">
                                 <HiOutlineQrcode className="w-5 h-5" />
                               </button>
-                              <button onClick={() => handleCancel(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 text-slate-500 hover:text-red-400 hover:border-red-500/40 transition-all shadow-lg active:scale-95" title="Revoke Authorization">
+                              <button onClick={() => handleCancel(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 text-slate-500 hover:text-red-400 hover:border-red-500/40 transition-all shadow-lg active:scale-95" title="Cancel Ticket">
                                 <HiOutlineBan className="w-5 h-5" />
                               </button>
                             </>
                           )}
                           {user?.role === 'superadmin' && (
-                            <button onClick={() => handleDelete(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-600/10 border border-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-lg active:scale-95" title="Purge Record">
+                            <button onClick={() => handleDelete(t._id)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-600/10 border border-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-lg active:scale-95" title="Delete">
                               <HiOutlineTrash className="w-4 h-4" />
                             </button>
                           )}
@@ -301,11 +301,11 @@ export default function TicketsList() {
                         </div>
                         <div>
                           <p className="text-lg font-bold text-white tracking-tight leading-none mb-1.5 uppercase">{group.team.teamName}</p>
-                          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{group.event?.title || 'General Intake'}</p>
+                          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{group.event?.title || 'General'}</p>
                         </div>
                       </div>
                       <div className="text-right flex flex-col items-end gap-1.5">
-                         <span className="px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/[0.05] text-[10px] font-bold text-slate-400 uppercase tracking-widest">{group.tickets.length} Tokens</span>
+                         <span className="px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/[0.05] text-[10px] font-bold text-slate-400 uppercase tracking-widest">{group.tickets.length} Tickets</span>
                          {group.team.leaderId && <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5 leading-none mt-1 opacity-70">LDR: {group.team.leaderId.name}</p>}
                       </div>
                     </div>
@@ -325,7 +325,7 @@ export default function TicketsList() {
                                 <td className="px-8 py-5">
                                   <p className="text-xs font-bold text-slate-400 group-hover/row:text-white transition-colors leading-none mb-1">{t.userId?.name || '---'}</p>
                                   {t.userId?._id?.toString() === group.team.leaderId?._id?.toString() && (
-                                    <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest opacity-60">Lead Architect</span>
+                                    <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest opacity-60">Team Leader</span>
                                   )}
                                 </td>
                                 <td className="px-8 py-5 text-center">
@@ -354,17 +354,17 @@ export default function TicketsList() {
             <div className="card !p-0 overflow-hidden border-slate-700/30">
                <div className="px-8 py-6 bg-white/[0.02] border-b border-white/[0.05]">
                   <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
-                     <HiOutlineTicket className="w-5 h-5 text-emerald-500" /> Individual Tickets ({soloTickets.length})
+                     <HiOutlineTicket className="w-5 h-5 text-emerald-500" /> Individual Entries ({soloTickets.length})
                   </h3>
                </div>
                <div className="overflow-x-auto">
                  <table className="w-full text-left">
                    <thead>
-                     <tr className="bg-white/[0.01]">
-                       <th className="px-8 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Ticket ID</th>
-                       <th className="px-8 py-5 text-[9px] font-bold text-slate-500 uppercase tracking-widest">Bearer Spec</th>
-                       <th className="px-8 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-widest text-right">Actions</th>
-                     </tr>
+                      <tr className="bg-white/[0.01]">
+                        <th className="px-8 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Ticket ID</th>
+                        <th className="px-8 py-5 text-[9px] font-bold text-slate-500 uppercase tracking-widest">User Info</th>
+                        <th className="px-8 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-widest text-right">Actions</th>
+                      </tr>
                    </thead>
                    <tbody className="divide-y divide-white/[0.02]">
                      {soloTickets.map((t) => (

@@ -24,14 +24,14 @@ import {
 
 
 const TEMPLATE_OPTIONS = [
-  { id: 'raw', label: 'Raw Alpha', icon: HiOutlineDocumentText, desc: 'Unformatted plaintext dispatch' },
-  { id: 'success', label: 'Verified', icon: HiOutlineCheckCircle, desc: 'Positive verification theme' },
-  { id: 'congratulations', label: 'Commendation', icon: HiOutlineStar, desc: 'Achievement recognition theme' },
-  { id: 'important', label: 'Priority', icon: HiOutlineExclamation, desc: 'Critical alert/notice theme' },
-  { id: 'formal', label: 'Institutional', icon: HiOutlineShieldCheck, desc: 'Professional administrative theme' },
-  { id: 'marketing', label: 'External Lead', icon: HiOutlineSpeakerphone, desc: 'Institutional outreach theme' },
-  { id: 'club', label: 'Entity Invite', icon: HiOutlineUserGroup, desc: 'Professional cluster theme' },
-  { id: 'team_login', label: 'Team Login', icon: HiOutlineKey, desc: 'Login credentials and team welcome' },
+  { id: 'raw', label: 'Plain Text', icon: HiOutlineDocumentText, desc: 'Simple text email' },
+  { id: 'success', label: 'Success', icon: HiOutlineCheckCircle, desc: 'Verification success theme' },
+  { id: 'congratulations', label: 'Congratulations', icon: HiOutlineStar, desc: 'Achievement/congrats theme' },
+  { id: 'important', label: 'Important', icon: HiOutlineExclamation, desc: 'Priority notice theme' },
+  { id: 'formal', label: 'Formal', icon: HiOutlineShieldCheck, desc: 'Official administrative theme' },
+  { id: 'marketing', label: 'Marketing', icon: HiOutlineSpeakerphone, desc: 'Outreach/promo theme' },
+  { id: 'club', label: 'Invite', icon: HiOutlineUserGroup, desc: 'Invitation theme' },
+  { id: 'team_login', label: 'Team Login', icon: HiOutlineKey, desc: 'Team credentials' },
 ];
 
 
@@ -378,14 +378,14 @@ export default function BulkEmail() {
     <div className="animate-fade-in space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pb-10 border-b border-white/[0.05]">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Communication Dispatch</h1>
-          <p className="text-slate-500 font-medium text-sm">Broadcast institutional directives to coordinators, participants, and stakeholders</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Bulk Email</h1>
+          <p className="text-slate-500 font-medium text-sm">Send bulk emails to participants and coordinators</p>
         </div>
         <button
           onClick={() => navigate('/bulk-email/jobs')}
           className="btn-outline flex items-center gap-3 px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-all"
         >
-          <HiOutlineClipboardList className="w-5 h-5 text-indigo-400" /> Delivery Archive
+          <HiOutlineClipboardList className="w-5 h-5 text-indigo-400" /> Email Logs
         </button>
       </div>
 
@@ -396,7 +396,7 @@ export default function BulkEmail() {
           <div className="card border-white/[0.05] bg-slate-900 shadow-xl">
             <h2 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-6 flex items-center gap-3">
                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/20"></div>
-               Personnel Clusters
+               Recipients
             </h2>
             <div className="space-y-3">
               {ROLE_OPTIONS.map(({ value, label }) => (
@@ -407,7 +407,7 @@ export default function BulkEmail() {
                     onChange={() => toggleRole(value)}
                     className="w-4.5 h-4.5 rounded border-white/[0.1] bg-slate-900 text-indigo-600 focus:ring-indigo-500/20"
                   />
-                  <span className="text-xs font-bold text-slate-500 group-hover:text-white transition-colors uppercase tracking-tight">{label} Scope</span>
+                  <span className="text-xs font-bold text-slate-500 group-hover:text-white transition-colors uppercase tracking-tight">{label}</span>
                 </label>
               ))}
             </div>
@@ -417,7 +417,7 @@ export default function BulkEmail() {
           <div className="card border-slate-800/40">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
-               Specific Recipients
+               Select Users
             </h2>
             <div className="relative mb-4">
               <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-4 h-4" />
@@ -464,7 +464,7 @@ export default function BulkEmail() {
           <div className="card border-slate-800/40">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
-               Manual Entry
+               Add Emails
             </h2>
             <textarea
               value={manualEmails}
@@ -482,7 +482,7 @@ export default function BulkEmail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
-                 Import From List
+                 Upload CSV / Excel
               </h2>
               <div className="group relative">
                 <HiOutlineInformationCircle className="w-4 h-4 text-slate-600 cursor-help" />
@@ -592,7 +592,7 @@ export default function BulkEmail() {
           <div className="card border-slate-800/40">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
-               Outgoing Identity
+               Sender
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {SENDER_OPTIONS.map((opt) => (
@@ -616,7 +616,7 @@ export default function BulkEmail() {
           <div className="card border-slate-800/40">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
-               Communication Template
+               Email Template
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
               {TEMPLATE_OPTIONS.map(({ id, label, icon: Icon, desc }) => (
@@ -708,7 +708,7 @@ export default function BulkEmail() {
               disabled={template !== 'team_login' && !body.trim()}
               className="btn-outline flex-1 py-4 text-[10px] font-bold uppercase tracking-widest disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
-              <HiOutlineEye className="w-5 h-5" /> Dispatch Preview
+              <HiOutlineEye className="w-5 h-5" /> Preview Email
             </button>
             <button
               onClick={() => setConfirmOpen(true)}
@@ -716,7 +716,7 @@ export default function BulkEmail() {
               className="btn-primary flex-[2] py-4 text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/10 disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
               <HiOutlinePaperAirplane className="w-5 h-5" /> 
-              {sending ? 'COMMENCING DISPATCH...' : 'INITIALIZE BULK DISPATCH'}
+              {sending ? 'SENDING EMAILS...' : 'SEND BULK EMAILS'}
             </button>
             {hasRecipients && (
               <div className="px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden lg:block">
