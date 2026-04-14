@@ -28,6 +28,7 @@ import UserDetail from '@admin/pages/UserDetail';
 import TeamsList from '@admin/pages/TeamsList';
 import AlumniManagementPage from '@admin/pages/AlumniManagementPage';
 import HackathonImport from '@admin/pages/HackathonImport';
+import EventInsights from '@admin/pages/EventInsights';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
@@ -72,6 +73,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<RoleDashboard />} />
+          <Route path="event-insights" element={<RoleRoute role="admin"><EventInsights /></RoleRoute>} />
 
           {/* ── Admin-only routes ── */}
           <Route path="events" element={<RoleRoute role="admin"><Events /></RoleRoute>} />

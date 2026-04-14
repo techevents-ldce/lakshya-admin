@@ -277,8 +277,8 @@ export default function Registrations() {
 
                     {expanded === r._id && (
                       <tr className="bg-white/[0.01] animate-scale-in">
-                        <td colSpan="6" className="px-8 py-12 border-b border-white/[0.02]">
-                          <div className="flex flex-col gap-12 max-h-[600px] overflow-y-auto custom-scrollbar pr-4 border-l-2 border-indigo-500/30 pl-8">
+                        <td colSpan="6" className="px-8 py-16 border-b border-white/[0.02] bg-gradient-to-b from-indigo-500/[0.02] to-transparent">
+                          <div className="flex flex-col gap-16 border-l-2 border-indigo-500/30 pl-10 pr-4">
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                                <div className="space-y-8">
                                   <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-3">

@@ -18,7 +18,7 @@ import {
   HiOutlineIdentification,
 } from 'react-icons/hi';
 
-const ENGAGEMENT_ROLES = ['Guest', 'Judge', 'Speaker', 'Donor', 'Sponsor'];
+const ENGAGEMENT_ROLES = ['Guest', 'Judge', 'Speaker', 'Donor', 'Sponsor', 'Visitor'];
 
 const ROLE_CONFIG = {
   Guest: { label: 'Guest', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
@@ -26,6 +26,7 @@ const ROLE_CONFIG = {
   Speaker: { label: 'Speaker', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
   Donor: { label: 'Donor', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
   Sponsor: { label: 'Sponsor', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  Visitor: { label: 'Visitor', color: 'text-slate-400', bg: 'bg-slate-500/10 border-slate-500/20' },
 };
 
 const fmtDT = (d) =>

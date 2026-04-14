@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const ENGAGEMENT_ROLES = ['Guest', 'Judge', 'Speaker', 'Donor', 'Sponsor'];
+const ENGAGEMENT_ROLES = ['Guest', 'Judge', 'Speaker', 'Donor', 'Sponsor', 'Visitor'];
 const QUALIFICATIONS = ['BE', 'ME', 'MCA'];
 
 const alumniSubmissionSchema = new mongoose.Schema(

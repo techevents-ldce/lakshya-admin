@@ -11,6 +11,8 @@ const { mergeCollegeStatsForDisplay } = require('../utils/collegeDisplayGroup');
 const getDashboardStats = async (filters = {}) => {
   try {
     const { dateFrom, dateTo, eventId, registrationMode } = filters;
+    const mongoose = require('mongoose');
+    const Transaction = require('../models/Transaction');
 
     // Build date match condition
     const dateMatch = {};
@@ -18,30 +20,46 @@ const getDashboardStats = async (filters = {}) => {
     if (dateTo) dateMatch.$lte = new Date(dateTo);
     const hasDateFilter = Object.keys(dateMatch).length > 0;
 
+    // Build date match for Transaction (uses created_at)
+    const txDateMatch = {};
+    if (dateFrom) txDateMatch.$gte = new Date(dateFrom);
+    if (dateTo) txDateMatch.$lte = new Date(dateTo);
+
     // Build registration filter
     const regFilter = { status: { $ne: 'cancelled' } };
-    if (eventId) regFilter.eventId = require('mongoose').Types.ObjectId.createFromHexString(eventId);
+    if (eventId) regFilter.eventId = mongoose.Types.ObjectId.createFromHexString(eventId);
     if (hasDateFilter) regFilter.createdAt = dateMatch;
     if (registrationMode) regFilter.registrationMode = registrationMode;
 
-    // Build payment filter
-    const payFilter = { status: 'completed' };
-    if (eventId) payFilter.eventId = require('mongoose').Types.ObjectId.createFromHexString(eventId);
-    if (hasDateFilter) payFilter.createdAt = dateMatch;
+    // Build transaction filter (Primary source of truth for revenue)
+    const txFilter = { status: 'SUCCESS' };
+    if (eventId) {
+      const eventIdObj = mongoose.Types.ObjectId.createFromHexString(eventId);
+      txFilter.event_ids = { $in: [eventIdObj] };
+    }
+    if (hasDateFilter) txFilter.created_at = txDateMatch;
 
     // Base ticket filter
     const ticketFilter = {};
-    if (eventId) ticketFilter.eventId = require('mongoose').Types.ObjectId.createFromHexString(eventId);
+    if (eventId) ticketFilter.eventId = mongoose.Types.ObjectId.createFromHexString(eventId);
     if (hasDateFilter) ticketFilter.createdAt = dateMatch;
 
-    // Try to get Order-based revenue (orders collection may not exist)
+    // Build Order-based stats (using Order model only for successful order counts/amounts)
     let orderRevenue = 0;
     let orderStatusBreakdown = [];
     try {
       const Order = require('../models/Order');
       const orderMatch = {};
       if (hasDateFilter) orderMatch.createdAt = dateMatch;
-      if (eventId) orderMatch['itemsSnapshot.eventId'] = require('mongoose').Types.ObjectId.createFromHexString(eventId);
+      if (eventId) {
+        const eventIdObj = mongoose.Types.ObjectId.createFromHexString(eventId);
+        // Use $elemMatch to find orders containing this event in their snapshot
+        orderMatch.itemsSnapshot = { 
+          $elemMatch: { 
+            eventId: { $in: [eventId, eventIdObj] } 
+          } 
+        };
+      }
 
       const [orderRev, orderStatuses] = await Promise.all([
         Order.aggregate([
@@ -56,8 +74,8 @@ const getDashboardStats = async (filters = {}) => {
       ]);
       orderRevenue = orderRev[0]?.total || 0;
       orderStatusBreakdown = orderStatuses;
-    } catch {
-      // orders collection doesn't exist yet
+    } catch (e) {
+      logger.error('Order query failed in analytics', { error: e.message });
     }
 
     const [
@@ -81,11 +99,15 @@ const getDashboardStats = async (filters = {}) => {
       topBranches,
       topYears,
     ] = await Promise.all([
-      User.countDocuments(),
+      // Total Users: If event selected, count unique users for that event
+      eventId 
+        ? Registration.distinct('userId', regFilter).then(ids => ids.length)
+        : User.countDocuments(),
       Event.countDocuments(),
       Registration.countDocuments(regFilter),
-      Payment.aggregate([
-        { $match: payFilter },
+      // Revenue from transactions
+      Transaction.aggregate([
+        { $match: txFilter },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
       Registration.find(regFilter)
@@ -102,9 +124,9 @@ const getDashboardStats = async (filters = {}) => {
         { $unwind: '$event' },
         { $project: { eventTitle: '$event.title', count: 1 } },
       ]),
-      // Registration trend (last 30 days or filtered range)
+      // Registration trend (respect eventId)
       Registration.aggregate([
-        { $match: hasDateFilter ? { createdAt: dateMatch } : { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
+        { $match: eventId ? regFilter : (hasDateFilter ? { createdAt: dateMatch } : { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }) },
         {
           $group: {
             _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -113,34 +135,47 @@ const getDashboardStats = async (filters = {}) => {
         },
         { $sort: { _id: 1 } },
       ]),
-      User.aggregate([
-        { $group: { _id: '$role', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]),
-      Payment.aggregate([
-        ...(hasDateFilter ? [{ $match: { createdAt: dateMatch } }] : []),
+      // User Role Breakdown (respect eventId)
+      eventId
+        ? Registration.aggregate([
+            { $match: regFilter },
+            { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+            { $unwind: '$user' },
+            { $group: { _id: '$user.role', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+          ])
+        : User.aggregate([
+            { $group: { _id: '$role', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+          ]),
+      // Transaction status breakdown (replaces payment status)
+      Transaction.aggregate([
+        { $match: eventId ? { event_ids: { $in: [mongoose.Types.ObjectId.createFromHexString(eventId)] } } : (hasDateFilter ? { created_at: txDateMatch } : {}) },
         { $group: { _id: '$status', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-      // Revenue trend
-      Payment.aggregate([
-        { $match: hasDateFilter ? { status: 'completed', createdAt: dateMatch } : { status: 'completed', createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
+      // Revenue trend (from Transactions, respect eventId)
+      Transaction.aggregate([
+        { $match: txFilter.created_at ? txFilter : { status: 'SUCCESS', created_at: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
             total: { $sum: '$amount' },
           },
         },
         { $sort: { _id: 1 } },
       ]),
+      // Registration status (respect eventId)
       Registration.aggregate([
-        { $match: hasDateFilter ? { createdAt: dateMatch } : {} },
+        { $match: eventId ? { eventId: mongoose.Types.ObjectId.createFromHexString(eventId) } : (hasDateFilter ? { createdAt: dateMatch } : {}) },
         { $group: { _id: '$status', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-      Payment.aggregate([
-        { $match: payFilter },
-        { $group: { _id: '$eventId', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
+      // Top paying events (from transactions)
+      Transaction.aggregate([
+        { $match: { status: 'SUCCESS' } },
+        { $unwind: '$event_ids' },
+        { $group: { _id: '$event_ids', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
         { $sort: { totalRevenue: -1 } },
         { $limit: 5 },
         { $lookup: { from: 'events', localField: '_id', foreignField: '_id', as: 'event' } },
@@ -163,26 +198,55 @@ const getDashboardStats = async (filters = {}) => {
           },
         },
       ]),
-      // Top colleges (raw strings; merged for display in JS — see mergeCollegeStatsForDisplay)
-      User.aggregate([
-        { $match: { college: { $ne: null, $ne: '' } } },
-        { $group: { _id: '$college', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 500 },
-      ]),
-      // Top branches
-      User.aggregate([
-        { $match: { branch: { $ne: null, $ne: '' } } },
-        { $group: { _id: '$branch', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-      ]),
-      // Top years
-      User.aggregate([
-        { $match: { year: { $ne: null } } },
-        { $group: { _id: '$year', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]),
+      // Top colleges (event-aware if needed)
+      eventId
+        ? Registration.aggregate([
+            { $match: regFilter },
+            { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+            { $unwind: '$user' },
+            { $match: { 'user.college': { $ne: null, $ne: '' } } },
+            { $group: { _id: '$user.college', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 500 },
+          ])
+        : User.aggregate([
+            { $match: { college: { $ne: null, $ne: '' } } },
+            { $group: { _id: '$college', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 500 },
+          ]),
+      // Top branches (event-aware if needed)
+      eventId
+        ? Registration.aggregate([
+            { $match: regFilter },
+            { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+            { $unwind: '$user' },
+            { $match: { 'user.branch': { $ne: null, $ne: '' } } },
+            { $group: { _id: '$user.branch', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+          ])
+        : User.aggregate([
+            { $match: { branch: { $ne: null, $ne: '' } } },
+            { $group: { _id: '$branch', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+          ]),
+      // Top years (event-aware if needed)
+      eventId
+        ? Registration.aggregate([
+            { $match: regFilter },
+            { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+            { $unwind: '$user' },
+            { $match: { 'user.year': { $ne: null } } },
+            { $group: { _id: '$user.year', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+          ])
+        : User.aggregate([
+            { $match: { year: { $ne: null } } },
+            { $group: { _id: '$year', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+          ]),
     ]);
 
     const topColleges = mergeCollegeStatsForDisplay(topCollegesRaw, 10);
@@ -221,4 +285,94 @@ const getDashboardStats = async (filters = {}) => {
   }
 };
 
-module.exports = { getDashboardStats };
+const getEventMetrics = async () => {
+  try {
+    const mongoose = require('mongoose');
+    const Transaction = require('../models/Transaction');
+
+    // 1. Fetch all events for base info
+    const events = await Event.find({}).select('title category registrationFee').lean();
+
+    // 2. Aggregate participants and alumni participation from Registrations
+    const regStats = await Registration.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' },
+      {
+        $lookup: {
+          from: 'alumnisubmissions',
+          localField: 'user.email',
+          foreignField: 'email',
+          as: 'alumni'
+        }
+      },
+      {
+        $group: {
+          _id: '$eventId',
+          participantCount: { $sum: 1 },
+          alumniCount: {
+            $sum: { $cond: [{ $gt: [{ $size: '$alumni' }, 0] }, 1, 0] }
+          },
+          priorityAlumniCount: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $gt: [{ $size: '$alumni' }, 0] },
+                  { $eq: [{ $arrayElemAt: ['$alumni.priority', 0] }, true] }
+                ]},
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    // 3. Aggregate revenue from Transactions
+    const revStats = await Transaction.aggregate([
+      { $match: { status: 'SUCCESS' } },
+      { $unwind: '$event_ids' },
+      {
+        $group: {
+          _id: '$event_ids',
+          totalRevenue: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    // 4. Combine metrics
+    const result = events.map(ev => {
+      const rs = regStats.find(s => s._id?.toString() === ev._id.toString()) || {};
+      const vs = revStats.find(s => s._id?.toString() === ev._id.toString()) || {};
+
+      return {
+        _id: ev._id,
+        title: ev.title,
+        category: ev.category,
+        registrationFee: ev.registrationFee,
+        participantCount: rs.participantCount || 0,
+        alumniCount: rs.alumniCount || 0,
+        priorityAlumniCount: rs.priorityAlumniCount || 0,
+        totalRevenue: vs.totalRevenue || 0
+      };
+    });
+
+    // Sort by revenue descending by default
+    result.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    return result;
+  } catch (err) {
+    logger.error('Failed to aggregate event metrics', { error: err.message });
+    throw new AppError('Analytics aggregation failed', 500);
+  }
+};
+
+module.exports = { getDashboardStats, getEventMetrics };

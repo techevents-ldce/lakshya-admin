@@ -227,8 +227,8 @@ export default function Users() {
                     </tr>
                     {expanded === u._id && (
                       <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
-                        <td colSpan="6" className="px-12 py-12">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 max-h-[500px] overflow-y-auto custom-scrollbar pr-4">
+                        <td colSpan="6" className="px-12 py-20 bg-gradient-to-b from-indigo-500/[0.02] to-transparent">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 pr-4">
                             <DetailNode label="Phone Number" value={u.phone || 'Not provided'} />
                             <DetailNode label="Branch / Course" value={u.branch || 'Not specified'} />
                             <DetailNode label="Academic Year" value={u.year ? `Year ${u.year}` : 'Not specified'} />
