@@ -738,9 +738,9 @@ export default function BulkEmail() {
 
       {/* ── Preview Modal ──────────────────────────────────────────────────── */}
       {previewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => setPreviewOpen(false)}>
+        <div className="modal-overlay fixed inset-0 z-[9998] bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => setPreviewOpen(false)}>
           <div
-            className="card w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border-slate-800 shadow-2xl relative bg-slate-900"
+            className="modal-panel card max-w-3xl max-h-[90vh] flex flex-col border-slate-800 shadow-2xl bg-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/5 blur-[100px] pointer-events-none"></div>

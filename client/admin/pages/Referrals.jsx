@@ -424,8 +424,8 @@ export default function Referrals() {
 
       {/* Modal Overlay */}
       {isSuperadmin && modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={closeModal}>
-          <div className="card w-full max-w-xl border-slate-700/50 shadow-2xl relative overflow-hidden bg-slate-900/40" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay fixed inset-0 z-[9998] bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={closeModal}>
+          <div className="modal-panel card max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar border-slate-700/50 shadow-2xl bg-slate-900/40" onClick={(e) => e.stopPropagation()}>
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 blur-[100px] -mr-32 -mt-32 pointer-events-none"></div>
             <form onSubmit={handleSave} className="relative z-10 space-y-8 p-4">
               <div className="flex items-center gap-4 border-b border-white/[0.05] pb-6">

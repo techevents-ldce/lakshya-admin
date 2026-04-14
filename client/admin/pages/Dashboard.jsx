@@ -402,8 +402,8 @@ export default function Dashboard() {
       </div>
 
       {reconOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-950/95 shadow-2xl overflow-hidden">
+        <div className="modal-overlay fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="modal-panel max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl border border-slate-800 bg-slate-950/95 shadow-2xl">
             <div className="p-6 border-b border-slate-800 flex items-start justify-between gap-6">
               <div>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -422,7 +422,7 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-auto">
+            <div className="p-6 space-y-6">
               {reconLoading && (
                 <div className="flex items-center justify-center py-12 gap-3">
                   <HiOutlineRefresh className="w-6 h-6 text-amber-400 animate-spin" />

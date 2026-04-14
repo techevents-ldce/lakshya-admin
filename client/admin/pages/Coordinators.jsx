@@ -239,8 +239,8 @@ export default function Coordinators() {
 
       {/* Assign Events Modal Overlay */}
       {isSuperadmin && assignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => setAssignModal(null)}>
-          <div className="card w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col border-slate-700/50 shadow-2xl relative bg-slate-900/60" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay fixed inset-0 z-[9998] bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => setAssignModal(null)}>
+          <div className="modal-panel card max-w-lg max-h-[85vh] flex flex-col border-slate-700/50 shadow-2xl bg-slate-900/60" onClick={(e) => e.stopPropagation()}>
             <div className="absolute top-0 right-0 w-80 h-80 bg-primary-600/5 blur-[120px] pointer-events-none"></div>
             
             <div className="sticky top-0 z-20 bg-slate-900 border-b border-white/[0.05] px-8 py-6 flex items-center justify-between">
@@ -283,8 +283,8 @@ export default function Coordinators() {
 
       {/* Reset Password Modal Overlay */}
       {isSuperadmin && resetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => { setResetModal(null); setNewPassword(''); }}>
-          <div className="card w-full max-sm border-slate-700/50 shadow-2xl relative overflow-hidden bg-slate-900/40" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay fixed inset-0 z-[9998] bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => { setResetModal(null); setNewPassword(''); }}>
+          <div className="modal-panel card max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar border-slate-700/50 shadow-2xl bg-slate-900/40" onClick={(e) => e.stopPropagation()}>
              <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 blur-[100px] pointer-events-none"></div>
              
              <div className="p-8 text-center space-y-8 relative z-10">

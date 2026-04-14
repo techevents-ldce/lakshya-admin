@@ -94,9 +94,9 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
     : 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20';
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-fade-in" onClick={onClose}>
+    <div className="modal-overlay fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9998] animate-fade-in" onClick={onClose}>
       <div
-        className="bg-slate-900 border border-slate-800/60 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-in"
+        className="modal-panel bg-slate-900 border border-slate-800/60 rounded-2xl shadow-2xl max-w-md max-h-[90vh] custom-scrollbar animate-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

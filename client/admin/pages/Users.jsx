@@ -291,8 +291,8 @@ export default function Users() {
 
       {/* Reset Password Modal Overlay */}
       {isSuperadmin && resetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => { setResetModal(null); setNewPassword(''); }}>
-          <div className="card w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar border-slate-800 shadow-2xl relative bg-slate-900" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay fixed inset-0 z-[9998] bg-slate-950/80 backdrop-blur-md animate-fade-in" onClick={() => { setResetModal(null); setNewPassword(''); }}>
+          <div className="modal-panel card max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar border-slate-800 shadow-2xl bg-slate-900" onClick={(e) => e.stopPropagation()}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-[100px] -mr-16 -mt-16 pointer-events-none"></div>
             <div className="relative z-10 space-y-8 p-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400 shadow-lg">

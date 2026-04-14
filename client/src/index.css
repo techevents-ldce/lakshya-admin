@@ -22,6 +22,11 @@
       linear-gradient(to bottom right, #020617, #0f172a);
     background-attachment: fixed;
   }
+
+  /* ── Body scroll lock when any modal overlay is open (CSS-only) ── */
+  body:has(.modal-overlay) {
+    overflow: hidden;
+  }
 }
 
 @layer components {
@@ -61,21 +66,51 @@
   .custom-scrollbar::-webkit-scrollbar { width: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { @apply bg-transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-white/[0.05] rounded-full hover:bg-white/[0.1] transition-colors; }
+
+  /* ── Shared Modal Overlay (backdrop + centering container) ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  /* ── Shared Modal Panel ── */
+  /* Self-centers via position:fixed + translate as a safety net in case any
+     ancestor ever gets a transform. Works alongside the overlay's flex centering. */
+  .modal-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: calc(100% - 2rem);
+  }
 }
 
 /* Animations */
+/* NOTE: These animations intentionally use ONLY opacity — no CSS transform.
+   Using transform (even translateY(0) or scale(1)) with animation-fill-mode: forwards
+   permanently sets a transform on animated elements, which creates a new CSS containing
+   block that breaks position:fixed for ALL descendants (modals, overlays, dropdowns).
+   This is a browser-spec behavior that cannot be overridden with !important. */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fade-in  { animation: fadeIn  0.35s ease-out forwards; }
+.animate-scale-in { animation: scaleIn 0.25s ease-out forwards; }
 
 /* Custom selection */
 ::selection {

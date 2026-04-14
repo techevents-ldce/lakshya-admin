@@ -372,11 +372,11 @@ export default function AlumniManagementPage() {
       {/* Detail modal */}
       {(detail || detailLoading) && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in"
+          className="modal-overlay fixed inset-0 z-[9998] bg-slate-950/80 backdrop-blur-md animate-fade-in"
           onClick={() => { setDetail(null); setDetailLoading(false); }}
         >
           <div
-            className="card w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border-slate-700/50 shadow-2xl relative bg-slate-900/60"
+            className="modal-panel card max-w-3xl max-h-[90vh] flex flex-col border-slate-700/50 shadow-2xl bg-slate-900/60"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-600/5 blur-[150px] pointer-events-none"></div>
