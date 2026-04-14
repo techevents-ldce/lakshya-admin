@@ -105,11 +105,10 @@ const getTickets = async (query = {}) => {
     Ticket.countDocuments(filter),
   ]);
 
-  // Enrich with team info for team events
+  // Enrich with team info for team events (registration link + Ticket.teamId fallback)
   const Registration = require('../models/Registration');
   const Team = require('../models/Team');
 
-  // Get all unique user+event combos to search registrations
   const userEventPairs = tickets.map((t) => ({
     userId: t.userId?._id || t.userId,
     eventId: t.eventId?._id || t.eventId,
@@ -125,31 +124,41 @@ const getTickets = async (query = {}) => {
       teamId: { $ne: null },
     }).select('userId eventId teamId').lean();
 
-    if (regs.length > 0) {
-      const teamIds = [...new Set(regs.map((r) => r.teamId))];
-      const teams = await Team.find({ _id: { $in: teamIds } })
+    const teamIdSet = new Set();
+    regs.forEach((r) => {
+      if (r.teamId) teamIdSet.add(r.teamId.toString());
+    });
+    tickets.forEach((t) => {
+      if (t.teamId) teamIdSet.add(t.teamId.toString());
+    });
+
+    let teamMap = {};
+    if (teamIdSet.size > 0) {
+      const teams = await Team.find({ _id: { $in: [...teamIdSet] } })
         .select('teamName leaderId')
         .populate('leaderId', 'name email')
         .lean();
-      const teamMap = {};
-      teams.forEach((t) => { teamMap[t._id.toString()] = t; });
-
-      const regMap = {};
-      regs.forEach((r) => {
-        const key = `${r.userId.toString()}_${r.eventId.toString()}`;
-        regMap[key] = r;
-      });
-
-      tickets.forEach((t) => {
-        const uid = (t.userId?._id || t.userId)?.toString();
-        const eid = (t.eventId?._id || t.eventId)?.toString();
-        const key = `${uid}_${eid}`;
-        const reg = regMap[key];
-        if (reg && reg.teamId) {
-          t.team = teamMap[reg.teamId.toString()] || null;
-        }
-      });
+      teams.forEach((tm) => { teamMap[tm._id.toString()] = tm; });
     }
+
+    const regMap = {};
+    regs.forEach((r) => {
+      const key = `${r.userId.toString()}_${r.eventId.toString()}`;
+      regMap[key] = r;
+    });
+
+    tickets.forEach((t) => {
+      const uid = (t.userId?._id || t.userId)?.toString();
+      const eid = (t.eventId?._id || t.eventId)?.toString();
+      const key = `${uid}_${eid}`;
+      const reg = regMap[key];
+      if (reg && reg.teamId) {
+        t.team = teamMap[reg.teamId.toString()] || null;
+      }
+      if (!t.team && t.teamId) {
+        t.team = teamMap[t.teamId.toString()] || null;
+      }
+    });
   }
 
   return { tickets, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };

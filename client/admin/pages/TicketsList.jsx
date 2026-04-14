@@ -44,7 +44,8 @@ export default function TicketsList() {
   const fetchTickets = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 40 };
+      // Team view groups by team; a larger page reduces the same team split across pages.
+      const params = { page, limit: viewMode === 'team' ? 200 : 40 };
       if (statusFilter) params.status = statusFilter;
       if (eventFilter) params.eventId = eventFilter;
       if (search) params.search = search;
@@ -56,7 +57,7 @@ export default function TicketsList() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchTickets(); }, [page, statusFilter, eventFilter, search]);
+  useEffect(() => { fetchTickets(); }, [page, statusFilter, eventFilter, search, viewMode]);
 
   const handleMarkUsed = async (ticketDbId) => {
     try {
