@@ -29,7 +29,44 @@ const getRegistrations = async (query = {}) => {
         { email: { $regex: search, $options: 'i' } },
       ],
     }).select('_id');
-    filter.userId = { $in: matchingUsers.map((u) => u._id) };
+    const matchedUserIds = matchingUsers.map((u) => u._id);
+
+    if (query.groupTeams) {
+      // Find teams matching by teamName
+      const matchingTeamsByName = await Team.find({
+        eventId,
+        teamName: { $regex: search, $options: 'i' }
+      }).select('_id leaderId');
+      
+      const teamIdsBySearch = matchingTeamsByName.map(t => t._id);
+      const leaderIdsByTeamSearch = matchingTeamsByName.map(t => t.leaderId);
+
+      // Find team IDs where at least one member matches the user search
+      const matchedRegs = await Registration.find({
+        eventId,
+        userId: { $in: matchedUserIds }
+      }).select('teamId userId');
+
+      const involvedTeamIdsFromMembers = matchedRegs.filter(r => r.teamId).map(r => r.teamId);
+      const soloMatchedUserIds = matchedRegs.filter(r => !r.teamId).map(r => r.userId);
+
+      // Find the leaders of teams matched by member search
+      const teamsByMemberSearch = await Team.find({ _id: { $in: involvedTeamIdsFromMembers } }).select('leaderId');
+      const leaderUserIdsFromMembers = teamsByMemberSearch.map(t => t.leaderId);
+
+      // Final filter: matching solo users OR leaders of teams matched by member OR leaders of teams matched by name
+      filter.userId = { $in: [...soloMatchedUserIds, ...leaderUserIdsFromMembers, ...leaderIdsByTeamSearch] };
+    } else {
+      filter.userId = { $in: matchedUserIds };
+    }
+  } else if (query.groupTeams && eventId) {
+    // If grouping teams but no search, only show solo regs + team leaders
+    const teams = await Team.find({ eventId }).select('leaderId');
+    const leaderUserIds = teams.map(t => t.leaderId);
+    filter.$or = [
+      { teamId: null },
+      { userId: { $in: leaderUserIds } }
+    ];
   }
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -73,7 +110,17 @@ const getRegistrations = async (query = {}) => {
     return plain;
   });
 
-  return { registrations: enriched, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
+  // If grouping teams, we might need the actual participant counts for the dashboard
+  let stats = null;
+  if (query.groupTeams && eventId) {
+    const [allRegs, checkedIn] = await Promise.all([
+      Registration.countDocuments({ eventId, status: { $ne: 'cancelled' } }),
+      Registration.countDocuments({ eventId, status: { $ne: 'cancelled' }, checkedIn: true })
+    ]);
+    stats = { totalParticipants: allRegs, totalCheckedIn: checkedIn };
+  }
+
+  return { registrations: enriched, total, page: Number(page), pages: Math.ceil(total / Number(limit)), stats };
 };
 
 const getRegistrationById = async (id) => {
