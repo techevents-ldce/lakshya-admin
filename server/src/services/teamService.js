@@ -83,20 +83,24 @@ const getTeamById = async (id) => {
     .lean();
   team.registration = registration;
 
-  // Get linked tickets for members
+  // All tickets for this team: by Ticket.teamId (fulfillment) and/or member userIds (legacy)
   try {
-    if (members.length > 0) {
-      const memberUserIds = members.map((m) => m.userId?._id || m.userId).filter(Boolean);
-      const eventObjId = team.eventId?._id || team.eventId;
-      if (eventObjId && memberUserIds.length > 0) {
-        const tickets = await Ticket.find({
-          userId: { $in: memberUserIds },
-          eventId: eventObjId,
-        }).select('ticketId status userId scannedAt').lean();
-        team.tickets = tickets;
-      } else {
-        team.tickets = [];
+    const eventObjId = team.eventId?._id || team.eventId;
+    const memberUserIds = members.map((m) => m.userId?._id || m.userId).filter(Boolean);
+    if (eventObjId) {
+      const orConds = [{ teamId: id }];
+      if (memberUserIds.length > 0) {
+        orConds.push({ userId: { $in: memberUserIds } });
       }
+      const tickets = await Ticket.find({
+        eventId: eventObjId,
+        $or: orConds,
+      })
+        .select('ticketId status userId scannedAt teamId')
+        .lean();
+      team.tickets = tickets;
+    } else {
+      team.tickets = [];
     }
   } catch {
     team.tickets = [];
