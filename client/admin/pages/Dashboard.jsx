@@ -17,6 +17,10 @@ import {
   HiOutlineArrowRight,
   HiOutlineGlobeAlt,
   HiOutlineInformationCircle,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+  HiOutlineClock,
+  HiOutlineReply,
 } from 'react-icons/hi';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler);
@@ -113,6 +117,20 @@ export default function Dashboard() {
     { label: 'Total Events', value: stats?.totalEvents || 0, icon: HiOutlineCalendar, accent: 'from-emerald-500/10 to-emerald-600/10', color: 'text-emerald-400' },
     { label: 'Registrations', value: stats?.totalRegistrations || 0, icon: HiOutlineTicket, accent: 'from-violet-500/10 to-violet-600/10', color: 'text-violet-400' },
     { label: 'Total Revenue', value: `₹${(Number((stats?.orderRevenue || stats?.totalRevenue) || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, icon: HiOutlineCurrencyRupee, accent: 'from-amber-500/10 to-amber-600/10', color: 'text-amber-400' },
+  ];
+
+  const getOrderCount = (statuses) => {
+    if (!stats?.orderStatusBreakdown) return 0;
+    return stats.orderStatusBreakdown
+      .filter((b) => statuses.includes(b._id))
+      .reduce((sum, b) => sum + b.count, 0);
+  };
+
+  const transactionStats = [
+    { label: 'Paid Transactions', value: getOrderCount(['success']), icon: HiOutlineCheckCircle, color: 'text-emerald-400' },
+    { label: 'Pending Transactions', value: getOrderCount(['pending', 'payment_initiated', 'fulfilling']), icon: HiOutlineClock, color: 'text-amber-400' },
+    { label: 'Failed Transactions', value: getOrderCount(['failed', 'cancelled']), icon: HiOutlineXCircle, color: 'text-red-400' },
+    { label: 'Refunded Transactions', value: getOrderCount(['refunded']), icon: HiOutlineReply, color: 'text-slate-400' },
   ];
 
   const secondaryStats = [
@@ -227,6 +245,26 @@ export default function Dashboard() {
             <div className="mt-4 flex items-center gap-2 relative z-10">
                <div className={`w-1.5 h-1.5 rounded-full ${card.color.replace('text', 'bg')} opacity-60`}></div>
                <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Updated live</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {transactionStats.map((card, i) => (
+          <div key={`tx-${i}`} className="card p-6 border-slate-800/40 relative overflow-hidden group hover:bg-slate-800/40 transition-all duration-300 shadow-lg rounded-2xl bg-slate-900/40 backdrop-blur-sm">
+            <div className="flex items-start justify-between relative z-10">
+               <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{card.label}</p>
+                  <p className="text-3xl font-bold text-white tracking-tight tabular-nums">{card.value}</p>
+               </div>
+               <div className={`w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center ${card.color} shadow-sm group-hover:border-slate-700 transition-all duration-300`}>
+                  <card.icon className="w-6 h-6" />
+               </div>
+            </div>
+            <div className="mt-4 flex items-center gap-2 relative z-10">
+               <div className={`w-1.5 h-1.5 rounded-full ${card.color.replace('text', 'bg')} opacity-60`}></div>
+               <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Live tracking</span>
             </div>
           </div>
         ))}
