@@ -105,8 +105,9 @@ export default function Coordinators() {
   };
 
   return (
-    <div className="animate-fade-in space-y-8">
-      {/* Header */}
+    <>
+      <div className="animate-fade-in space-y-8">
+        {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Coordinators</h1>
@@ -234,6 +235,7 @@ export default function Coordinators() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Assign Events Modal Overlay */}
       {isSuperadmin && assignModal && (
@@ -335,6 +337,6 @@ export default function Coordinators() {
         confirmLabel={confirmModal.confirmLabel}
         variant={confirmModal.variant}
       />
-    </div>
+    </>
   );
 }

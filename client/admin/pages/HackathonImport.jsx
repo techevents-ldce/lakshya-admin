@@ -83,6 +83,8 @@ export default function HackathonImport() {
   const [batches, setBatches] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [totalTeams, setTotalTeams] = useState(0);
+  const [globalPaidTeams, setGlobalPaidTeams] = useState(0);
+  const [globalUnpaidTeams, setGlobalUnpaidTeams] = useState(0);
   const [teamPages, setTeamPages] = useState(0);
   const [teamPage, setTeamPage] = useState(1);
   const [teamSearch, setTeamSearch] = useState('');
@@ -105,6 +107,21 @@ export default function HackathonImport() {
       setTeams(data.data.teams || []);
       setTotalTeams(data.data.total || 0);
       setTeamPages(data.data.pages || 0);
+
+      // Async fetch global paid/unpaid totals for the same filters
+      try {
+        const baseParams = { limit: 1 };
+        if (statusFilter) baseParams.selectionStatus = statusFilter;
+        if (batchFilter) baseParams.importBatch = batchFilter;
+        
+        const paidRes = await api.get('/hackathon/teams', { params: { ...baseParams, paymentStatus: 'paid' } });
+        setGlobalPaidTeams(paidRes.data.data.total || 0);
+        
+        const unpaidRes = await api.get('/hackathon/teams', { params: { ...baseParams, paymentStatus: 'unpaid' } });
+        setGlobalUnpaidTeams(unpaidRes.data.data.total || 0);
+      } catch (err) {
+        // Silently ignore if counts fail
+      }
     } catch { toast.error('Failed to load hackathon teams'); }
     finally { setLoadingTeams(false); }
   };
@@ -285,7 +302,8 @@ export default function HackathonImport() {
   };
 
   return (
-    <div className="animate-fade-in space-y-8">
+    <>
+      <div className="animate-fade-in space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Hackathon</h1>
@@ -310,6 +328,39 @@ export default function HackathonImport() {
 
       {viewMode === 'manage' ? (
         <div className="space-y-6">
+           {/* Quick Stats Panel */}
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+             <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#6366F1]/30 transition-all group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="w-10 h-10 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]">
+                   <HiOutlineUserGroup className="w-5 h-5"/>
+                 </div>
+                 <p className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest">Total Teams</p>
+               </div>
+               <p className="text-4xl font-bold text-[#F1F5F9] pl-1">{totalTeams} <span className="text-sm font-medium text-[#64748B]">Global</span></p>
+             </div>
+             
+             <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#22C55E]/30 transition-all group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="w-10 h-10 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E]">
+                   <HiOutlineCheckCircle className="w-5 h-5"/>
+                 </div>
+                 <p className="text-xs font-bold text-[#22C55E] uppercase tracking-widest">Paid Teams</p>
+               </div>
+               <p className="text-4xl font-bold text-[#22C55E] pl-1">{globalPaidTeams} <span className="text-sm font-medium text-[#22C55E]/50">Global</span></p>
+             </div>
+             
+             <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#F59E0B]/30 transition-all group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
+                   <HiOutlineExclamationCircle className="w-5 h-5"/>
+                 </div>
+                 <p className="text-xs font-bold text-[#F59E0B] uppercase tracking-widest">Unpaid Teams</p>
+               </div>
+               <p className="text-4xl font-bold text-[#F59E0B] pl-1">{globalUnpaidTeams} <span className="text-sm font-medium text-[#F59E0B]/50">Global</span></p>
+             </div>
+           </div>
+
            <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
               <div className="relative group flex-1 min-w-[300px]">
                 <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-5 h-5 transition-colors" />
@@ -757,6 +808,8 @@ export default function HackathonImport() {
       {/* Spacing element at bottom */}
       <div className="h-20"></div>
 
+      </div>
+
       <ConfirmWithPassword
         open={confirmModal.open}
         onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
@@ -788,6 +841,6 @@ export default function HackathonImport() {
         confirmLabel="Execute Import"
         loading={importing}
       />
-    </div>
+    </>
   );
 }

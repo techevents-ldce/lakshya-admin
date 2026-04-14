@@ -108,9 +108,10 @@ export default function Users() {
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
 
   return (
-    <div className="animate-fade-in space-y-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+    <>
+      <div className="animate-fade-in space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">User Archive</h1>
           <p className="text-slate-500 font-medium text-sm">Manage user accounts and status</p>
@@ -286,6 +287,7 @@ export default function Users() {
           )}
         </div>
       )}
+      </div>
 
       {/* Reset Password Modal Overlay */}
       {isSuperadmin && resetModal && (
@@ -334,7 +336,7 @@ export default function Users() {
         confirmLabel={confirmModal.confirmLabel}
         variant={confirmModal.variant}
       />
-    </div>
+    </>
   );
 }
 

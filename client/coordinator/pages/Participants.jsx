@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import {
   HiOutlineSearch, HiOutlineArrowLeft, HiOutlineDocumentDownload,
   HiOutlineChevronDown, HiOutlineChevronUp, HiOutlineUserGroup,
-  HiOutlineStar, HiOutlineUsers, HiOutlineCheckCircle,
+  HiOutlineStar, HiOutlineUsers, HiOutlineCheckCircle, HiOutlineRefresh
 } from 'react-icons/hi';
 
 export default function Participants() {
@@ -46,7 +46,6 @@ export default function Participants() {
       )
     : regs;
 
-  // Attendance stats
   const totalCount = filtered.length;
   const checkedInCount = filtered.filter((r) => r.checkedIn).length;
   const pendingCount = totalCount - checkedInCount;
@@ -60,7 +59,7 @@ export default function Participants() {
       link.href = URL.createObjectURL(blob);
       link.download = `participants_${eventId}.${ext}`;
       link.click();
-      toast.success('Exported');
+      toast.success('Exported successfully');
     } catch { toast.error('Export failed'); }
   };
 
@@ -76,186 +75,212 @@ export default function Participants() {
   };
 
   return (
-    <div>
-      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-600 mb-4">
-        <HiOutlineArrowLeft className="w-4 h-4" /> Back to Events
+    <div className="animate-fade-in space-y-8 bg-[#0F1117] min-h-[700px]">
+      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-[#94A3B8] hover:text-[#F1F5F9] transition-colors rounded">
+        <HiOutlineArrowLeft className="w-4 h-4" /> Back to Dashboard
       </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">Participants</h1>
-            <span className={`badge ${isTeamEvent ? 'badge-blue' : 'badge-green'}`}>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-[#F1F5F9] tracking-tight uppercase leading-none">Participants</h1>
+            <span className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider border shrink-0 ${isTeamEvent ? 'bg-[#6366F1]/10 border-[#6366F1]/30 text-[#6366F1]' : 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'}`}>
               {isTeamEvent ? '👥 Team Event' : '👤 Solo Event'}
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-1">{eventTitle}</p>
+          <p className="text-sm font-medium text-[#94A3B8]">{eventTitle}</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-3 flex-wrap">
           {isTeamEvent && (
-            <Link to={`/events/${eventId}/teams`} className="btn-accent-outline text-xs px-3 py-1.5 flex items-center gap-1">
+            <Link to={`/events/${eventId}/teams`} className="border-2 border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1]/10 focus:ring-4 focus:ring-[#6366F1]/50 outline-none transition-all duration-150 rounded-xl py-2 px-4 shadow-sm font-semibold flex items-center justify-center gap-2">
               <HiOutlineUserGroup className="w-4 h-4" /> View Teams
             </Link>
           )}
-          <button onClick={() => handleExport('csv')} className="btn-accent-outline text-xs px-3 py-1.5 flex items-center gap-1"><HiOutlineDocumentDownload className="w-4 h-4" /> CSV</button>
-          <button onClick={() => handleExport('excel')} className="btn-accent text-xs px-3 py-1.5 flex items-center gap-1"><HiOutlineDocumentDownload className="w-4 h-4" /> Excel</button>
+          <button onClick={() => handleExport('csv')} className="border-2 border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10 focus:ring-4 focus:ring-[#22C55E]/50 outline-none transition-all duration-150 rounded-xl py-2 px-4 shadow-sm font-semibold flex items-center justify-center gap-2">
+            <HiOutlineDocumentDownload className="w-4 h-4" /> CSV
+          </button>
+          <button onClick={() => handleExport('excel')} className="bg-[#3B82F6] text-[#F1F5F9] hover:bg-blue-600 focus:ring-4 focus:ring-[#3B82F6]/50 outline-none transition-all duration-150 rounded-xl py-2 px-4 shadow-sm font-semibold flex items-center justify-center gap-2">
+            <HiOutlineDocumentDownload className="w-4 h-4" /> Excel
+          </button>
         </div>
       </div>
 
-      {/* Attendance Summary Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="stat-card">
-          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-700 font-bold text-sm">{totalCount}</span>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+        <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-xs text-gray-400">Total</p>
-            <p className="font-semibold text-gray-900">Registered</p>
+            <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Total</p>
+            <p className="text-2xl font-bold text-[#F1F5F9] leading-none">{totalCount} <span className="text-xs font-medium text-[#64748B] ml-1">Registered</span></p>
           </div>
+          <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]"><HiOutlineUsers className="w-6 h-6"/></div>
         </div>
-        <div className="stat-card">
-          <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <span className="text-emerald-700 font-bold text-sm">{checkedInCount}</span>
-          </div>
+        <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-xs text-gray-400">Scanned</p>
-            <p className="font-semibold text-emerald-700">Checked In</p>
+            <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Scanned</p>
+            <p className="text-2xl font-bold text-[#22C55E] leading-none">{checkedInCount} <span className="text-xs font-medium text-[#22C55E]/50 ml-1">Checked In</span></p>
           </div>
+          <div className="w-12 h-12 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E]"><HiOutlineCheckCircle className="w-6 h-6"/></div>
         </div>
-        <div className="stat-card">
-          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-            <span className="text-gray-700 font-bold text-sm">{pendingCount}</span>
-          </div>
+        <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-xs text-gray-400">Not Yet</p>
-            <p className="font-semibold text-gray-700">Pending</p>
+            <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Pending</p>
+            <p className="text-2xl font-bold text-[#F1F5F9] leading-none">{pendingCount} <span className="text-xs font-medium text-[#64748B] ml-1">Not Yet</span></p>
           </div>
+          <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]"><HiOutlineSearch className="w-6 h-6"/></div>
         </div>
       </div>
 
-      <div className="relative mb-6 w-full sm:max-w-md">
-        <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <input type="text" placeholder="Search by name, email or team..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative group flex-1">
+          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] group-focus-within:text-[#3B82F6] w-5 h-5 transition-colors" />
+          <input type="text" placeholder="Search by name, email or team..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl pl-12 pr-4 py-3 bg-[#1E2130] border border-[#2E3348] text-[#F1F5F9] placeholder-[#64748B] focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] outline-none transition-all shadow-sm" />
+        </div>
       </div>
 
-      {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (
-        <div className="card overflow-hidden p-0 overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
-            <thead><tr className="table-header">
-              <th className="px-4 py-3 w-8"></th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3 hidden md:table-cell">Phone</th>
-              <th className="px-4 py-3 hidden md:table-cell">College</th>
-              <th className="px-4 py-3 hidden lg:table-cell">Branch</th>
-              <th className="px-4 py-3 hidden lg:table-cell">Year</th>
-              {isTeamEvent && <th className="px-4 py-3">Team</th>}
-              {isTeamEvent && <th className="px-4 py-3">Role</th>}
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Check-in</th>
-            </tr></thead>
-            <tbody>
-              {filtered.map((r) => {
-                const leader = isLeader(r);
-                const hasTeamMembers = r.teamMembers && r.teamMembers.length > 0;
-                return (
-                  <>
-                    <tr key={r._id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => hasTeamMembers && toggleExpand(r._id)}>
-                      <td className="px-4 py-3 text-gray-400">
-                        {hasTeamMembers && (
-                          expandedRow === r._id
-                            ? <HiOutlineChevronUp className="w-4 h-4" />
-                            : <HiOutlineChevronDown className="w-4 h-4" />
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{r.userId?.name}</td>
-                      <td className="px-4 py-3 text-gray-500">{r.userId?.email}</td>
-                      <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{r.userId?.phone || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{r.userId?.college || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{r.userId?.branch || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{r.userId?.year || '—'}</td>
-                      {isTeamEvent && (
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1 text-gray-700 font-medium">
-                            <HiOutlineUsers className="w-3.5 h-3.5 text-accent-600" />
-                            {r.teamId?.teamName || '—'}
-                          </span>
-                        </td>
-                      )}
-                      {isTeamEvent && (
-                        <td className="px-4 py-3">
-                          {leader ? (
-                            <span className="inline-flex items-center gap-1 text-amber-700 font-semibold text-xs">
-                              <HiOutlineStar className="w-3.5 h-3.5" /> Leader
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs">Member</span>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-6 bg-[#1A1D27] rounded-3xl border border-[#2E3348]">
+          <HiOutlineRefresh className="w-12 h-12 text-[#6366F1] animate-spin" />
+          <p className="text-[11px] font-bold text-[#64748B] uppercase tracking-[0.4em] animate-pulse">Loading Participants...</p>
+        </div>
+      ) : (
+        <div className="bg-[#1A1D27] border border-[#2E3348] rounded-2xl overflow-hidden shadow-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#22263A] border-b border-[#2E3348]">
+                  <th className="px-6 py-4 w-12 text-center text-[10px] font-bold text-[#64748B] uppercase tracking-wider"></th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#64748B] uppercase tracking-wider hidden lg:table-cell">Details</th>
+                  {isTeamEvent && <th className="px-6 py-4 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Team</th>}
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#64748B] uppercase tracking-wider text-center">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#64748B] uppercase tracking-wider text-right">Check-in</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#2E3348]">
+                {filtered.map((r, i) => {
+                  const leader = isLeader(r);
+                  const hasTeamMembers = r.teamMembers && r.teamMembers.length > 0;
+                  const rowBg = expandedRow === r._id ? 'bg-[#6366F1]/10 border-l-2 border-l-[#6366F1]' : (i % 2 === 0 ? 'bg-transparent' : 'bg-[#22263A]/30');
+                  return (
+                    <div key={r._id} className="contents">
+                      <tr 
+                        className={`group hover:bg-[#22263A] transition-colors ${hasTeamMembers ? 'cursor-pointer' : ''} ${rowBg}`} 
+                        onClick={() => hasTeamMembers && toggleExpand(r._id)}
+                      >
+                        <td className="px-6 py-4 text-center text-[#64748B]">
+                          {hasTeamMembers && (
+                            expandedRow === r._id
+                              ? <HiOutlineChevronUp className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
+                              : <HiOutlineChevronDown className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
                           )}
                         </td>
-                      )}
-                      <td className="px-4 py-3">
-                        <span className={`badge ${r.status === 'confirmed' ? 'badge-green' : r.status === 'pending' ? 'badge-yellow' : 'badge-red'}`}>{r.status}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {r.checkedIn ? (
-                          <div className="flex items-center gap-1.5">
-                            <HiOutlineCheckCircle className="w-5 h-5 text-emerald-500" />
-                            <div>
-                              <p className="text-xs font-semibold text-emerald-700">Entered</p>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-sm text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors uppercase tracking-tight">{r.userId?.name}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                           <p className="text-xs text-[#94A3B8] font-medium lowercase tracking-tight max-w-[150px] truncate">{r.userId?.email}</p>
+                        </td>
+                        <td className="px-6 py-4 hidden lg:table-cell space-y-1">
+                          <p className="text-[10px] text-[#94A3B8] font-bold uppercase truncate max-w-[150px]">{r.userId?.college || '—'}</p>
+                          <p className="text-[9px] text-[#64748B] font-bold uppercase truncate">
+                            {r.userId?.phone ? `☎ ${r.userId.phone}` : ''} {r.userId?.branch ? `· ${r.userId.branch}` : ''}
+                          </p>
+                        </td>
+                        {isTeamEvent && (
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#22263A] border border-[#2E3348] rounded-lg text-[10px] font-bold text-[#F1F5F9] uppercase tracking-wider">
+                              <HiOutlineUsers className="w-3.5 h-3.5 text-[#6366F1]" />
+                              {r.teamId?.teamName || '—'}
+                            </span>
+                            {leader && (
+                              <span className="block mt-1.5 text-[9px] text-[#F59E0B] font-bold uppercase tracking-widest flex items-center gap-1">
+                                <HiOutlineStar className="w-3 h-3" /> Leader
+                              </span>
+                            )}
+                          </td>
+                        )}
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${r.status === 'confirmed' ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]' : r.status === 'pending' ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]' : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'}`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {r.checkedIn ? (
+                            <div className="flex flex-col items-end gap-1">
+                               <div className="flex items-center gap-1.5 text-[#22C55E]">
+                                  <span className="text-[9px] font-bold uppercase tracking-wider">Entered</span>
+                                  <HiOutlineCheckCircle className="w-4 h-4" />
+                               </div>
                               {r.checkedInAt && (
-                                <p className="text-[10px] text-gray-400">
-                                  {new Date(r.checkedInAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
+                                <p className="text-[9px] text-[#64748B] font-bold tracking-tight">
+                                  {new Date(r.checkedInAt).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'short' })}
                                 </p>
                               )}
                             </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400 italic">pending</span>
-                        )}
-                      </td>
-                    </tr>
-                    {/* Expanded team members */}
-                    {expandedRow === r._id && hasTeamMembers && (
-                      <tr key={`${r._id}-members`} className="bg-accent-50/30">
-                        <td colSpan={isTeamEvent ? 12 : 10} className="px-6 py-4">
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                            Team Members — {r.teamId?.teamName}
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {r.teamMembers.map((tm) => {
-                              const tmIsLeader = r.teamId?.leaderId &&
-                                ((r.teamId.leaderId._id || r.teamId.leaderId).toString() === (tm.userId?._id || tm.userId).toString());
-                              return (
-                                <div key={tm._id} className="bg-white rounded-lg border border-gray-100 p-3 flex items-start gap-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${tmIsLeader ? 'bg-amber-500' : 'bg-accent-500'}`}>
-                                    {tm.userId?.name?.[0] || '?'}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="font-medium text-sm text-gray-900 truncate">{tm.userId?.name}</span>
-                                      {tmIsLeader && <HiOutlineStar className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
-                                    </div>
-                                    <p className="text-xs text-gray-500 truncate">{tm.userId?.email}</p>
-                                    {tm.userId?.phone && <p className="text-xs text-gray-400">{tm.userId.phone}</p>}
-                                    {tm.userId?.college && <p className="text-xs text-gray-400">{tm.userId.college}</p>}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          ) : (
+                            <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Pending</span>
+                          )}
                         </td>
                       </tr>
-                    )}
-                  </>
-                );
-              })}
-              {filtered.length === 0 && <tr><td colSpan={isTeamEvent ? 12 : 10} className="text-center py-8 text-gray-400">No participants found</td></tr>}
-            </tbody>
-          </table>
+
+                      {expandedRow === r._id && hasTeamMembers && (
+                        <tr className="bg-[#22263A] shadow-inner relative z-10 border-b border-[#2E3348]">
+                          <td colSpan={isTeamEvent ? 7 : 6} className="px-10 py-6">
+                            <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest mb-4">
+                              Team Roster — <span className="text-[#6366F1]">{r.teamId?.teamName}</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {r.teamMembers.map((tm) => {
+                                const tmIsLeader = r.teamId?.leaderId &&
+                                  ((r.teamId.leaderId._id || r.teamId.leaderId).toString() === (tm.userId?._id || tm.userId).toString());
+                                return (
+                                  <div key={tm._id} className="bg-[#1A1D27] rounded-xl border border-[#2E3348] p-4 flex items-start gap-4 hover:border-[#6366F1]/50 transition-all shadow-sm">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[#F1F5F9] text-sm font-bold flex-shrink-0 shadow-lg ${tmIsLeader ? 'bg-[#F59E0B]' : 'bg-[#2E3348]'}`}>
+                                      {tm.userId?.name?.[0]?.toUpperCase() || '?'}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="font-bold text-sm text-[#F1F5F9] uppercase tracking-tight truncate">{tm.userId?.name}</span>
+                                        {tmIsLeader && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#F59E0B]/20 text-[#F59E0B] uppercase tracking-widest flex items-center gap-1"><HiOutlineStar className="w-2.5 h-2.5"/> LDR</span>}
+                                      </div>
+                                      <p className="text-[10px] font-medium text-[#94A3B8] lowercase tracking-tight truncate mb-1.5">{tm.userId?.email}</p>
+                                      {tm.userId?.phone && <p className="text-[9px] text-[#64748B] font-bold tracking-wider">☎ {tm.userId.phone}</p>}
+                                      {tm.userId?.college && <p className="text-[9px] text-[#64748B] font-bold uppercase tracking-tight truncate max-w-[150px] mt-0.5">{tm.userId.college}</p>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </div>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={isTeamEvent ? 7 : 6} className="text-center py-24 bg-[#1A1D27]">
+                      <div className="w-16 h-16 bg-[#22263A] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#2E3348]">
+                        <HiOutlineUserGroup className="w-8 h-8 text-[#64748B]" />
+                      </div>
+                      <p className="text-[#F1F5F9] text-lg font-bold uppercase tracking-wider mb-2">No Participants Found</p>
+                      <p className="text-[#94A3B8] text-sm max-w-sm mx-auto">Try adjusting your search criteria or clear the filters to see more results.</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           {totalPages > 1 && (
-            <div className="flex flex-wrap items-center justify-center gap-2 py-4 border-t border-gray-100">
+            <div className="flex flex-wrap items-center justify-center gap-3 py-6 bg-[#22263A]/50 border-t border-[#2E3348]">
               {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 rounded-lg text-sm font-medium ${page === i + 1 ? 'bg-accent-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{i + 1}</button>
+                <button 
+                  key={i} 
+                  onClick={() => setPage(i + 1)} 
+                  className={`w-10 h-10 rounded-xl text-[10px] font-bold transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[#6366F1] active:scale-95 ${page === i + 1 ? 'bg-[#6366F1] text-[#F1F5F9]' : 'bg-[#1A1D27] border border-[#2E3348] text-[#94A3B8] hover:text-[#F1F5F9] hover:border-[#6366F1]'}`}
+                >
+                  {(i + 1).toString().padStart(2, '0')}
+                </button>
               ))}
             </div>
           )}
