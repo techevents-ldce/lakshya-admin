@@ -24,7 +24,7 @@ export default function Layout() {
       </div>
 
       <main className="lg:ml-64 min-h-screen">
-        <div className="p-6 sm:p-10 max-w-7xl mx-auto animate-fade-in">
+        <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto animate-fade-in">
           <Outlet />
         </div>
       </main>

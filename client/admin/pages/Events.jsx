@@ -89,44 +89,44 @@ export default function Events() {
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
 
   return (
-    <div className="animate-fade-in space-y-8">
+    <div className="animate-fade-in space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Event Portfolio</h1>
-          <p className="text-slate-500 font-medium text-sm">Configure, monitor, and audit festival event specifications</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-none mb-2">Event Portfolio</h1>
+          <p className="text-slate-500 font-medium text-xs sm:text-sm">Configure, monitor, and audit festival event specifications</p>
         </div>
         {isSuperadmin && (
-          <Link to="/events/new" className="btn-primary flex items-center gap-2.5 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all">
-            <HiOutlinePlus className="w-5 h-5" />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Create Event</span>
+          <Link to="/events/new" className="btn-primary flex items-center gap-2 sm:gap-2.5 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all">
+            <HiOutlinePlus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest">Create Event</span>
           </Link>
         )}
       </div>
 
       {/* Control Panel */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-900 border border-white/[0.05] p-3 rounded-xl shadow-lg">
-        <div className="relative group flex-1">
-          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 sm:gap-4 bg-slate-900 border border-white/[0.05] p-2.5 sm:p-3 rounded-xl shadow-lg">
+        <div className="relative group flex-1 min-w-[200px]">
+          <HiOutlineSearch className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-4 h-4 sm:w-5 sm:h-5 transition-colors" />
           <input 
             type="text" 
             placeholder="Search event registry..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="input-field pl-12" 
+            className="input-field pl-10 sm:pl-12 text-sm" 
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-white/[0.03] rounded-xl group transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-2 hover:bg-white/[0.03] rounded-xl group transition-all border border-transparent hover:border-slate-800 cursor-pointer flex-1 sm:flex-none">
              <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
-             <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer">
+             <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer w-full sm:w-auto">
                 <option value="" className="bg-slate-900">All Categories</option>
                 {categories.map((c) => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
              </select>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-white/[0.03] rounded-xl group transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-2 hover:bg-white/[0.03] rounded-xl group transition-all border border-transparent hover:border-slate-800 cursor-pointer flex-1 sm:flex-none">
              <HiOutlineUserGroup className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
-             <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer">
+             <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer w-full sm:w-auto">
                 <option value="" className="bg-slate-900">All Types</option>
                 <option value="solo" className="bg-slate-900">Solo</option>
                 <option value="team" className="bg-slate-900">Team</option>

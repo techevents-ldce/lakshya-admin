@@ -63,11 +63,11 @@ app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/registrations', require('./routes/registrations'));
-app.use('/api/tickets', require('./routes/tickets'));
-app.use('/api/payments', require('./routes/payments'));
+app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/teams', require('./routes/teams'));
-app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/tickets', require('./routes/tickets'));
+app.use('/api/payments', require('./routes/payments'));
 
 // Rate limit export endpoints
 const exportLimiter = rateLimit({
@@ -80,6 +80,8 @@ app.use('/api/audit-logs', require('./routes/auditLogs'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/admin/alumni', require('./routes/alumni.routes'));
+app.use('/api/admin/event-insights', require('./routes/eventInsights'));
+app.use('/api/admin/event-summary', require('./routes/eventSummary'));
 app.use('/api/hackathon',   require('./routes/hackathon'));
 app.use('/uploads', express.static(require('path').join(__dirname, '..', 'uploads')));
 app.use('/api/mail', require('./routes/mail'));

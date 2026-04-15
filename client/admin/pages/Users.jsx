@@ -108,35 +108,34 @@ export default function Users() {
   const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
 
   return (
-    <>
-      <div className="animate-fade-in space-y-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+    <div className="animate-fade-in space-y-6 sm:space-y-8">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">User Archive</h1>
-          <p className="text-slate-500 font-medium text-sm">Manage user accounts and status</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-none mb-2">User Management</h1>
+          <p className="text-slate-500 font-medium text-xs sm:text-sm">Manage participant accounts, roles, and access controls</p>
         </div>
       </div>
 
       {/* Control Panel */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
-        <div className="relative group flex-1 min-w-[300px]">
-          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-5 h-5 transition-colors" />
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4 bg-slate-900/40 p-2.5 sm:p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
+        <div className="relative group flex-1 min-w-[200px]">
+          <HiOutlineSearch className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-4 h-4 sm:w-5 sm:h-5 transition-colors" />
           <input 
             type="text" 
             placeholder="Search users (name, email, phone)..." 
             value={search} 
             onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
-            className="input-field pl-12" 
+            className="input-field pl-10 sm:pl-12 text-sm" 
           />
         </div>
         
-        <div className="flex flex-wrap items-center gap-4 px-2">
-          <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 px-2">
+          <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
           
-          <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+          <div className="flex items-center gap-2 group px-3 sm:px-4 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer flex-1 sm:flex-none">
              <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
-             <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer">
+             <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer w-full sm:w-auto">
                 <option value="" className="bg-slate-900">All Roles</option>
                 <option value="participant" className="bg-slate-900">Participant</option>
                 <option value="coordinator" className="bg-slate-900">Coordinator</option>
@@ -144,11 +143,11 @@ export default function Users() {
              </select>
           </div>
 
-          <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+          <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
 
-          <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+          <div className="flex items-center gap-2 group px-3 sm:px-4 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer flex-1 sm:flex-none">
              <HiOutlineShieldCheck className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
-             <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer">
+             <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer w-full sm:w-auto">
                 <option value="" className="bg-slate-900">All Status</option>
                 <option value="true" className="bg-slate-900">Active Only</option>
                 <option value="false" className="bg-slate-900">Blocked Only</option>
@@ -287,7 +286,6 @@ export default function Users() {
           )}
         </div>
       )}
-      </div>
 
       {/* Reset Password Modal Overlay */}
       {isSuperadmin && resetModal && (

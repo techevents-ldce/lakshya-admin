@@ -19,6 +19,18 @@ const eventSchema = new mongoose.Schema(
     eventDate: { type: Date },
     coordinators: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     banner: { type: String },
+    pricingConfig: {
+      mode: { type: String, enum: ['per_team', 'per_person', 'free'] },
+      currency: { type: String, default: 'INR' },
+      perTeamAmount: { type: Number },
+      perPersonAmount: { type: Number }
+    },
+    participationConfig: {
+      mode: { type: String, enum: ['individual', 'team', 'solo'] },
+      minMembers: { type: Number },
+      maxMembers: { type: Number },
+      exactMembers: { type: Number }
+    }
   },
   { timestamps: true }
 );

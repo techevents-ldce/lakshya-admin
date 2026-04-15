@@ -100,34 +100,34 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-8 pt-10 pb-4 text-center">
+        <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-3 sm:pb-4 text-center">
           {step === 1 ? (
-            <div className={`mx-auto w-14 h-14 rounded-xl flex items-center justify-center mb-6 border ${iconBg} shadow-sm`}>
-              <HiOutlineExclamation className={`w-7 h-7 ${iconColor}`} />
+            <div className={`mx-auto w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-6 border ${iconBg} shadow-sm`}>
+              <HiOutlineExclamation className={`w-6 h-6 sm:w-7 sm:h-7 ${iconColor}`} />
             </div>
           ) : (
-            <div className="mx-auto w-14 h-14 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 shadow-sm">
-              <HiOutlineShieldCheck className="w-7 h-7 text-indigo-400" />
+            <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4 sm:mb-6 shadow-sm">
+              <HiOutlineShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-400" />
             </div>
           )}
-          <h3 className="text-xl font-bold text-white tracking-tight">{step === 1 ? title : 'Confirm Identity'}</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">{step === 1 ? title : 'Confirm Identity'}</h3>
         </div>
 
         {/* Body */}
-        <div className="px-8 py-4">
+        <div className="px-4 sm:px-8 py-3 sm:py-4">
           {step === 1 ? (
             <>
-              <p className="text-slate-400 text-sm text-center leading-relaxed font-medium">{message}</p>
+              <p className="text-slate-400 text-xs sm:text-sm text-center leading-relaxed font-medium">{message}</p>
               {user?.role !== 'superadmin' && (
-                <div className="mt-8 p-4 rounded-xl bg-slate-800/20 border border-white/[0.05] text-center">
-                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1.5">Security Protocol</p>
-                  <p className="text-slate-400 text-xs font-medium">Authentication is required to authorize this change.</p>
+                <div className="mt-6 sm:mt-8 p-3 sm:p-4 rounded-xl bg-slate-800/20 border border-white/[0.05] text-center">
+                  <p className="text-slate-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-1 sm:mb-1.5">Security Protocol</p>
+                  <p className="text-slate-400 text-[10px] sm:text-xs font-medium">Authentication is required to authorize this change.</p>
                 </div>
               )}
             </>
           ) : (
-            <div className="space-y-6">
-              <p className="text-slate-400 text-sm text-center font-medium">Please enter your password to authorize this action.</p>
+            <div className="space-y-4 sm:space-y-6">
+              <p className="text-slate-400 text-xs sm:text-sm text-center font-medium">Please enter your password to authorize this action.</p>
               <div className="relative group">
                 <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 w-5 h-5 transition-colors" />
                 <input
@@ -144,17 +144,17 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
             </div>
           )}
           {error && (
-            <div className="mt-6 p-4 rounded-xl bg-red-400/10 border border-red-500/20 animate-fade-in">
-               <p className="text-red-400 text-xs text-center font-semibold">{error}</p>
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl bg-red-400/10 border border-red-500/20 animate-fade-in">
+               <p className="text-red-400 text-[10px] sm:text-xs text-center font-semibold">{error}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-8 flex gap-3">
+        <div className="px-4 sm:px-8 py-6 sm:py-8 flex gap-3">
           <button
             onClick={onClose}
-            className="btn-outline flex-1 py-3 text-xs tracking-widest uppercase font-bold"
+            className="btn-outline flex-1 text-[10px] sm:text-xs tracking-widest uppercase font-bold"
           >
             Cancel
           </button>
@@ -162,7 +162,7 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
             <button
               onClick={handleProceed}
               disabled={loading}
-              className={`${btnClass} text-white flex-[1.5] py-3 rounded-lg font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50 text-xs uppercase tracking-widest`}
+              className={`${btnClass} text-white flex-[1.5] py-2.5 sm:py-3 rounded-lg font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50 text-[10px] sm:text-xs uppercase tracking-widest`}
             >
               {loading ? 'Processing...' : (user?.role === 'superadmin' ? confirmLabel : 'Continue')}
             </button>
@@ -170,7 +170,7 @@ export default function ConfirmWithPassword({ open, onClose, onConfirm, title, m
             <button
               onClick={handleConfirm}
               disabled={loading || !password.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white flex-[1.5] py-3 rounded-lg font-bold transition-all shadow-lg shadow-indigo-900/20 active:scale-95 disabled:opacity-50 text-xs uppercase tracking-widest"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white flex-[1.5] py-2.5 sm:py-3 rounded-lg font-bold transition-all shadow-lg shadow-indigo-900/20 active:scale-95 disabled:opacity-50 text-[10px] sm:text-xs uppercase tracking-widest"
             >
               {loading ? 'Verifying...' : confirmLabel}
             </button>

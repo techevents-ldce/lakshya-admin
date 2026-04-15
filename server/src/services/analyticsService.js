@@ -287,11 +287,8 @@ const getDashboardStats = async (filters = {}) => {
 
 const getEventMetrics = async () => {
   try {
-    const mongoose = require('mongoose');
-    const Transaction = require('../models/Transaction');
-
-    // 1. Fetch all events for base info
-    const events = await Event.find({}).select('title category registrationFee').lean();
+    // 1. Fetch all events with pricingConfig
+    const events = await Event.find({}).select('title category pricingConfig').lean();
 
     // 2. Aggregate participants and alumni participation from Registrations
     const regStats = await Registration.aggregate([
@@ -336,14 +333,22 @@ const getEventMetrics = async () => {
       }
     ]);
 
-    // 3. Aggregate revenue from Transactions
-    const revStats = await Transaction.aggregate([
-      { $match: { status: 'SUCCESS' } },
-      { $unwind: '$event_ids' },
+    // 3. Calculate revenue from Order itemsSnapshot using lineTotal field
+    const Order = require('../models/Order');
+    const revStats = await Order.aggregate([
+      { $match: { status: 'success' } },
+      { $unwind: '$itemsSnapshot' },
       {
         $group: {
-          _id: '$event_ids',
-          totalRevenue: { $sum: '$amount' }
+          _id: '$itemsSnapshot.eventId',
+          totalRevenue: { 
+            $sum: { 
+              $ifNull: [
+                { $ifNull: ['$itemsSnapshot.lineTotal', '$itemsSnapshot.calculatedPrice'] }, 
+                0
+              ] 
+            } 
+          }
         }
       }
     ]);
@@ -353,11 +358,24 @@ const getEventMetrics = async () => {
       const rs = regStats.find(s => s._id?.toString() === ev._id.toString()) || {};
       const vs = revStats.find(s => s._id?.toString() === ev._id.toString()) || {};
 
+      // Get effective fee from pricingConfig
+      const pricing = ev.pricingConfig || {};
+      let feeAmount = 0;
+      let feeMode = pricing.mode || 'free';
+      
+      if (pricing.mode === 'per_team') {
+        feeAmount = pricing.perTeamAmount || 0;
+      } else if (pricing.mode === 'per_person') {
+        feeAmount = pricing.perPersonAmount || 0;
+      }
+
       return {
         _id: ev._id,
         title: ev.title,
         category: ev.category,
-        registrationFee: ev.registrationFee,
+        pricingConfig: pricing,
+        feeAmount,
+        feeMode,
         participantCount: rs.participantCount || 0,
         alumniCount: rs.alumniCount || 0,
         priorityAlumniCount: rs.priorityAlumniCount || 0,
