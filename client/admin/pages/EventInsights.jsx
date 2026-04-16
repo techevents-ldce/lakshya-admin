@@ -49,9 +49,15 @@ export default function EventInsights() {
         const sanitizedMetrics = data.data.map(item => ({
           eventId: item.eventId || 'unknown',
           eventName: item.eventName || 'Unnamed Event',
-          pricingMode: item.pricingMode || 'free',
+          eventType: item.eventType || 'solo',
           totalRegistrations: item.totalRegistrations || 0,
+          totalTeams: item.totalTeams || 0,
+          totalSoloRegistrations: item.totalSoloRegistrations || 0,
           totalParticipants: item.totalParticipants || 0,
+          paidParticipants: item.paidParticipants || 0,
+          confirmedParticipants: item.confirmedParticipants || 0,
+          pendingTransactionsCount: item.pendingTransactionsCount,
+          failedTransactionsCount: item.failedTransactionsCount,
         }));
         setMetrics(sanitizedMetrics);
       } else {
@@ -77,7 +83,7 @@ export default function EventInsights() {
     labels: metrics.slice(0, 10).map(m => m.eventName || 'Unnamed'),
     datasets: [
       {
-        label: 'Total Registrations',
+        label: 'Registration Units (Teams/Solo)',
         data: metrics.slice(0, 10).map(m => m.totalRegistrations || 0),
         backgroundColor: 'rgba(99, 102, 241, 0.5)',
         borderColor: 'rgb(99, 102, 241)',
@@ -121,10 +127,10 @@ export default function EventInsights() {
   };
 
   const pieData = {
-    labels: metrics.slice(0, 5).map(m => m.title || 'Unnamed'),
+    labels: metrics.slice(0, 5).map(m => m.eventName || 'Unnamed'),
     datasets: [
       {
-        data: metrics.slice(0, 5).map(m => m.participantCount || 0),
+        data: metrics.slice(0, 5).map(m => m.totalParticipants || 0),
         backgroundColor: [
           'rgba(99, 102, 241, 0.7)',
           'rgba(168, 85, 247, 0.7)',
@@ -165,7 +171,7 @@ export default function EventInsights() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard 
-          title="Total Registrations" 
+          title="Total Registration Units" 
           value={totalRegistrations.toLocaleString()} 
           icon={HiOutlineUsers} 
           color="text-indigo-400" 
@@ -184,11 +190,11 @@ export default function EventInsights() {
           icon={HiOutlineTrendingUp} 
           color="text-amber-400" 
           accent="from-amber-500/20"
-          subtitle={metrics[0] ? `${metrics[0].totalRegistrations || 0} registrations` : '0 registrations'}
+          subtitle={metrics[0] ? `${metrics[0].totalRegistrations || 0} units` : '0 units'}
         />
         <StatCard 
           title="Most Popular Event Type" 
-          value={metrics[0] ? (metrics[0].pricingMode === 'per_team' ? 'Team' : metrics[0].pricingMode === 'per_person' ? 'Individual' : 'Free') : 'N/A'} 
+          value={metrics[0] ? (metrics[0].eventType === 'team' ? 'Team' : 'Solo') : 'N/A'} 
           icon={HiOutlineStar} 
           color="text-emerald-400" 
           accent="from-emerald-500/20"
@@ -222,7 +228,7 @@ export default function EventInsights() {
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Event Registration Summary</h2>
-            <p className="text-slate-500 text-[10px] sm:text-xs mt-1">Event Name • Total Registrations • Total Participants</p>
+            <p className="text-slate-500 text-[10px] sm:text-xs mt-1">Event Name • Registration Units (Teams/Solo) • Total Participants</p>
           </div>
         </div>
 
@@ -233,7 +239,7 @@ export default function EventInsights() {
                 <tr className="bg-white/[0.02]">
                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/[0.05] hidden sm:table-cell">Event ID</th>
                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/[0.05]">Event Name</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/[0.05] text-center">Total Registrations</th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/[0.05] text-center">Registration Units</th>
                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-white/[0.05] text-center">Total Participants</th>
                                   </tr>
               </thead>
@@ -248,16 +254,18 @@ export default function EventInsights() {
                     <td className="px-4 sm:px-6 py-3 sm:py-4">
                       <p className="text-xs sm:text-sm font-semibold text-white group-hover:text-indigo-400 transition-colors">{row.eventName}</p>
                       <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1">
-                        {row.pricingMode === 'free' 
-                          ? 'Free Event' 
-                          : `${row.pricingMode === 'per_team' ? 'Team' : 'Individual'} Event`
-                        }
+                        {row.eventType === 'team' ? 'Team Event' : 'Solo Event'}
                       </p>
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
                       <div className="space-y-1">
-                        <div className="text-[10px] sm:text-xs text-slate-400">Registrations</div>
+                        <div className="text-[10px] sm:text-xs text-slate-400">
+                          {row.eventType === 'team' ? 'Teams' : 'Solo Registrations'}
+                        </div>
                         <div className="text-sm sm:text-lg font-bold text-white">{row.totalRegistrations}</div>
+                        <p className="text-[9px] text-slate-500">
+                          Team units: {row.totalTeams} • Solo units: {row.totalSoloRegistrations}
+                        </p>
                       </div>
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">

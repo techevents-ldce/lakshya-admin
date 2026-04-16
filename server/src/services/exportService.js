@@ -75,11 +75,23 @@ const exportParticipants = async (filters = {}) => {
   return generateCSV(data, fields);
 };
 
-const exportPayments = async (filters = {}) => {
+const exportPayments = async (filters = {}, viewerRole = null) => {
   const { eventId, format = 'csv', status, dateFrom, dateTo } = filters;
   const query = {};
   if (eventId) query.eventId = eventId;
   if (status) query.status = status;
+  // Role-based visibility:
+  // Normal admins should not download failed/pending transactions unless explicitly superadmin.
+  if (viewerRole !== 'superadmin') {
+    const effectiveStatus = (() => {
+      if (!status) return 'completed';
+      const s = String(status).toLowerCase();
+      if (s === 'completed') return 'completed';
+      // Force completed; prevents leaking pending/failed/refunded.
+      return 'completed';
+    })();
+    query.status = effectiveStatus;
+  }
   const dateFilter = buildDateFilter(dateFrom, dateTo);
   if (dateFilter) query.createdAt = dateFilter;
 

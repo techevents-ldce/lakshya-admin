@@ -6,7 +6,7 @@ const asyncHandler = require('../utils/asyncHandler');
  * Returns event summary with team/solo breakdown
  */
 exports.getEventSummary = asyncHandler(async (req, res) => {
-  const summary = await eventSummaryService.getEventSummary();
+  const summary = await eventSummaryService.getEventSummary(req.query, req.user?.role);
   
   res.json({
     success: true,

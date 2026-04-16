@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import { 
   HiOutlineSearch, 
   HiOutlineUserGroup, 
@@ -186,19 +187,7 @@ export default function TeamsList() {
                   </tbody>
                 </table>
               </div>
-              {pages > 1 && (
-                <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
-                  {[...Array(pages)].map((_, i) => (
-                    <button 
-                      key={i} 
-                      onClick={() => setPage(i + 1)} 
-                      className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
-                    >
-                      {(i + 1).toString().padStart(2, '0')}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <Pagination page={page} pages={pages} onPage={setPage} />
             </div>
           )}
         </div>

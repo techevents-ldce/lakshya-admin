@@ -3,6 +3,28 @@ const Registration = require('../models/Registration');
 const AppError = require('../middleware/AppError');
 const { normalizeReferralCode } = require('../utils/referralCode');
 
+// Codes that look like referral codes but are actually placeholder/garbage entries.
+// Normalised (upper-cased, trimmed) values that should be silently excluded from all
+// referral analytics and mapping views.
+const JUNK_CODES = new Set([
+  '-', '--', '---', 'N/A', 'NA', 'N.A', 'N.A.',
+  'NONE', 'NIL', 'NO', 'NULL', 'NULL_CODE', 'UNDEFINED',
+  'CA', 'CAX', 'TEST', 'TESTING', 'REFER', 'REFERRAL',
+  'DEMO', 'SAMPLE', 'EXAMPLE', '0', '1', 'X', 'XX', 'XXX',
+  'LDCE', 'COLLEGE', 'DIRECT', 'DIRECT_ENTRY',
+]);
+
+/** Returns true if the given normalised code is considered junk / not a real referral code. */
+function isJunkCode(normalised) {
+  if (!normalised) return true;
+  const n = normalised.trim().toUpperCase();
+  if (n.length < 3) return true;           // too short — single chars, '--', etc.
+  if (JUNK_CODES.has(n)) return true;      // explicit blocklist
+  // Skip codes that are purely punctuation / whitespace / numbers
+  if (/^[\s\-_.,/\\|]+$/.test(n)) return true;
+  return false;
+}
+
 async function aggregateRegistrationCountsByCode() {
   const rows = await Registration.aggregate([
     { $match: { referralCodeUsed: { $exists: true, $nin: [null, ''] } } },
@@ -21,11 +43,13 @@ async function aggregateRegistrationCountsByCode() {
       },
     },
   ]);
-  return rows.map((r) => ({
-    normalizedReferralCode: r._id,
-    count: r.count,
-    referralCodeDisplay: r.referralCodeSample || r._id,
-  }));
+  return rows
+    .filter((r) => !isJunkCode(r._id))   // ← strip junk before returning
+    .map((r) => ({
+      normalizedReferralCode: r._id,
+      count: r.count,
+      referralCodeDisplay: r.referralCodeSample || r._id,
+    }));
 }
 
 async function getActiveMappingMap() {

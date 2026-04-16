@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import { 
   HiOutlineSearch, 
   HiOutlineClipboardCopy, 
@@ -190,35 +191,7 @@ export default function OrdersList() {
           </div>
 
           {/* Pagination */}
-          {pages > 1 && (
-            <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
-              <button 
-                disabled={page === 1} 
-                onClick={() => setPage(p => p - 1)} 
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-all active:scale-95 shadow-md"
-              >
-                <HiOutlineArrowsExpand className="w-4 h-4 rotate-180" />
-              </button>
-              <div className="flex gap-2">
-                {[...Array(pages)].map((_, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => setPage(i + 1)} 
-                    className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-white/[0.05]'}`}
-                  >
-                    {(i + 1).toString().padStart(2, '0')}
-                  </button>
-                ))}
-              </div>
-              <button 
-                disabled={page === pages} 
-                onClick={() => setPage(p => p + 1)} 
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-all active:scale-95 shadow-md"
-              >
-                <HiOutlineArrowsExpand className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <Pagination page={page} pages={pages} onPage={setPage} />
         </div>
       )}
     </div>

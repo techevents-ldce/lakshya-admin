@@ -1,35 +1,33 @@
-const Team = require('../models/Team');
-const Registration = require('../models/Registration');
 const AppError = require('../middleware/AppError');
+const { getEventRegistrationMetrics } = require('./analytics/eventRegistrationMetricsService');
 
 /**
  * Get event summary with team/solo breakdown
  * 
  * Returns:
- * - totalRegistrations: totalTeams + totalSolo
- * - totalTeams: count of active teams
- * - totalSolo: count of individual registrations (teamId: null)
+ * - totalRegistrations: registration units (teams for TEAM events, solo registrations for SOLO events)
+ * - totalTeams: number of TEAM units (teams) for TEAM events
+ * - totalSolo: number of SOLO units (solo registrations) for SOLO events
  */
-const getEventSummary = async () => {
+const getEventSummary = async (filters = {}, viewerRole = null) => {
   try {
-    // Count total teams (excluding withdrawn teams)
-    const totalTeams = await Team.countDocuments({ 
-      status: { $ne: 'withdrawn' } 
-    });
+    const { eventId = null, dateFrom = null, dateTo = null } = filters || {};
 
-    // Count solo registrations (registrations without teamId)
-    const totalSolo = await Registration.countDocuments({
-      teamId: null,
-      status: { $ne: 'cancelled' }
+    const metrics = await getEventRegistrationMetrics({
+      eventId,
+      dateFrom,
+      dateTo,
+      viewerRole,
+      includePaidParticipants: false,
+      includePaymentFailures: false,
     });
-
-    // Total registrations is the sum
-    const totalRegistrations = totalTeams + totalSolo;
 
     return {
-      totalRegistrations,
-      totalTeams,
-      totalSolo
+      totalRegistrations: metrics.totals.totalRegistrations,
+      totalTeams: metrics.totals.totalTeams,
+      totalSolo: metrics.totals.totalSoloRegistrations,
+      totalParticipants: metrics.totals.totalParticipants,
+      canViewPaymentFailures: metrics.canViewPaymentFailures,
     };
   } catch (err) {
     console.error('Failed to generate event summary:', err);

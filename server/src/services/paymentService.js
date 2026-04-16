@@ -2,17 +2,32 @@ const Payment = require('../models/Payment');
 const Transaction = require('../models/Transaction');
 const AppError = require('../middleware/AppError');
 
-const getPayments = async (query = {}) => {
+const getPayments = async (query = {}, viewerRole = null) => {
   const { page = 1, limit = 20, eventId, status, search } = query;
+  const viewerIsSuperadmin = viewerRole === 'superadmin';
   const filter = {};
   if (eventId) filter.event_ids = eventId;
-  if (status) {
+  // Role-based transaction visibility:
+  // - Normal admin: never show pending/failed/refunded; default to SUCCESS only.
+  // - Superadmin: full visibility.
+  const effectiveStatus = (() => {
+    if (viewerIsSuperadmin) return status;
+    // Normal admin: only allow "completed" (SUCCESS). Anything else is forced to completed.
+    if (!status) return 'completed';
+    const s = String(status).toLowerCase();
+    if (s === 'completed') return 'completed';
+    return 'completed';
+  })();
+
+  if (effectiveStatus) {
     const statusMap = {
       pending: 'PENDING',
       completed: 'SUCCESS',
       failed: 'FAILED',
     };
-    filter.status = statusMap[String(status).toLowerCase()] || String(status).toUpperCase();
+    filter.status =
+      statusMap[String(effectiveStatus).toLowerCase()] ||
+      String(effectiveStatus).toUpperCase();
   }
 
   // Search by participant name/email or transaction ID

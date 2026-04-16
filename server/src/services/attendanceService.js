@@ -139,7 +139,8 @@ const toggleTicketStatus = async (ticketId, newStatus, coordinatorId) => {
 const getTeamWiseAttendance = async (eventId, query = {}) => {
   const { search } = query;
 
-  const teams = await Team.find({ eventId })
+  // Align team "units" with analytics: exclude withdrawn teams.
+  const teams = await Team.find({ eventId, status: { $ne: 'withdrawn' } })
     .populate('leaderId', 'name email phone college')
     .sort({ createdAt: -1 })
     .lean();

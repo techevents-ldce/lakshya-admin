@@ -2,7 +2,7 @@ const paymentService = require('../services/paymentService');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAll = asyncHandler(async (req, res) => {
-  const result = await paymentService.getPayments(req.query);
+  const result = await paymentService.getPayments(req.query, req.user?.role);
   res.json({ success: true, ...result });
 });
 

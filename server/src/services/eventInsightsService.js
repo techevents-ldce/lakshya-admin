@@ -220,4 +220,27 @@ const getEventInsights = async () => {
   }
 };
 
-module.exports = { getEventInsights };
+// Unified implementation: delegate to the shared metrics layer so
+// Dashboard and Insights stay perfectly in sync for team vs solo counting.
+const getEventInsightsUnified = async (filters = {}, viewerRole = null) => {
+  try {
+    const { getEventRegistrationMetrics } = require('./analytics/eventRegistrationMetricsService');
+    const { eventId = null, dateFrom = null, dateTo = null } = filters || {};
+
+    const { events } = await getEventRegistrationMetrics({
+      eventId,
+      dateFrom,
+      dateTo,
+      viewerRole,
+    });
+
+    // More useful than sorting by units for the insights table.
+    events.sort((a, b) => (b.totalParticipants || 0) - (a.totalParticipants || 0));
+    return events;
+  } catch (err) {
+    console.error('Failed to generate unified event insights:', err);
+    throw new AppError('Failed to generate event insights', 500, 'EVENT_INSIGHTS_ERROR');
+  }
+};
+
+module.exports = { getEventInsights: getEventInsightsUnified };

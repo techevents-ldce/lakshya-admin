@@ -2,7 +2,7 @@ const analyticsService = require('../services/analyticsService');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getDashboard = asyncHandler(async (req, res) => {
-  const stats = await analyticsService.getDashboardStats(req.query);
+  const stats = await analyticsService.getDashboardStats(req.query, req.user?.role);
   res.json({ success: true, data: stats });
 });
 exports.getEvents = asyncHandler(async (req, res) => {

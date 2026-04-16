@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import { 
   HiOutlineCheckCircle, 
   HiOutlineLockClosed, 
@@ -261,19 +262,7 @@ export default function Payments() {
             </table>
           </div>
           {/* Pagination */}
-          {total > 1 && (
-            <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
-              {[...Array(total)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={`w-10 h-10 rounded-lg text-[11px] font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
-                >
-                  {(i + 1).toString().padStart(2, '0')}
-                </button>
-              ))}
-            </div>
-          )}
+          <Pagination page={page} pages={total} onPage={setPage} />
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../src/services/api';
+import { useAuth } from '../context/AuthContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { 
@@ -61,6 +62,8 @@ const doughnutOptions = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState('');
@@ -75,12 +78,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     api.get('/events', { params: { limit: 200 } }).then(({ data }) => setEvents(data.events || [])).catch(() => {});
-    fetchEventSummary();
+    // Event summary depends on the selected filters (date range + event).
+    // Refetch is handled by a dedicated effect below.
   }, []);
 
   const fetchEventSummary = async () => {
     try {
-      const { data } = await api.get('/admin/event-summary');
+      const params = {};
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      if (eventId) params.eventId = eventId;
+
+      const { data } = await api.get('/admin/event-summary', { params });
       if (data.success) {
         setEventSummary(data.data);
       }
@@ -102,6 +111,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => { fetchStats(); }, [dateFrom, dateTo, eventId]);
+  useEffect(() => { fetchEventSummary(); }, [dateFrom, dateTo, eventId]);
 
   const openReconciliation = async () => {
     setReconOpen(true);
@@ -125,10 +135,12 @@ export default function Dashboard() {
     </div>
   );
 
+  const canViewPaymentFailures = !!stats?.canViewPaymentFailures;
+
   const mainStats = [
     { label: 'Total Users', value: stats?.totalUsers || 0, icon: HiOutlineUsers, accent: 'from-blue-500/10 to-blue-600/10', color: 'text-blue-400' },
     { label: 'Total Events', value: stats?.totalEvents || 0, icon: HiOutlineCalendar, accent: 'from-emerald-500/10 to-emerald-600/10', color: 'text-emerald-400' },
-    { label: 'Registrations', value: stats?.totalRegistrations || 0, icon: HiOutlineTicket, accent: 'from-violet-500/10 to-violet-600/10', color: 'text-violet-400' },
+    { label: 'Total Participants', value: stats?.totalParticipants || 0, icon: HiOutlineUserGroup, accent: 'from-violet-500/10 to-violet-600/10', color: 'text-violet-400' },
     { label: 'Total Revenue', value: `₹${(Number((stats?.orderRevenue || stats?.totalRevenue) || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, icon: HiOutlineCurrencyRupee, accent: 'from-amber-500/10 to-amber-600/10', color: 'text-amber-400' },
   ];
 
@@ -141,9 +153,11 @@ export default function Dashboard() {
 
   const transactionStats = [
     { label: 'Paid Transactions', value: getOrderCount(['success']), icon: HiOutlineCheckCircle, color: 'text-emerald-400' },
-    { label: 'Pending Transactions', value: getOrderCount(['pending', 'payment_initiated', 'fulfilling']), icon: HiOutlineClock, color: 'text-amber-400' },
-    { label: 'Failed Transactions', value: getOrderCount(['failed', 'cancelled']), icon: HiOutlineXCircle, color: 'text-red-400' },
-    { label: 'Refunded Transactions', value: getOrderCount(['refunded']), icon: HiOutlineReply, color: 'text-slate-400' },
+    ...(canViewPaymentFailures ? [
+      { label: 'Pending Transactions', value: getOrderCount(['pending', 'payment_initiated', 'fulfilling']), icon: HiOutlineClock, color: 'text-amber-400' },
+      { label: 'Failed Transactions', value: getOrderCount(['failed', 'cancelled']), icon: HiOutlineXCircle, color: 'text-red-400' },
+      { label: 'Refunded Transactions', value: getOrderCount(['refunded']), icon: HiOutlineReply, color: 'text-slate-400' },
+    ] : []),
   ];
 
   const secondaryStats = [
@@ -193,16 +207,34 @@ export default function Dashboard() {
     }]
   };
 
+  const participantLabelObjects = (stats?.topColleges || []).slice(0, 10).map((d) => ({
+    rawId: d._id,
+    label: d._id.slice(0, 15) + '...',
+    count: d.count,
+  }));
+  const teamsByRawId = new Map((stats?.topCollegesTeams || []).map((d) => [d._id, d.count]));
+  const teamCountsForParticipantsLabels = participantLabelObjects.map((p) => teamsByRawId.get(p.rawId) || 0);
+
   const topCollegesData = {
-    labels: stats?.topColleges?.map(d => d._id.slice(0, 15) + '...') || [],
-    datasets: [{
-      label: 'Students',
-      data: stats?.topColleges?.map(d => d.count) || [],
-      backgroundColor: 'rgba(139, 92, 246, 0.5)',
-      borderColor: '#8b5cf6',
-      borderWidth: 1,
-      borderRadius: 8,
-    }]
+    labels: participantLabelObjects.map((d) => d.label),
+    datasets: [
+      {
+        label: 'Participants',
+        data: participantLabelObjects.map((d) => d.count),
+        backgroundColor: 'rgba(139, 92, 246, 0.45)',
+        borderColor: '#8b5cf6',
+        borderWidth: 1,
+        borderRadius: 8,
+      },
+      {
+        label: 'Teams',
+        data: teamCountsForParticipantsLabels,
+        backgroundColor: 'rgba(99, 102, 241, 0.35)',
+        borderColor: '#6366f1',
+        borderWidth: 1,
+        borderRadius: 8,
+      },
+    ],
   };
 
   const chartOptions = {
@@ -250,10 +282,10 @@ export default function Dashboard() {
                <div className="flex-1">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{card.label}</p>
                   <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight tabular-nums">{card.value}</p>
-                  {/* Show team/solo breakdown for Registrations card */}
-                  {card.label === 'Registrations' && eventSummary && (
+                  {/* Show team/solo units + participants for selected event */}
+                  {card.label === 'Total Participants' && eventSummary && (
                     <p className="text-[10px] sm:text-xs text-slate-500 mt-2 font-medium">
-                      Teams: {eventSummary.totalTeams} • Solo: {eventSummary.totalSolo}
+                      Team Units: {eventSummary.totalTeams} • Solo Units: {eventSummary.totalSolo} • Total Participants: {eventSummary.totalParticipants}
                     </p>
                   )}
                </div>
@@ -321,8 +353,10 @@ export default function Dashboard() {
                 <div className="relative h-48 sm:h-60">
                    <Doughnut data={regStatusData} options={doughnutOptions} />
                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight tabular-nums">{stats?.totalRegistrations || 0}</p>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Total Registrations</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-indigo-300 tracking-tight tabular-nums drop-shadow-[0_0_10px_rgba(99,102,241,0.25)]">
+                        {stats?.totalParticipants || 0}
+                      </p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Participants</p>
                    </div>
                 </div>
              </div>
@@ -336,7 +370,17 @@ export default function Dashboard() {
                 <button className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider hover:text-white transition-colors">Explorer</button>
              </div>
              <div className="h-56 sm:h-72">
-                <Bar data={topCollegesData} options={{ ...chartOptions, indexAxis: 'y' }} />
+                <Bar
+                  data={topCollegesData}
+                  options={{
+                    ...chartOptions,
+                    indexAxis: 'y',
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: true, position: 'bottom' },
+                    },
+                  }}
+                />
              </div>
           </div>
         </div>
@@ -382,8 +426,12 @@ export default function Dashboard() {
                 {stats?.teamVsIndividual?.map((s, i) => (
                   <div key={i} className="space-y-2 sm:space-y-2.5">
                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s._id} ENTRIES</p>
-                        <p className="text-[11px] font-bold text-white tabular-nums">{s.count} <span className="text-slate-600 text-[9px] ml-0.5">UNITS</span></p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                          {s._id === 'team' ? 'Team Participants' : 'Solo Participants'}
+                        </p>
+                        <p className="text-[11px] font-bold text-white tabular-nums">
+                          {s.count} <span className="text-slate-600 text-[9px] ml-0.5">Participants</span>
+                        </p>
                      </div>
                      <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                         <div 
@@ -396,6 +444,7 @@ export default function Dashboard() {
              </div>
           </div>
 
+          {isSuperadmin && (
           <div className="p-4 sm:p-8 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 space-y-4 relative overflow-hidden group shadow-lg">
              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md mb-3 sm:mb-4">
                 <HiOutlineSparkles className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -417,6 +466,7 @@ export default function Dashboard() {
                </button>
              </div>
           </div>
+          )}
         </div>
       </div>
 

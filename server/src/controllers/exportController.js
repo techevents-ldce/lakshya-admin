@@ -19,7 +19,7 @@ exports.exportParticipants = asyncHandler(async (req, res) => {
 });
 
 exports.exportPayments = asyncHandler(async (req, res) => {
-  const data = await exportService.exportPayments(req.query);
+  const data = await exportService.exportPayments(req.query, req.user?.role);
   const ext = req.query.format === 'excel' ? 'xlsx' : 'csv';
   res.setHeader('Content-Type', ext === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename=payments.${ext}`);

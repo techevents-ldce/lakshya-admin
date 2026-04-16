@@ -6,7 +6,7 @@ const asyncHandler = require('../utils/asyncHandler');
  * Returns comprehensive event insights with correct registration and participant counts
  */
 exports.getEventInsights = asyncHandler(async (req, res) => {
-  const insights = await eventInsightsService.getEventInsights();
+  const insights = await eventInsightsService.getEventInsights(req.query, req.user?.role);
   
   res.json({
     success: true,

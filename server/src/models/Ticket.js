@@ -19,7 +19,9 @@ const ticketSchema = new mongoose.Schema(
   { timestamps: true, strict: false }
 );
 
-ticketSchema.index({ userId: 1, eventId: 1 });
+// Unique compound index — one ticket per user per event.
+// Run dedup_tickets.js BEFORE deploying if duplicates exist in production.
+ticketSchema.index({ userId: 1, eventId: 1 }, { unique: true });
 ticketSchema.index({ registrationId: 1 });
 
 module.exports = mongoose.model('Ticket', ticketSchema);
