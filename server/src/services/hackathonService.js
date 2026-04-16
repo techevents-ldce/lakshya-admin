@@ -34,6 +34,7 @@ const Order          = require('../models/Order');
 const AppError       = require('../middleware/AppError');
 const { hashPassword }  = require('../utils/password');
 const { writeAuditLog } = require('../middleware/auditLog');
+const { generateCSV, generateExcel } = require('../utils/export');
 
 // ─── Column aliases (case-insensitive, common variations) ────────────────────
 const COLUMN_ALIASES = {
@@ -776,6 +777,100 @@ const finalizeImport = async (filePath, mappings, adminId) => {
   return processImportRows(mappedRows, event, 'selected', adminId);
 };
 
+// ─── Export paid teams ────────────────────────────────────────────────────────
+/**
+ * Exports ALL paid hackathon teams (one row per member) to CSV or Excel.
+ * Supports optional filters: selectionStatus, importBatch, teamIds (specific team IDs).
+ */
+const exportPaidTeams = async (filters = {}) => {
+  const { format = 'csv', selectionStatus, importBatch, teamIds } = filters;
+
+  // Build base filter — always fetch all matching teams then filter by isPaid
+  const filter = {};
+  if (selectionStatus) filter.selectionStatus = selectionStatus;
+  if (importBatch)     filter.importBatch     = importBatch;
+  if (teamIds && teamIds.length > 0) filter._id = { $in: teamIds };
+
+  const hackathonTeams = await HackathonTeam.find(filter)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!hackathonTeams.length) {
+    throw new AppError('No hackathon teams found matching filters', 404, 'NO_TEAMS_FOUND');
+  }
+
+  // Resolve isPaid for each team
+  const regIds   = hackathonTeams.map((t) => t.registrationId).filter(Boolean);
+  const regs     = await Registration.find({ _id: { $in: regIds } }).select('_id status orderId').lean();
+  const regMap   = Object.fromEntries(regs.map((r) => [r._id.toString(), r]));
+  const orderIds = regs.map((r) => r.orderId).filter(Boolean);
+  let orderMap   = {};
+  if (orderIds.length > 0) {
+    const orders = await Order.find({ _id: { $in: orderIds } }).select('_id status updatedAt').lean();
+    orderMap = Object.fromEntries(orders.map((o) => [o._id.toString(), o]));
+  }
+
+  // Flatten: one row per member, only for paid teams
+  const rows = [];
+  for (const t of hackathonTeams) {
+    const reg   = regMap[t.registrationId?.toString()];
+    const order = reg?.orderId ? orderMap[reg.orderId.toString()] : null;
+    const isPaid = order?.status === 'success' && reg?.status === 'confirmed';
+    if (!isPaid) continue;
+
+    const paidAt = order?.updatedAt ? new Date(order.updatedAt).toISOString().split('T')[0] : 'N/A';
+
+    const members = t.members && t.members.length > 0 ? t.members : [{
+      name: t.leaderName, email: t.leaderEmail, phone: t.leaderPhone,
+      collegeName: t.collegeName, department: '', year: '', teamRole: 'leader',
+    }];
+
+    for (const m of members) {
+      rows.push({
+        teamName:        t.teamName                 || 'N/A',
+        memberRole:      m.teamRole                 || 'member',
+        name:            m.name                     || 'N/A',
+        email:           m.email                    || 'N/A',
+        phone:           m.phone                    || 'N/A',
+        collegeName:     m.collegeName || t.collegeName || 'N/A',
+        department:      m.department               || 'N/A',
+        year:            m.year                     || 'N/A',
+        leaderEmail:     t.leaderEmail              || 'N/A',
+        selectionStatus: t.selectionStatus          || 'N/A',
+        importBatch:     t.importBatch              || 'N/A',
+        unstopTeamId:    t.unstopTeamId             || 'N/A',
+        paidAt,
+      });
+    }
+  }
+
+  if (!rows.length) {
+    throw new AppError('No paid hackathon teams found matching filters', 404, 'NO_PAID_TEAMS_FOUND');
+  }
+
+  if (format === 'excel') {
+    const columns = [
+      { header: 'Team Name',        key: 'teamName',        width: 25 },
+      { header: 'Role',             key: 'memberRole',      width: 10 },
+      { header: 'Name',             key: 'name',            width: 25 },
+      { header: 'Email',            key: 'email',           width: 30 },
+      { header: 'Phone',            key: 'phone',           width: 15 },
+      { header: 'College',          key: 'collegeName',     width: 30 },
+      { header: 'Department',       key: 'department',      width: 20 },
+      { header: 'Year',             key: 'year',            width: 8  },
+      { header: 'Leader Email',     key: 'leaderEmail',     width: 30 },
+      { header: 'Selection Status', key: 'selectionStatus', width: 15 },
+      { header: 'Import Batch',     key: 'importBatch',     width: 18 },
+      { header: 'Unstop Team ID',   key: 'unstopTeamId',    width: 15 },
+      { header: 'Paid At',          key: 'paidAt',          width: 12 },
+    ];
+    return generateExcel(rows, columns, 'Paid Teams');
+  }
+
+  const fields = ['teamName', 'memberRole', 'name', 'email', 'phone', 'collegeName', 'department', 'year', 'leaderEmail', 'selectionStatus', 'importBatch', 'unstopTeamId', 'paidAt'];
+  return generateCSV(rows, fields);
+};
+
 module.exports = { 
   importTeams, 
   getHeadersAndPreview, 
@@ -789,5 +884,6 @@ module.exports = {
   restoreTeam, 
   listImportBatches, 
   deleteTeam, 
-  deleteBatch 
+  deleteBatch,
+  exportPaidTeams,
 };

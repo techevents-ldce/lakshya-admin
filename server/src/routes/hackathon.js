@@ -30,9 +30,10 @@ router.post('/import-validate', hackathonController.importValidate);
 router.post('/import-execute', verifyAdminPassword, hackathonController.importExecute);
 
 // ── List & Detail ────────────────────────────────────────────────────────────
-router.get('/teams',          hackathonController.listTeams);
-router.get('/teams/:id',      hackathonController.getTeamDetail);
-router.get('/batches',        hackathonController.listBatches);
+router.get('/teams',                    hackathonController.listTeams);
+router.get('/teams/:id',                hackathonController.getTeamDetail);
+router.get('/batches',                  hackathonController.listBatches);
+router.get('/export/paid-teams',        hackathonController.exportPaidTeams);
 
 // ── State transitions ────────────────────────────────────────────────────────
 router.patch('/teams/:id/promote', hackathonController.promoteTeam);

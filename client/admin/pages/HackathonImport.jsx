@@ -23,6 +23,8 @@ import {
   HiOutlineTrash as HiOutlineTrashAlternative,
   HiOutlineDotsHorizontal,
   HiOutlinePhone,
+  HiOutlineDownload,
+  HiOutlineDocumentDownload,
 } from 'react-icons/hi';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
@@ -37,20 +39,20 @@ const STEPS = [
 ];
 
 const COLUMN_OPTIONS = [
-  { value: 'email',        label: 'Email',          required: true },
-  { value: 'name',         label: 'Full Name',      required: true },
-  { value: 'phone',        label: 'Phone Number',   required: true },
-  { value: 'teamName',     label: 'Team Name',      required: true },
-  { value: 'collegeName',  label: 'College',        required: true },
-  { value: 'teamRole',     label: 'Team Role',      required: false },
+  { value: 'email', label: 'Email', required: true },
+  { value: 'name', label: 'Full Name', required: true },
+  { value: 'phone', label: 'Phone Number', required: true },
+  { value: 'teamName', label: 'Team Name', required: true },
+  { value: 'collegeName', label: 'College', required: true },
+  { value: 'teamRole', label: 'Team Role', required: false },
   { value: 'unstopTeamId', label: 'Unstop Team ID', required: false },
-  { value: 'status',       label: 'Selection Status', required: false },
-  { value: 'gender',       label: 'Gender',         required: false },
-  { value: 'department',   label: 'Department',     required: false },
-  { value: 'year',         label: 'Year of Study',  required: false },
-  { value: 'linkedin',     label: 'LinkedIn URL',   required: false },
-  { value: 'github',       label: 'GitHub URL',     required: false },
-  { value: 'referralCode',    label: 'Referral Code',   required: false },
+  { value: 'status', label: 'Selection Status', required: false },
+  { value: 'gender', label: 'Gender', required: false },
+  { value: 'department', label: 'Department', required: false },
+  { value: 'year', label: 'Year of Study', required: false },
+  { value: 'linkedin', label: 'LinkedIn URL', required: false },
+  { value: 'github', label: 'GitHub URL', required: false },
+  { value: 'referralCode', label: 'Referral Code', required: false },
   { value: 'defaultPassword', label: 'Default Password', required: false },
 ];
 
@@ -64,8 +66,8 @@ const SELECTION_STATUS_CONFIG = {
 export default function HackathonImport() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState('manage'); 
-  
+  const [viewMode, setViewMode] = useState('manage');
+
   const [step, setStep] = useState('upload');
   const [file, setFile] = useState(null);
   const [tempFileName, setTempFileName] = useState('');
@@ -93,6 +95,8 @@ export default function HackathonImport() {
   const [paymentFilter, setPaymentFilter] = useState('');
   const [expandedTeam, setExpandedTeam] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', confirmLabel: '', variant: 'warning', action: null });
+  const [exportingData, setExportingData] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const fetchTeams = async () => {
     if (viewMode !== 'manage') return;
@@ -102,7 +106,7 @@ export default function HackathonImport() {
       if (statusFilter) params.selectionStatus = statusFilter;
       if (batchFilter) params.importBatch = batchFilter;
       if (paymentFilter) params.paymentStatus = paymentFilter;
-      
+
       const { data } = await api.get('/hackathon/teams', { params });
       setTeams(data.data.teams || []);
       setTotalTeams(data.data.total || 0);
@@ -113,10 +117,10 @@ export default function HackathonImport() {
         const baseParams = { limit: 1 };
         if (statusFilter) baseParams.selectionStatus = statusFilter;
         if (batchFilter) baseParams.importBatch = batchFilter;
-        
+
         const paidRes = await api.get('/hackathon/teams', { params: { ...baseParams, paymentStatus: 'paid' } });
         setGlobalPaidTeams(paidRes.data.data.total || 0);
-        
+
         const unpaidRes = await api.get('/hackathon/teams', { params: { ...baseParams, paymentStatus: 'unpaid' } });
         setGlobalUnpaidTeams(unpaidRes.data.data.total || 0);
       } catch (err) {
@@ -130,7 +134,45 @@ export default function HackathonImport() {
     try {
       const { data } = await api.get('/hackathon/batches');
       setBatches(data.data || []);
-    } catch {}
+    } catch { }
+  };
+
+  const handleExportPaidTeams = async (format) => {
+    setExportingData(true);
+    setShowExportDropdown(false);
+    try {
+      const params = { format };
+      if (statusFilter) params.selectionStatus = statusFilter;
+      if (batchFilter) params.importBatch = batchFilter;
+
+      const response = await api.get('/hackathon/export/paid-teams', {
+        params,
+        responseType: 'blob',
+      });
+
+      const ext = format === 'excel' ? 'xlsx' : 'csv';
+      const blob = new Blob([response.data], {
+        type: format === 'excel'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'text/csv',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hackathon-paid-teams.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported paid teams as ${ext.toUpperCase()}`);
+    } catch (err) {
+      const msg = err?.response?.data ? await err.response.data.text?.() : null;
+      let parsed;
+      try { parsed = JSON.parse(msg); } catch { }
+      toast.error(parsed?.message || 'No paid teams found matching current filters');
+    } finally {
+      setExportingData(false);
+    }
   };
 
   useEffect(() => {
@@ -142,8 +184,8 @@ export default function HackathonImport() {
 
   const handleAction = (teamId, teamName, actionType) => {
     let title, message, confirmLabel, variant, endpoint, method = 'PATCH';
-    
-    switch(actionType) {
+
+    switch (actionType) {
       case 'promote':
         title = 'Promote Team';
         message = `You are about to promote "${teamName}" to Selected. This will unlock the payment flow for all team members.`;
@@ -196,22 +238,22 @@ export default function HackathonImport() {
   const handleFileSelect = async (e) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
-    
+
     setFile(selectedFile);
     setParsing(true);
-    
+
     const formData = new FormData();
     formData.append('file', selectedFile);
-    
+
     try {
       const { data } = await api.post('/hackathon/import-parse', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       setHeaders(data.data.headers);
       setPreviewData(data.data.preview);
       setTempFileName(data.data.tempFileName);
-      
+
       const initialMappings = {};
       data.data.headers.forEach(header => {
         const lowerH = header.toLowerCase().replace(/[^a-z]/g, '');
@@ -254,7 +296,7 @@ export default function HackathonImport() {
 
   const runValidation = async () => {
     if (!validateMappings()) return;
-    
+
     setParsing(true);
     try {
       const { data } = await api.post('/hackathon/import-validate', {
@@ -304,445 +346,491 @@ export default function HackathonImport() {
   return (
     <>
       <div className="animate-fade-in space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Hackathon</h1>
-          <p className="text-slate-500 font-medium">Manage teams and data imports</p>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-2">Hackathon</h1>
+            <p className="text-slate-500 font-medium">Manage teams and data imports</p>
+          </div>
+
+          <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-2xl border border-slate-700/30 backdrop-blur-xl">
+            <button
+              onClick={() => setViewMode('manage')}
+              className={`px-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'manage' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            >
+              Manage Teams
+            </button>
+            <button
+              onClick={() => setViewMode('import')}
+              className={`px-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'import' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            >
+              Import Data
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-2xl border border-slate-700/30 backdrop-blur-xl">
-           <button 
-             onClick={() => setViewMode('manage')}
-             className={`px-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'manage' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-           >
-             Manage Teams
-           </button>
-           <button 
-             onClick={() => setViewMode('import')}
-             className={`px-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'import' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-           >
-             Import Data
-           </button>
-        </div>
-      </div>
+        {viewMode === 'manage' ? (
+          <div className="space-y-6">
+            {/* Quick Stats Panel */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#6366F1]/30 transition-all group">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]">
+                    <HiOutlineUserGroup className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest">Total Teams</p>
+                </div>
+                <p className="text-4xl font-bold text-[#F1F5F9] pl-1">{totalTeams} <span className="text-sm font-medium text-[#64748B]">Global</span></p>
+              </div>
 
-      {viewMode === 'manage' ? (
-        <div className="space-y-6">
-           {/* Quick Stats Panel */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-             <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#6366F1]/30 transition-all group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]">
-                   <HiOutlineUserGroup className="w-5 h-5"/>
-                 </div>
-                 <p className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest">Total Teams</p>
-               </div>
-               <p className="text-4xl font-bold text-[#F1F5F9] pl-1">{totalTeams} <span className="text-sm font-medium text-[#64748B]">Global</span></p>
-             </div>
-             
-             <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#22C55E]/30 transition-all group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E]">
-                   <HiOutlineCheckCircle className="w-5 h-5"/>
-                 </div>
-                 <p className="text-xs font-bold text-[#22C55E] uppercase tracking-widest">Paid Teams</p>
-               </div>
-               <p className="text-4xl font-bold text-[#22C55E] pl-1">{globalPaidTeams} <span className="text-sm font-medium text-[#22C55E]/50">Global</span></p>
-             </div>
-             
-             <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#F59E0B]/30 transition-all group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
-                   <HiOutlineExclamationCircle className="w-5 h-5"/>
-                 </div>
-                 <p className="text-xs font-bold text-[#F59E0B] uppercase tracking-widest">Unpaid Teams</p>
-               </div>
-               <p className="text-4xl font-bold text-[#F59E0B] pl-1">{globalUnpaidTeams} <span className="text-sm font-medium text-[#F59E0B]/50">Global</span></p>
-             </div>
-           </div>
+              <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#22C55E]/30 transition-all group">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E]">
+                    <HiOutlineCheckCircle className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-[#22C55E] uppercase tracking-widest">Paid Teams</p>
+                </div>
+                <p className="text-4xl font-bold text-[#22C55E] pl-1">{globalPaidTeams} <span className="text-sm font-medium text-[#22C55E]/50">Global</span></p>
+              </div>
 
-           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
+              <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl shadow-lg hover:border-[#F59E0B]/30 transition-all group">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
+                    <HiOutlineExclamationCircle className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-[#F59E0B] uppercase tracking-widest">Unpaid Teams</p>
+                </div>
+                <p className="text-4xl font-bold text-[#F59E0B] pl-1">{globalUnpaidTeams} <span className="text-sm font-medium text-[#F59E0B]/50">Global</span></p>
+              </div>
+            </div>
+
+            <div className="relative z-50 flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/30 backdrop-blur-xl transition-all shadow-xl">
               <div className="relative group flex-1 min-w-[300px]">
                 <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-400 w-5 h-5 transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Search by team name or member email..." 
-                  value={teamSearch} 
-                  onChange={(e) => { setTeamSearch(e.target.value); setTeamPage(1); }} 
-                  className="input-field pl-12" 
+                <input
+                  type="text"
+                  placeholder="Search by team name or member email..."
+                  value={teamSearch}
+                  onChange={(e) => { setTeamSearch(e.target.value); setTeamPage(1); }}
+                  className="input-field pl-12"
                 />
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-4 px-2">
                 <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
                 <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
-                   <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
-                   <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer">
-                     <option value="" className="bg-slate-900">All Status</option>
-                     {Object.entries(SELECTION_STATUS_CONFIG).map(([key, cfg]) => (
-                       <option key={key} value={key} className="bg-slate-900">{cfg.label}</option>
-                     ))}
-                   </select>
+                  <HiOutlineFilter className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+                  <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer">
+                    <option value="" className="bg-slate-900">All Status</option>
+                    {Object.entries(SELECTION_STATUS_CONFIG).map(([key, cfg]) => (
+                      <option key={key} value={key} className="bg-slate-900">{cfg.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
                 <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
-                   <HiOutlineFolderOpen className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
-                   <select value={batchFilter} onChange={(e) => { setBatchFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer max-w-[150px]">
-                     <option value="" className="bg-slate-900">All Batches</option>
-                     {batches.map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
-                   </select>
+                  <HiOutlineFolderOpen className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+                  <select value={batchFilter} onChange={(e) => { setBatchFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer max-w-[150px]">
+                    <option value="" className="bg-slate-900">All Batches</option>
+                    {batches.map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
+                  </select>
                 </div>
 
                 <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
                 <div className="flex items-center gap-2 group px-4 py-2 hover:bg-white/[0.02] rounded-xl transition-all cursor-pointer">
-                   <HiOutlineRefresh className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
-                   <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer">
-                     <option value="" className="bg-slate-900">Payment: All</option>
-                     <option value="paid" className="bg-slate-900">Paid Only</option>
-                     <option value="unpaid" className="bg-slate-900">Unpaid Only</option>
-                   </select>
+                  <HiOutlineRefresh className="w-4 h-4 text-slate-500 group-hover:text-primary-400" />
+                  <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value); setTeamPage(1); }} className="bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-wider outline-none cursor-pointer">
+                    <option value="" className="bg-slate-900">Payment: All</option>
+                    <option value="paid" className="bg-slate-900">Paid Only</option>
+                    <option value="unpaid" className="bg-slate-900">Unpaid Only</option>
+                  </select>
                 </div>
-              </div>
-           </div>
 
-           {loadingTeams ? (
-             <div className="flex flex-col items-center justify-center py-32 gap-6">
-                <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
-                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Hackathon Data...</p>
-             </div>
-           ) : (
-             <div className="card !p-0 border-slate-700/30 overflow-hidden shadow-2xl bg-slate-900/20 backdrop-blur-xl">
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left">
-                   <thead>
-                     <tr className="bg-white/[0.01]">
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Information</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Members</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-center">Status</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Payment</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Batch</th>
-                       <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-white/[0.02]">
-                     {teams.map((t) => (
-                       <Fragment key={t._id}>
-                         <tr className={`group hover:bg-white/[0.02] transition-all cursor-pointer ${expandedTeam === t._id ? 'bg-primary-500/[0.03] border-l-2 border-l-primary-500' : ''}`} onClick={() => setExpandedTeam(expandedTeam === t._id ? null : t._id)}>
-                          <td className="px-6 py-6">
-                            <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-xl">
-                                 {t.teamName?.[0]?.toUpperCase()}
-                               </div>
-                               <div>
-                                 <p className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{t.teamName}</p>
-                                 <p className="text-[10px] text-slate-600 font-bold uppercase tracking-tight line-clamp-1">{t.leaderId?.name || 'Unknown Leader'}</p>
-                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-6">
-                             <div className="flex flex-col gap-1">
-                                {t.members?.map(m => (
-                                  <p key={m._id} className="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate max-w-[150px]">{m.userId?.name || m.userId?.email}</p>
-                                ))}
-                             </div>
-                          </td>
-                          <td className="px-6 py-6 text-center">
-                             <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.bg} ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.color}`}>
-                                {SELECTION_STATUS_CONFIG[t.selectionStatus]?.label || t.selectionStatus}
-                             </span>
-                          </td>
-                          <td className="px-6 py-6">
-                             {t.isPaid ? (
-                               <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider text-emerald-400">
-                                 <HiOutlineCheckCircle className="w-3 h-3" /> Paid
-                               </span>
-                             ) : (
-                               <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider text-slate-500/50">
-                                 <HiOutlineExclamationCircle className="w-3 h-3" /> Unpaid
-                               </span>
-                             )}
-                          </td>
-                          <td className="px-6 py-6">
-                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate max-w-[100px]">{t.importBatch || 'Direct'}</p>
-                          </td>
-                          <td className="px-6 py-6 text-right" onClick={(ev) => ev.stopPropagation()}>
-                            <div className="flex items-center justify-end gap-2">
-                               {t.selectionStatus === 'waitlisted' && (
-                                 <button onClick={() => handleAction(t._id, t.teamName, 'promote')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 transition-all shadow-xl active:scale-95" title="Promote to Selected">
-                                   <HiOutlineTrendingUp className="w-5 h-5" />
-                                 </button>
-                               )}
-                               {t.selectionStatus === 'selected' && (
-                                 <button onClick={() => handleAction(t._id, t.teamName, 'suspend')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/20 transition-all shadow-xl active:scale-95" title="Suspend Team">
-                                   <HiOutlineBan className="w-5 h-5" />
-                                 </button>
-                               )}
-                               {(t.selectionStatus === 'suspended' || t.selectionStatus === 'removed') && (
-                                 <button onClick={() => handleAction(t._id, t.teamName, 'restore')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 transition-all shadow-xl active:scale-95" title="Restore Team">
-                                   <HiOutlineRefresh className="w-5 h-5" />
-                                 </button>
-                               )}
-                               {t.selectionStatus !== 'removed' && (
-                                 <button onClick={() => handleAction(t._id, t.teamName, 'remove')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-400/10 text-red-400 hover:bg-red-400 hover:text-white border border-red-500/20 transition-all shadow-xl active:scale-95" title="Remove Team">
-                                   <HiOutlineTrash className="w-5 h-5" />
-                                 </button>
-                               )}
-                               <button onClick={() => handleAction(t._id, t.teamName, 'delete')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:bg-red-500 hover:text-white transition-all shadow-xl active:scale-95" title="Delete Permanently">
-                                 <HiOutlineTrashAlternative className="w-5 h-5" />
-                               </button>
-                            </div>
-                          </td>
-                        </tr>
-                        {expandedTeam === t._id && (
-                          <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
-                            <td colSpan="6" className="px-12 py-10">
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {t.members?.map((m, idx) => (
-                                  <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-3 hover:border-primary-500/30 transition-all group">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{m.teamRole || 'Member'}</span>
-                                      {m.teamRole === 'leader' && <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[8px] font-bold uppercase tracking-wider">LEADER</span>}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <p className="text-sm font-bold text-white uppercase tracking-tight truncate">{m.name}</p>
-                                      <p className="text-[10px] text-slate-500 font-bold lowercase tracking-tight truncate">{m.email}</p>
-                                    </div>
-                                    {m.phone && (
-                                      <div className="pt-2 flex items-center justify-between border-t border-white/[0.05]">
-                                        <div className="flex items-center gap-2">
-                                          <HiOutlinePhone className="w-3 h-3 text-primary-500" />
-                                          <span className="text-[10px] text-slate-400 font-bold tabular-nums">{m.phone}</span>
-                                        </div>
-                                        <span className="text-[8px] text-slate-600 font-bold uppercase">{m.gender}</span>
-                                      </div>
-                                    )}
-                                    {(m.collegeName || m.department) && (
-                                      <div className="space-y-1">
-                                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight truncate">{m.collegeName}</p>
-                                         <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tight">{m.department} {m.year ? `— Year ${m.year}` : ''}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
-                                 <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.4em]">Team ID: {t._id}</p>
-                                 <div className="flex flex-wrap gap-4">
-                                    {t.registrationId?.referralCodeUsed && <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider p-2 bg-amber-500/5 border border-amber-500/10 rounded-lg">REF CODE: {t.registrationId.referralCodeUsed}</span>}
-                                    {t.unstopTeamId && <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">UNSTOP ID: {t.unstopTeamId}</span>}
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">TOTAL MEMBERS: {t.members?.length || 0}</span>
-                                 </div>
-                              </div>
-                            </td>
-                          </tr>
+                <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+
+                {/* Extract Paid Data Dropdown */}
+                <div className="relative">
+                  <button
+                    id="hackathon-extract-btn"
+                    onClick={() => setShowExportDropdown(prev => !prev)}
+                    disabled={exportingData}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 transition-all text-[10px] font-bold uppercase tracking-wider shadow-lg active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {exportingData
+                      ? <HiOutlineRefresh className="w-4 h-4 animate-spin" />
+                      : <HiOutlineDownload className="w-4 h-4" />
+                    }
+                    {exportingData ? 'Exporting...' : 'Extract Paid Data'}
+                  </button>
+
+                  {showExportDropdown && !exportingData && (
+                    <div className="absolute right-0 top-full mt-2 w-56 z-50 bg-[#1A1D27] border border-[#2E3348] rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+                      <div className="px-4 pt-3 pb-2 border-b border-white/[0.05]">
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download paid teams</p>
+                        {(statusFilter || batchFilter) && (
+                          <p className="text-[8px] text-emerald-400/70 font-bold uppercase tracking-tight mt-0.5">
+                            Filtered: {[statusFilter && `status:${statusFilter}`, batchFilter && `batch:${batchFilter}`].filter(Boolean).join(' · ')}
+                          </p>
                         )}
-                       </Fragment>
-                     ))}
-                     {teams.length === 0 && (
-                       <tr>
-                         <td colSpan="6" className="text-center py-40">
-                           <HiOutlineSearch className="w-16 h-16 text-slate-800 mx-auto mb-6" />
-                           <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em]">No hackathon teams found</p>
-                         </td>
-                       </tr>
-                     )}
-                   </tbody>
-                 </table>
-               </div>
-               {teamPages > 1 && (
-                 <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
-                   {[...Array(teamPages)].map((_, i) => (
-                     <button 
-                       key={i} 
-                       onClick={() => setTeamPage(i + 1)} 
-                       className={`w-10 h-10 rounded-xl text-[10px] font-bold transition-all ${teamPage === i + 1 ? 'bg-primary-500 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
-                     >
-                       {(i + 1).toString().padStart(2, '0')}
-                     </button>
-                   ))}
-                 </div>
-               )}
-             </div>
-           )}
-        </div>
-      ) : (
-        <div className="space-y-8 animate-scale-in">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-2 rounded-3xl bg-slate-950/50 border border-white/[0.05]">
-            {STEPS.map((s, i) => {
-              const isActive = step === s.id;
-              const isDone = STEPS.findIndex(st => st.id === step) > i;
-              const Icon = s.icon;
-              return (
-                <div key={s.id} className={`relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${isActive ? 'bg-primary-500/10 border-primary-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'opacity-40 grayscale filter'}`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-primary-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-slate-500'}`}>
-                    {isDone ? <HiOutlineCheckCircle className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">Phase 0{i+1}</p>
-                    <p className={`text-[11px] font-bold uppercase tracking-tight ${isActive ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2 z-10">
-                      <HiOutlineChevronRight className="w-4 h-4 text-slate-800" />
+                      </div>
+                      <div className="flex flex-col py-1">
+                        <button
+                          onClick={() => handleExportPaidTeams('csv')}
+                          className="flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/[0.04] hover:text-white transition-all uppercase tracking-wider"
+                        >
+                          <HiOutlineDocumentDownload className="w-4 h-4 text-emerald-400 shrink-0" />
+                          Download as CSV
+                        </button>
+                        <button
+                          onClick={() => handleExportPaidTeams('excel')}
+                          className="flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/[0.04] hover:text-white transition-all uppercase tracking-wider"
+                        >
+                          <HiOutlineDocumentDownload className="w-4 h-4 text-emerald-400 shrink-0" />
+                          Download as Excel
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="animate-scale-in">
-            {step === 'upload' && (
-              <div className="card py-32 flex flex-col items-center justify-center border-slate-700/30 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-primary-500/5 blur-[100px] pointer-events-none group-hover:bg-primary-500/10 transition-all"></div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="nexus-upload"
-                />
-                <label htmlFor="nexus-upload" className="cursor-pointer flex flex-col items-center text-center">
-                  <div className="w-20 h-20 rounded-3xl bg-slate-950 border border-slate-700 flex items-center justify-center text-slate-600 mb-6 group-hover:text-primary-400 group-hover:border-primary-500/50 group-hover:bg-primary-500/10 transition-all duration-500 shadow-2xl">
-                    {parsing ? <HiOutlineRefresh className="w-10 h-10 animate-spin text-primary-500" /> : <HiOutlineUpload className="w-10 h-10" />}
+              </div>
+            </div>
+            {loadingTeams ? (
+              <div className="flex flex-col items-center justify-center py-32 gap-6">
+                <HiOutlineRefresh className="w-12 h-12 text-primary-500 animate-spin" />
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em] animate-pulse">Loading Hackathon Data...</p>
+              </div>
+            ) : (
+              <div className="card !p-0 border-slate-700/30 overflow-hidden shadow-2xl bg-slate-900/20 backdrop-blur-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-white/[0.01]">
+                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Information</th>
+                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team Members</th>
+                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-center">Status</th>
+                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Payment</th>
+                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Batch</th>
+                        <th className="px-6 py-6 text-[9px] font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.02]">
+                      {teams.map((t) => (
+                        <Fragment key={t._id}>
+                          <tr className={`group hover:bg-white/[0.02] transition-all cursor-pointer ${expandedTeam === t._id ? 'bg-primary-500/[0.03] border-l-2 border-l-primary-500' : ''}`} onClick={() => setExpandedTeam(expandedTeam === t._id ? null : t._id)}>
+                            <td className="px-6 py-6">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-xl">
+                                  {t.teamName?.[0]?.toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors tracking-tight uppercase leading-none mb-1.5">{t.teamName}</p>
+                                  <p className="text-[10px] text-slate-600 font-bold uppercase tracking-tight line-clamp-1">{t.leaderId?.name || 'Unknown Leader'}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-6">
+                              <div className="flex flex-col gap-1">
+                                {t.members?.map(m => (
+                                  <p key={m._id} className="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate max-w-[150px]">{m.userId?.name || m.userId?.email}</p>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-6 text-center">
+                              <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.bg} ${SELECTION_STATUS_CONFIG[t.selectionStatus]?.color}`}>
+                                {SELECTION_STATUS_CONFIG[t.selectionStatus]?.label || t.selectionStatus}
+                              </span>
+                            </td>
+                            <td className="px-6 py-6">
+                              {t.isPaid ? (
+                                <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider text-emerald-400">
+                                  <HiOutlineCheckCircle className="w-3 h-3" /> Paid
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider text-slate-500/50">
+                                  <HiOutlineExclamationCircle className="w-3 h-3" /> Unpaid
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-6">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate max-w-[100px]">{t.importBatch || 'Direct'}</p>
+                            </td>
+                            <td className="px-6 py-6 text-right" onClick={(ev) => ev.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-2">
+                                {t.selectionStatus === 'waitlisted' && (
+                                  <button onClick={() => handleAction(t._id, t.teamName, 'promote')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 transition-all shadow-xl active:scale-95" title="Promote to Selected">
+                                    <HiOutlineTrendingUp className="w-5 h-5" />
+                                  </button>
+                                )}
+                                {t.selectionStatus === 'selected' && (
+                                  <button onClick={() => handleAction(t._id, t.teamName, 'suspend')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/20 transition-all shadow-xl active:scale-95" title="Suspend Team">
+                                    <HiOutlineBan className="w-5 h-5" />
+                                  </button>
+                                )}
+                                {(t.selectionStatus === 'suspended' || t.selectionStatus === 'removed') && (
+                                  <button onClick={() => handleAction(t._id, t.teamName, 'restore')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 transition-all shadow-xl active:scale-95" title="Restore Team">
+                                    <HiOutlineRefresh className="w-5 h-5" />
+                                  </button>
+                                )}
+                                {t.selectionStatus !== 'removed' && (
+                                  <button onClick={() => handleAction(t._id, t.teamName, 'remove')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-400/10 text-red-400 hover:bg-red-400 hover:text-white border border-red-500/20 transition-all shadow-xl active:scale-95" title="Remove Team">
+                                    <HiOutlineTrash className="w-5 h-5" />
+                                  </button>
+                                )}
+                                <button onClick={() => handleAction(t._id, t.teamName, 'delete')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:bg-red-500 hover:text-white transition-all shadow-xl active:scale-95" title="Delete Permanently">
+                                  <HiOutlineTrashAlternative className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {expandedTeam === t._id && (
+                            <tr className="bg-slate-900/40 backdrop-blur-3xl animate-fade-in relative z-10">
+                              <td colSpan="6" className="px-12 py-10">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                  {t.members?.map((m, idx) => (
+                                    <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-3 hover:border-primary-500/30 transition-all group">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{m.teamRole || 'Member'}</span>
+                                        {m.teamRole === 'leader' && <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[8px] font-bold uppercase tracking-wider">LEADER</span>}
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-sm font-bold text-white uppercase tracking-tight truncate">{m.name}</p>
+                                        <p className="text-[10px] text-slate-500 font-bold lowercase tracking-tight truncate">{m.email}</p>
+                                      </div>
+                                      {m.phone && (
+                                        <div className="pt-2 flex items-center justify-between border-t border-white/[0.05]">
+                                          <div className="flex items-center gap-2">
+                                            <HiOutlinePhone className="w-3 h-3 text-primary-500" />
+                                            <span className="text-[10px] text-slate-400 font-bold tabular-nums">{m.phone}</span>
+                                          </div>
+                                          <span className="text-[8px] text-slate-600 font-bold uppercase">{m.gender}</span>
+                                        </div>
+                                      )}
+                                      {(m.collegeName || m.department) && (
+                                        <div className="space-y-1">
+                                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight truncate">{m.collegeName}</p>
+                                          <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tight">{m.department} {m.year ? `— Year ${m.year}` : ''}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
+                                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.4em]">Team ID: {t._id}</p>
+                                  <div className="flex flex-wrap gap-4">
+                                    {t.registrationId?.referralCodeUsed && <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider p-2 bg-amber-500/5 border border-amber-500/10 rounded-lg">REF CODE: {t.registrationId.referralCodeUsed}</span>}
+                                    {t.unstopTeamId && <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">UNSTOP ID: {t.unstopTeamId}</span>}
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">TOTAL MEMBERS: {t.members?.length || 0}</span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      ))}
+                      {teams.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="text-center py-40">
+                            <HiOutlineSearch className="w-16 h-16 text-slate-800 mx-auto mb-6" />
+                            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.4em]">No hackathon teams found</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {teamPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
+                    {[...Array(teamPages)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setTeamPage(i + 1)}
+                        className={`w-10 h-10 rounded-xl text-[10px] font-bold transition-all ${teamPage === i + 1 ? 'bg-primary-500 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
+                      >
+                        {(i + 1).toString().padStart(2, '0')}
+                      </button>
+                    ))}
                   </div>
-                  <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">{parsing ? 'PARSING FILE...' : 'UPLOAD CSV / XLSX'}</h2>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-wider max-w-sm">Select a file containing participant and team data</p>
-                  {!parsing && <span className="mt-8 px-8 py-3 rounded-full bg-white/[0.05] border border-white/[0.1] text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 group-hover:bg-primary-500 group-hover:text-white group-hover:border-transparent transition-all">Select File</span>}
-                </label>
+                )}
               </div>
             )}
-
-            {step === 'mapping' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Mapping Info & Password */}
-                  <div className="bg-primary-500/5 border border-primary-500/20 rounded-2xl p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <h4 className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-wider">
-                          <HiOutlineExclamationCircle className="w-4 h-4" /> Required Mapping
-                        </h4>
-                        <p className="text-[10px] text-slate-400 leading-relaxed font-medium uppercase tracking-tight">
-                          Email, Name, Phone, Team Name, and College are mandatory for successful import.
-                        </p>
+          </div>
+        ) : (
+          <div className="space-y-8 animate-scale-in">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-2 rounded-3xl bg-slate-950/50 border border-white/[0.05]">
+              {STEPS.map((s, i) => {
+                const isActive = step === s.id;
+                const isDone = STEPS.findIndex(st => st.id === step) > i;
+                const Icon = s.icon;
+                return (
+                  <div key={s.id} className={`relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${isActive ? 'bg-primary-500/10 border-primary-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'opacity-40 grayscale filter'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-primary-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-slate-500'}`}>
+                      {isDone ? <HiOutlineCheckCircle className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">Phase 0{i + 1}</p>
+                      <p className={`text-[11px] font-bold uppercase tracking-tight ${isActive ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
+                    </div>
+                    {i < STEPS.length - 1 && (
+                      <div className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2 z-10">
+                        <HiOutlineChevronRight className="w-4 h-4 text-slate-800" />
                       </div>
-                      <div className="space-y-2 md:border-l md:border-white/10 md:pl-6">
-                        <h4 className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider">
-                          <HiOutlineShieldCheck className="w-4 h-4" /> Default Password
-                        </h4>
-                        <div className="flex items-center gap-3">
-                          <code className="bg-blue-500/10 px-3 py-1.5 rounded-lg text-white font-mono text-xs border border-blue-500/30">
-                            Lakshya@2025
-                          </code>
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tight">
-                            For new accounts
-                          </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="animate-scale-in">
+              {step === 'upload' && (
+                <div className="card py-32 flex flex-col items-center justify-center border-slate-700/30 relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-primary-500/5 blur-[100px] pointer-events-none group-hover:bg-primary-500/10 transition-all"></div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="nexus-upload"
+                  />
+                  <label htmlFor="nexus-upload" className="cursor-pointer flex flex-col items-center text-center">
+                    <div className="w-20 h-20 rounded-3xl bg-slate-950 border border-slate-700 flex items-center justify-center text-slate-600 mb-6 group-hover:text-primary-400 group-hover:border-primary-500/50 group-hover:bg-primary-500/10 transition-all duration-500 shadow-2xl">
+                      {parsing ? <HiOutlineRefresh className="w-10 h-10 animate-spin text-primary-500" /> : <HiOutlineUpload className="w-10 h-10" />}
+                    </div>
+                    <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">{parsing ? 'PARSING FILE...' : 'UPLOAD CSV / XLSX'}</h2>
+                    <p className="text-sm text-slate-500 font-bold uppercase tracking-wider max-w-sm">Select a file containing participant and team data</p>
+                    {!parsing && <span className="mt-8 px-8 py-3 rounded-full bg-white/[0.05] border border-white/[0.1] text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 group-hover:bg-primary-500 group-hover:text-white group-hover:border-transparent transition-all">Select File</span>}
+                  </label>
+                </div>
+              )}
+
+              {step === 'mapping' && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* Mapping Info & Password */}
+                    <div className="bg-primary-500/5 border border-primary-500/20 rounded-2xl p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <h4 className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-wider">
+                            <HiOutlineExclamationCircle className="w-4 h-4" /> Required Mapping
+                          </h4>
+                          <p className="text-[10px] text-slate-400 leading-relaxed font-medium uppercase tracking-tight">
+                            Email, Name, Phone, Team Name, and College are mandatory for successful import.
+                          </p>
+                        </div>
+                        <div className="space-y-2 md:border-l md:border-white/10 md:pl-6">
+                          <h4 className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider">
+                            <HiOutlineShieldCheck className="w-4 h-4" /> Default Password
+                          </h4>
+                          <div className="flex items-center gap-3">
+                            <code className="bg-blue-500/10 px-3 py-1.5 rounded-lg text-white font-mono text-xs border border-blue-500/30">
+                              Lakshya@2025
+                            </code>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tight">
+                              For new accounts
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="card space-y-6 border-slate-700/30">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <HiOutlineChip className="w-4 h-4 text-primary-400" /> Column Mapping
-                      </h3>
+                    <div className="card space-y-6 border-slate-700/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                          <HiOutlineChip className="w-4 h-4 text-primary-400" /> Column Mapping
+                        </h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {headers.map(header => (
+                          <div key={header} className="p-4 rounded-2xl bg-slate-950/50 border border-white/[0.05] flex flex-col gap-3 group hover:border-primary-500/30 transition-all">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{header}</span>
+                            <select
+                              value={mappings[header] || 'unmapped'}
+                              onChange={(e) => handleMapChange(header, e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-white appearance-none cursor-pointer focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
+                            >
+                              <option value="unmapped">Unmapped</option>
+                              {COLUMN_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label} {opt.required ? '*' : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {headers.map(header => (
-                        <div key={header} className="p-4 rounded-2xl bg-slate-950/50 border border-white/[0.05] flex flex-col gap-3 group hover:border-primary-500/30 transition-all">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{header}</span>
-                          <select
-                            value={mappings[header] || 'unmapped'}
-                            onChange={(e) => handleMapChange(header, e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-white appearance-none cursor-pointer focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
-                          >
-                            <option value="unmapped">Unmapped</option>
-                            {COLUMN_OPTIONS.map(opt => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label} {opt.required ? '*' : ''}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="card border-slate-700/30">
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Preview (Top 5 rows)</h3>
-                    <div className="overflow-x-auto rounded-2xl border border-white/[0.05]">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-white/[0.02] border-b border-white/[0.05]">
-                            {headers.map(h => (
-                              <th key={h} className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/[0.02]">
-                           {previewData.slice(0, 5).map((row, i) => (
-                            <tr key={i} className="hover:bg-white/[0.01] transition-all">
+                    <div className="card border-slate-700/30">
+                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Preview (Top 5 rows)</h3>
+                      <div className="overflow-x-auto rounded-2xl border border-white/[0.05]">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-white/[0.02] border-b border-white/[0.05]">
                               {headers.map(h => (
-                                <td key={h} className="px-5 py-3 text-[10px] text-slate-400 font-bold tracking-tight whitespace-nowrap">{row[h] || '—'}</td>
+                                <th key={h} className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">{h}</th>
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.02]">
+                            {previewData.slice(0, 5).map((row, i) => (
+                              <tr key={i} className="hover:bg-white/[0.01] transition-all">
+                                {headers.map(h => (
+                                  <td key={h} className="px-5 py-3 text-[10px] text-slate-400 font-bold tracking-tight whitespace-nowrap">{row[h] || '—'}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-6">
-                  <div className="card mb-6 border-slate-700/30 space-y-6">
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <HiOutlineInformationCircle className="w-4 h-4 text-primary-400" /> Import Rules
-                    </h3>
-                    <div className="space-y-4">
-                       <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
+                  <div className="space-y-6">
+                    <div className="card mb-6 border-slate-700/30 space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <HiOutlineInformationCircle className="w-4 h-4 text-primary-400" /> Import Rules
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
                           <p className="text-[10px] font-bold text-orange-200 uppercase tracking-wider mb-1">Mapping Guide:</p>
                           <ul className="text-[9px] text-orange-300 font-bold uppercase tracking-tight space-y-2 list-disc pl-4">
                             <li>Groups rows by Team Name</li>
                             <li>leader role initiates registration</li>
                             <li>member role adds to Team Members</li>
                           </ul>
-                       </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={runValidation}
+                        className="btn-primary w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 transition-all flex items-center justify-center gap-3"
+                      >
+                        <HiOutlineShieldCheck className="w-5 h-5" /> VERIFY DATA
+                      </button>
                     </div>
-                    <button
-                      onClick={runValidation}
-                      className="btn-primary w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary-900/40 active:scale-95 transition-all flex items-center justify-center gap-3"
-                    >
-                      <HiOutlineShieldCheck className="w-5 h-5" /> VERIFY DATA
-                    </button>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {step === 'verification' && validationResults && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                   <div className="grid grid-cols-3 gap-6">
+              {step === 'verification' && validationResults && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-8">
+                    <div className="grid grid-cols-3 gap-6">
                       <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
-                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">VALID RECORDS</p>
-                         <p className="text-4xl font-bold text-emerald-400 tracking-tight">{validationResults.validCount}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">VALID RECORDS</p>
+                        <p className="text-4xl font-bold text-emerald-400 tracking-tight">{validationResults.validCount}</p>
                       </div>
                       <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
-                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">INVALID</p>
-                         <p className="text-4xl font-bold text-red-400 tracking-tight">{validationResults.invalidCount}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">INVALID</p>
+                        <p className="text-4xl font-bold text-red-400 tracking-tight">{validationResults.invalidCount}</p>
                       </div>
                       <div className="card border-slate-700/30 text-center space-y-2 relative overflow-hidden group">
-                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">DUPLICATES</p>
-                         <p className="text-4xl font-bold text-amber-400 tracking-tight">{validationResults.duplicateCount}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">DUPLICATES</p>
+                        <p className="text-4xl font-bold text-amber-400 tracking-tight">{validationResults.duplicateCount}</p>
                       </div>
-                   </div>
+                    </div>
 
-                   <div className="card border-slate-700/30">
+                    <div className="card border-slate-700/30">
                       <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <HiOutlineDatabase className="w-4 h-4 text-primary-400" /> VALID RECORDS PREVIEW
                       </h3>
@@ -750,9 +838,9 @@ export default function HackathonImport() {
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="bg-white/[0.02] border-b border-white/[0.05]">
-                               <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Name</th>
-                               <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team</th>
-                               <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Email</th>
+                              <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Name</th>
+                              <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Team</th>
+                              <th className="px-5 py-3 text-[9px] font-bold text-slate-600 uppercase tracking-wider">Email</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.02]">
@@ -768,26 +856,26 @@ export default function HackathonImport() {
                           </tbody>
                         </table>
                       </div>
-                   </div>
-                </div>
+                    </div>
+                  </div>
 
-                <div className="space-y-6">
-                   <div className="card border-slate-700/30 space-y-6">
-                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <HiOutlineShieldCheck className="w-4 h-4 text-primary-400" /> Ingestion Summary
-                     </h3>
-                     <div className="space-y-4">
+                  <div className="space-y-6">
+                    <div className="card border-slate-700/30 space-y-6">
+                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <HiOutlineShieldCheck className="w-4 h-4 text-primary-400" /> Ingestion Summary
+                      </h3>
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">File:</span>
-                           <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate max-w-[100px]">{file?.name || 'Unknown'}</span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">File:</span>
+                          <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate max-w-[100px]">{file?.name || 'Unknown'}</span>
                         </div>
-                     </div>
-                     
-                     <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-[9px] text-blue-300 font-bold uppercase tracking-tight leading-relaxed">
-                        Final import will create user accounts and teams. This action cannot be easily undone.
-                     </div>
+                      </div>
 
-                     <div className="flex flex-col gap-3">
+                      <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-[9px] text-blue-300 font-bold uppercase tracking-tight leading-relaxed">
+                        Final import will create user accounts and teams. This action cannot be easily undone.
+                      </div>
+
+                      <div className="flex flex-col gap-3">
                         <button
                           onClick={() => setShowConfirm(true)}
                           disabled={validationResults.validCount === 0}
@@ -796,17 +884,17 @@ export default function HackathonImport() {
                           <HiOutlineDatabase className="w-5 h-5" /> START IMPORT
                         </button>
                         <button onClick={resetImportState} className="btn-outline w-full py-4 text-[11px] font-bold uppercase tracking-wider">Reset</button>
-                     </div>
-                   </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Spacing element at bottom */}
-      <div className="h-20"></div>
+        {/* Spacing element at bottom */}
+        <div className="h-20"></div>
 
       </div>
 

@@ -2,6 +2,7 @@ const Event = require('../../models/Event');
 const Team = require('../../models/Team');
 const Registration = require('../../models/Registration');
 const Transaction = require('../../models/Transaction');
+const HackathonTeam = require('../../models/HackathonTeam');
 
 const AppError = require('../../middleware/AppError');
 const mongoose = require('mongoose');
@@ -157,21 +158,48 @@ async function getEventRegistrationMetrics({
       failedTxMap = new Map(failedArr.map((r) => [String(r._id), Number(r.count) || 0]));
     }
 
+    // Special calculation for Hackathon events since they are strictly managed via admin imports 
+    // and native portal registrations contain noisy abandoned/dummy teams.
+    const hackathonStatsMap = new Map();
+    for (const event of events) {
+      if (typeof event.title === 'string' && event.title.toLowerCase().includes('hackathon')) {
+        const hTeams = await HackathonTeam.find({ eventId: event._id, selectionStatus: { $ne: 'removed' } }).lean();
+        
+        // The admin explicitly requested to ONLY show "selected" and "paid" teams on the Insights dashboard
+        // so we filter down before tallying the official counts.
+        const paidHTeams = hTeams.filter(ht => ht.selectionStatus === 'selected' || ht.paymentEnabled);
+        
+        const totalRegistrations = paidHTeams.length; // total active paid/selected teams
+        let paidParticipants = 0;
+        paidHTeams.forEach(ht => { paidParticipants += (ht.members && ht.members.length > 0 ? ht.members.length : 1); });
+
+        hackathonStatsMap.set(String(event._id), {
+          totalRegistrations: totalRegistrations,
+          totalParticipants: paidParticipants,
+          paidParticipants: paidParticipants,
+          totalTeams: totalRegistrations
+        });
+      }
+    }
+
     const result = events.map((event) => {
       const eventIdStr = String(event._id);
-      const totalParticipants = participantMap.get(eventIdStr) || 0;
-      const totalTeams = teamMap.get(eventIdStr) || 0;
+      const hackathonStats = hackathonStatsMap.get(eventIdStr);
+
+      const totalParticipants = hackathonStats ? hackathonStats.totalParticipants : (participantMap.get(eventIdStr) || 0);
+      const totalTeams = hackathonStats ? hackathonStats.totalTeams : (teamMap.get(eventIdStr) || 0);
       const totalSoloRegistrations = soloMap.get(eventIdStr) || 0;
-      const totalConfirmedParticipants = confirmedMap.get(eventIdStr) || 0;
+      const totalConfirmedParticipants = hackathonStats ? hackathonStats.paidParticipants : (confirmedMap.get(eventIdStr) || 0);
 
       const paidByTx = paidMap.get(eventIdStr) || 0;
       const isFree = event.isPaid === false || Number(event.registrationFee || 0) === 0;
-      const paidParticipants = isFree ? totalConfirmedParticipants : paidByTx;
+      const paidParticipants = hackathonStats ? hackathonStats.paidParticipants : (isFree ? totalConfirmedParticipants : paidByTx);
 
-      const totalRegistrations =
+      const totalRegistrations = hackathonStats ? hackathonStats.totalRegistrations : (
         event.eventType === 'team'
           ? totalTeams
-          : totalSoloRegistrations;
+          : totalSoloRegistrations
+      );
 
       const item = {
         eventId: event._id,

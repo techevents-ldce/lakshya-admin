@@ -130,3 +130,21 @@ exports.deleteBatch = asyncHandler(async (req, res) => {
   });
   res.json({ success: true, data: result, message: `Deleted ${result.deletedCount} of ${result.total} teams in batch "${importBatch}"` });
 });
+
+/** GET /api/hackathon/export/paid-teams — export paid team members as CSV/Excel */
+exports.exportPaidTeams = asyncHandler(async (req, res) => {
+  const { format = 'csv', selectionStatus, importBatch, teamIds } = req.query;
+  const parsedTeamIds = teamIds ? (Array.isArray(teamIds) ? teamIds : teamIds.split(',').map(id => id.trim()).filter(Boolean)) : [];
+  
+  const data = await hackathonService.exportPaidTeams({
+    format,
+    selectionStatus,
+    importBatch,
+    teamIds: parsedTeamIds.length > 0 ? parsedTeamIds : undefined,
+  });
+
+  const ext = format === 'excel' ? 'xlsx' : 'csv';
+  res.setHeader('Content-Type', ext === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=hackathon-paid-teams.${ext}`);
+  return res.send(data);
+});

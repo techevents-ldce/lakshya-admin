@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
 import api from '../../src/services/api';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; 
 import { 
   HiOutlineChartBar, 
   HiOutlineTrendingUp, 
