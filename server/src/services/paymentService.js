@@ -104,7 +104,19 @@ const getRevenueStats = async () => {
     { $group: { _id: '$eventId', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
     { $lookup: { from: 'events', localField: '_id', foreignField: '_id', as: 'event' } },
     { $unwind: '$event' },
-    { $project: { eventTitle: '$event.title', totalRevenue: 1, count: 1 } },
+    {
+      $project: {
+        eventTitle: '$event.title',
+        totalRevenue: {
+          $cond: [
+            { $eq: [{ $ifNull: ['$event.registrationFee', 0] }, 0] },
+            0,
+            '$totalRevenue'
+          ]
+        },
+        count: 1
+      }
+    },
   ]);
   return stats;
 };

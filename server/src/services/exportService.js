@@ -1,5 +1,7 @@
 const Registration = require('../models/Registration');
 const Payment = require('../models/Payment');
+const Transaction = require('../models/Transaction');
+const Order = require('../models/Order');
 const Ticket = require('../models/Ticket');
 const { generateCSV, generateExcel } = require('../utils/export');
 const AppError = require('../middleware/AppError');
@@ -78,15 +80,29 @@ const exportParticipants = async (filters = {}) => {
 const exportPayments = async (filters = {}) => {
   const { eventId, format = 'csv', status, dateFrom, dateTo } = filters;
   const query = {};
-  if (eventId) query.eventId = eventId;
-  if (status) query.status = status;
-  const dateFilter = buildDateFilter(dateFrom, dateTo);
-  if (dateFilter) query.createdAt = dateFilter;
 
-  const payments = await Payment.find(query)
-    .populate('userId', 'name email phone')
-    .populate('eventId', 'title registrationFee')
-    .sort({ createdAt: -1 })
+  if (eventId) {
+    const mongoose = require('mongoose');
+    query.event_ids = { $in: [mongoose.Types.ObjectId.createFromHexString(eventId)] };
+  }
+
+  if (status) {
+    const statusMap = {
+      pending: 'PENDING',
+      completed: 'SUCCESS',
+      failed: 'FAILED',
+      refunded: 'REFUNDED',
+    };
+    query.status = statusMap[status.toLowerCase()] || status.toUpperCase();
+  }
+
+  const dateFilter = buildDateFilter(dateFrom, dateTo);
+  if (dateFilter) query.created_at = dateFilter;
+
+  const payments = await Transaction.find(query)
+    .populate('user_id', 'name email phone')
+    .populate('event_ids', 'title registrationFee')
+    .sort({ created_at: -1 })
     .lean();
 
   if (!payments.length) {
@@ -94,15 +110,16 @@ const exportPayments = async (filters = {}) => {
   }
 
   const data = payments.map((p) => ({
-    participant: p.userId?.name || 'N/A',
-    email: p.userId?.email || 'N/A',
-    phone: p.userId?.phone || 'N/A',
-    event: p.eventId?.title || 'N/A',
+    participant: p.user_id?.name || 'N/A',
+    email: p.user_id?.email || 'N/A',
+    phone: p.user_id?.phone || 'N/A',
+    event: Array.isArray(p.event_ids) ? p.event_ids.map(ev => ev.title).join(', ') : 'N/A',
     amount: p.amount,
     status: p.status,
-    transactionId: p.transactionId || 'N/A',
-    paymentMethod: p.paymentMethod || 'N/A',
-    date: p.createdAt?.toISOString().split('T')[0],
+    transactionId: p.transaction_id || 'N/A',
+    razorpayOrderId: p.razorpay_order_id || 'N/A',
+    razorpayPaymentId: p.razorpay_payment_id || 'N/A',
+    date: p.created_at?.toISOString().split('T')[0],
   }));
 
   if (format === 'excel') {
@@ -110,28 +127,36 @@ const exportPayments = async (filters = {}) => {
       { header: 'Participant', key: 'participant', width: 25 },
       { header: 'Email', key: 'email', width: 30 },
       { header: 'Phone', key: 'phone', width: 15 },
-      { header: 'Event', key: 'event', width: 25 },
+      { header: 'Events (Bundle)', key: 'event', width: 40 },
       { header: 'Amount (₹)', key: 'amount', width: 12 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Transaction ID', key: 'transactionId', width: 25 },
-      { header: 'Method', key: 'paymentMethod', width: 15 },
+      { header: 'Razorpay Order ID', key: 'razorpayOrderId', width: 25 },
+      { header: 'Razorpay Payment ID', key: 'razorpayPaymentId', width: 25 },
       { header: 'Date', key: 'date', width: 15 },
     ];
     return generateExcel(data, columns, 'Payments');
   }
 
-  const fields = ['participant', 'email', 'phone', 'event', 'amount', 'status', 'transactionId', 'paymentMethod', 'date'];
+  const fields = ['participant', 'email', 'phone', 'event', 'amount', 'status', 'transactionId', 'razorpayOrderId', 'razorpayPaymentId', 'date'];
   return generateCSV(data, fields);
 };
 
 const exportOrders = async (filters = {}) => {
-  const { format = 'csv', status, dateFrom, dateTo } = filters;
+  const { format = 'csv', status, dateFrom, dateTo, eventId } = filters;
   let orders = [];
   try {
-    const Order = require('../models/Order');
     const query = {};
     if (status) query.status = status;
     else query.status = 'success';
+
+    if (eventId) {
+      query.$or = [
+        { 'itemsSnapshot.eventId': eventId },
+        { 'itemsSnapshot.eventId': require('mongoose').Types.ObjectId.createFromHexString(eventId) }
+      ];
+    }
+
     const dateFilter = buildDateFilter(dateFrom, dateTo);
     if (dateFilter) query.createdAt = dateFilter;
 
@@ -139,8 +164,8 @@ const exportOrders = async (filters = {}) => {
       .populate('userId', 'name email phone')
       .sort({ createdAt: -1 })
       .lean();
-  } catch {
-    throw new AppError('Orders collection not available', 404, 'NO_ORDERS');
+  } catch (err) {
+    throw new AppError('Orders query failed: ' + err.message, 500, 'NO_ORDERS');
   }
 
   if (!orders.length) {

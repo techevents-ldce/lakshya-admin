@@ -20,6 +20,15 @@ const getDashboardStats = async (filters = {}) => {
     if (dateTo) dateMatch.$lte = new Date(dateTo);
     const hasDateFilter = Object.keys(dateMatch).length > 0;
 
+    // Fetch event info if eventId is present to check if it's free
+    let isFilteredEventFree = false;
+    if (eventId) {
+      const event = await Event.findById(eventId).select('registrationFee');
+      if (event && (!event.registrationFee || event.registrationFee === 0)) {
+        isFilteredEventFree = true;
+      }
+    }
+
     // Build date match for Transaction (uses created_at)
     const txDateMatch = {};
     if (dateFrom) txDateMatch.$gte = new Date(dateFrom);
@@ -106,10 +115,12 @@ const getDashboardStats = async (filters = {}) => {
       Event.countDocuments(),
       Registration.countDocuments(regFilter),
       // Revenue from transactions
-      Transaction.aggregate([
-        { $match: txFilter },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
-      ]),
+      (eventId && isFilteredEventFree)
+        ? Promise.resolve([{ total: 0 }])
+        : Transaction.aggregate([
+            { $match: txFilter },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+          ]),
       Registration.find(regFilter)
         .sort({ createdAt: -1 })
         .limit(10)
@@ -155,16 +166,18 @@ const getDashboardStats = async (filters = {}) => {
         { $sort: { count: -1 } },
       ]),
       // Revenue trend (from Transactions, respect eventId)
-      Transaction.aggregate([
-        { $match: txFilter.created_at ? txFilter : { status: 'SUCCESS', created_at: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
-            total: { $sum: '$amount' },
-          },
-        },
-        { $sort: { _id: 1 } },
-      ]),
+      (eventId && isFilteredEventFree)
+        ? Promise.resolve([])
+        : Transaction.aggregate([
+            { $match: txFilter.created_at ? txFilter : { status: 'SUCCESS', created_at: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
+            {
+              $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
+                total: { $sum: '$amount' },
+              },
+            },
+            { $sort: { _id: 1 } },
+          ]),
       // Registration status (respect eventId)
       Registration.aggregate([
         { $match: eventId ? { eventId: mongoose.Types.ObjectId.createFromHexString(eventId) } : (hasDateFilter ? { createdAt: dateMatch } : {}) },
@@ -172,15 +185,31 @@ const getDashboardStats = async (filters = {}) => {
         { $sort: { count: -1 } },
       ]),
       // Top paying events (from transactions)
+      // Top paying events (from transactions)
       Transaction.aggregate([
         { $match: { status: 'SUCCESS' } },
         { $unwind: '$event_ids' },
-        { $group: { _id: '$event_ids', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
+        { $lookup: { from: 'events', localField: 'event_ids', foreignField: '_id', as: 'eventInfo' } },
+        { $unwind: '$eventInfo' },
+        {
+          $group: {
+            _id: '$event_ids',
+            totalRevenue: {
+              $sum: {
+                $cond: [
+                  { $eq: [{ $ifNull: ['$eventInfo.registrationFee', 0] }, 0] },
+                  0,
+                  '$amount'
+                ]
+              }
+            },
+            count: { $sum: 1 },
+            eventTitle: { $first: '$eventInfo.title' }
+          }
+        },
         { $sort: { totalRevenue: -1 } },
         { $limit: 5 },
-        { $lookup: { from: 'events', localField: '_id', foreignField: '_id', as: 'event' } },
-        { $unwind: '$event' },
-        { $project: { eventTitle: '$event.title', totalRevenue: 1, count: 1 } },
+        { $project: { eventTitle: 1, totalRevenue: 1, count: 1 } },
       ]),
       // Tickets issued
       Ticket.countDocuments(ticketFilter),
@@ -353,6 +382,9 @@ const getEventMetrics = async () => {
       const rs = regStats.find(s => s._id?.toString() === ev._id.toString()) || {};
       const vs = revStats.find(s => s._id?.toString() === ev._id.toString()) || {};
 
+      // Free events (registrationFee === 0) should never report revenue
+      const isFree = !ev.registrationFee || Number(ev.registrationFee) === 0;
+
       return {
         _id: ev._id,
         title: ev.title,
@@ -361,7 +393,7 @@ const getEventMetrics = async () => {
         participantCount: rs.participantCount || 0,
         alumniCount: rs.alumniCount || 0,
         priorityAlumniCount: rs.priorityAlumniCount || 0,
-        totalRevenue: vs.totalRevenue || 0
+        totalRevenue: isFree ? 0 : (vs.totalRevenue || 0)
       };
     });
 
