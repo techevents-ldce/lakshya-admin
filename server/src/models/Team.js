@@ -16,5 +16,10 @@ const teamSchema = new mongoose.Schema(
 
 teamSchema.index({ eventId: 1 });
 teamSchema.index({ leaderId: 1 });
+// Compound index for fast leader+event team lookups.
+// NOTE: uniqueness is enforced at application level (atomic upsert in hackathonService)
+// rather than DB level, to avoid E11000 startup failure if historical duplicates exist.
+// Run POST /teams/dedup to clean up any existing duplicate documents.
+teamSchema.index({ eventId: 1, leaderId: 1 });
 
 module.exports = mongoose.model('Team', teamSchema);

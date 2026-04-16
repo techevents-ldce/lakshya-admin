@@ -158,9 +158,10 @@ const getTeamWiseAttendance = async (eventId, query = {}) => {
   for (const t of tickets) ticketMap[t.userId.toString()] = t;
 
   const membersByTeam = {};
+  const memberEmailsByTeam = {}; // track which emails are already in TeamMember per team
   for (const m of members) {
     const tid = m.teamId.toString();
-    if (!membersByTeam[tid]) membersByTeam[tid] = [];
+    if (!membersByTeam[tid]) { membersByTeam[tid] = []; memberEmailsByTeam[tid] = new Set(); }
     const uid = (m.userId?._id || m.userId).toString();
     const ticket = ticketMap[uid] || null;
     let attendanceStatus = 'no-ticket';
@@ -174,6 +175,45 @@ const getTeamWiseAttendance = async (eventId, query = {}) => {
       attendanceStatus,
       ticket: ticket ? { ticketId: ticket.ticketId, status: ticket.status, scannedAt: ticket.scannedAt, scannedBy: ticket.scannedBy } : null,
     });
+    // Track member email so we can skip duplicates when merging hackathon members
+    const memberEmail = m.userId?.email;
+    if (memberEmail) memberEmailsByTeam[tid].add(memberEmail.toLowerCase());
+  }
+
+  // ── Merge HackathonTeam raw members for teams that have hackathon imports ──
+  // This ensures the coordinator sees ALL imported members, not just those with
+  // portal accounts / TeamMember documents.
+  try {
+    const HackathonTeam = require('../models/HackathonTeam');
+    const hackathonTeams = await HackathonTeam.find({ teamId: { $in: teamIds } }).lean();
+    for (const ht of hackathonTeams) {
+      const tid = ht.teamId?.toString();
+      if (!tid) continue;
+      if (!membersByTeam[tid]) { membersByTeam[tid] = []; memberEmailsByTeam[tid] = new Set(); }
+      for (const htMember of (ht.members || [])) {
+        const htEmail = (htMember.email || '').toLowerCase();
+        // Skip if this member is already represented by a TeamMember entry
+        if (htEmail && memberEmailsByTeam[tid].has(htEmail)) continue;
+        // Add as a display-only member (no userId, no ticket)
+        membersByTeam[tid].push({
+          _id: `ht_${tid}_${htEmail || htMember.name}`,
+          teamId: ht.teamId,
+          userId: null, // no portal account yet
+          hackathonMember: true, // flag for frontend differentiation
+          displayName: htMember.name || htEmail,
+          displayEmail: htEmail,
+          displayPhone: htMember.phone || '',
+          displayCollege: htMember.collegeName || '',
+          teamRole: htMember.teamRole || 'member',
+          attendanceStatus: 'no-ticket',
+          ticket: null,
+          status: 'accepted',
+        });
+        if (htEmail) memberEmailsByTeam[tid].add(htEmail);
+      }
+    }
+  } catch (_) {
+    // HackathonTeam collection may not exist for non-hackathon events — safe to ignore.
   }
 
   let result = teams.map((t) => {
@@ -186,7 +226,10 @@ const getTeamWiseAttendance = async (eventId, query = {}) => {
     const q = search.toLowerCase();
     result = result.filter((t) =>
       t.teamName?.toLowerCase().includes(q) || t.leaderId?.name?.toLowerCase().includes(q) ||
-      t.members.some((m) => m.userId?.name?.toLowerCase().includes(q) || m.userId?.email?.toLowerCase().includes(q))
+      t.members.some((m) =>
+        m.userId?.name?.toLowerCase().includes(q) || m.userId?.email?.toLowerCase().includes(q) ||
+        m.displayName?.toLowerCase().includes(q) || m.displayEmail?.toLowerCase().includes(q)
+      )
     );
   }
 

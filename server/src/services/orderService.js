@@ -12,6 +12,13 @@ const QRCode = require('qrcode');
 const mongoose = require('mongoose');
 const Transaction = require('../models/Transaction');
 
+/** Normalise a referral code from itemsSnapshot to uppercase, trimmed, or null if empty. */
+const normaliseItemReferralCode = (code) => {
+  if (!code || typeof code !== 'string') return null;
+  const n = code.trim().toUpperCase();
+  return n.length >= 2 ? n : null;
+};
+
 const getOrders = async (query = {}) => {
   const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, sortBy = 'createdAt', sortOrder = 'desc' } = query;
   const filter = {};
@@ -359,6 +366,8 @@ const forceFulfillOrder = async (orderId, adminId, reqMeta = {}) => {
           );
         }
 
+        const itemReferralCode = normaliseItemReferralCode(item.referralCode);
+
         if (!leaderReg) {
           leaderReg = await Registration.create([{
             userId,
@@ -369,12 +378,18 @@ const forceFulfillOrder = async (orderId, adminId, reqMeta = {}) => {
             registrationData: item.extraFields || {},
             status: 'confirmed',
             pricingSnapshot: item,
+            // Propagate referral code from checkout snapshot into Registration
+            referralCodeUsed: itemReferralCode || undefined,
           }], { session }).then((r) => r[0]);
         } else {
           // Ensure confirmed + link back to this order if missing
           leaderReg.status = 'confirmed';
           if (!leaderReg.orderId) leaderReg.orderId = order._id;
           if (isTeamItem && !leaderReg.teamId && teamId) leaderReg.teamId = teamId;
+          // Set referral code if not already present and code is known from this order
+          if (itemReferralCode && !leaderReg.referralCodeUsed) {
+            leaderReg.referralCodeUsed = itemReferralCode;
+          }
           await leaderReg.save({ session });
         }
 
@@ -422,11 +437,16 @@ const forceFulfillOrder = async (orderId, adminId, reqMeta = {}) => {
                 orderId: order._id,
                 status: 'confirmed',
                 pricingSnapshot: item,
+                // Members share the same referral code as the leader for this order
+                referralCodeUsed: itemReferralCode || undefined,
               }], { session }).then((r) => r[0]);
             } else {
               mReg.status = 'confirmed';
               if (!mReg.orderId) mReg.orderId = order._id;
               if (!mReg.teamId) mReg.teamId = teamId;
+              if (itemReferralCode && !mReg.referralCodeUsed) {
+                mReg.referralCodeUsed = itemReferralCode;
+              }
               await mReg.save({ session });
             }
 

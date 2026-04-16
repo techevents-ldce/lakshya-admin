@@ -12,6 +12,7 @@ import {
   HiOutlineInformationCircle,
   HiOutlineRefresh,
   HiOutlineFilter,
+  HiOutlineAdjustments,
 } from 'react-icons/hi';
 import ConfirmWithPassword from '../components/ConfirmWithPassword';
 import { useAuth } from '../context/AuthContext';
@@ -90,6 +91,27 @@ export default function TeamsList() {
     });
   };
 
+  const handleDedupTeams = () => {
+    const scopeLabel = eventFilter ? 'this event' : 'ALL events';
+    setConfirmModal({
+      open: true,
+      title: 'Deduplicate Teams',
+      confirmLabel: 'RUN DEDUP',
+      variant: 'warning',
+      message: `This will find and remove duplicate Team records for ${scopeLabel}. Orphan records will be re-linked to the correct team before deletion. This cannot be undone.`,
+      action: async (pw) => {
+        const { data } = await api.post('/teams/dedup', { adminPassword: pw, eventId: eventFilter || undefined });
+        const { deduped, groupsChecked } = data.data;
+        if (deduped > 0) {
+          toast.success(`Cleaned up ${deduped} duplicate team(s) across ${groupsChecked} groups`);
+          fetchTeams();
+        } else {
+          toast.success('No duplicate teams found — database is clean!');
+        }
+      },
+    });
+  };
+
   return (
     <div className="animate-fade-in space-y-8">
       {/* Header */}
@@ -98,6 +120,16 @@ export default function TeamsList() {
           <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Teams</h1>
           <p className="text-slate-500 font-medium text-sm">{total.toLocaleString()} teams registered</p>
         </div>
+        {user?.role === 'superadmin' && (
+          <button
+            onClick={handleDedupTeams}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-widest hover:bg-amber-500/20 hover:border-amber-500/40 transition-all shadow-lg active:scale-95"
+            title="Remove duplicate team records from the database"
+          >
+            <HiOutlineAdjustments className="w-4 h-4" />
+            Dedup Teams
+          </button>
+        )}
         
         <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-900 border border-white/[0.05] p-3 rounded-xl shadow-lg">
            <div className="relative w-full sm:max-w-xs group">

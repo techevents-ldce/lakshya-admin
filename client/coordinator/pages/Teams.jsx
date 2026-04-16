@@ -205,29 +205,41 @@ export default function Teams() {
                     <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest mb-4">Team Roster & Attendance Status</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {(team.members || []).map((tm) => {
-                        const tmIsLeader = team.leaderId &&
+                        const isHackathonOnly = tm.hackathonMember && !tm.userId;
+                        const memberName = isHackathonOnly ? tm.displayName : tm.userId?.name;
+                        const memberEmail = isHackathonOnly ? tm.displayEmail : tm.userId?.email;
+                        const memberPhone = isHackathonOnly ? tm.displayPhone : tm.userId?.phone;
+                        const memberCollege = isHackathonOnly ? tm.displayCollege : tm.userId?.college;
+
+                        const tmIsLeader = !isHackathonOnly && team.leaderId &&
                           ((team.leaderId._id || team.leaderId).toString() === (tm.userId?._id || tm.userId).toString());
                         const badge = ATTENDANCE_BADGE[tm.attendanceStatus] || ATTENDANCE_BADGE['no-ticket'];
                         const BadgeIcon = badge.icon;
                         return (
                           <div key={tm._id} className="bg-[#1A1D27] rounded-xl border border-[#2E3348] p-4 flex items-start gap-4 hover:border-[#6366F1]/50 transition-all relative overflow-hidden group shadow-sm">
                             {tmIsLeader && <div className="absolute top-0 left-0 w-1 h-full bg-[#F59E0B]" />}
+                            {isHackathonOnly && <div className="absolute top-0 left-0 w-1 h-full bg-[#94A3B8]/40" />}
                             <div className="relative flex-shrink-0 mt-1">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[#F1F5F9] text-sm font-bold shadow-md ${tmIsLeader ? 'bg-[#F59E0B]' : 'bg-[#2E3348]'}`}>
-                                {tm.userId?.name?.[0]?.toUpperCase() || '?'}
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[#F1F5F9] text-sm font-bold shadow-md ${tmIsLeader ? 'bg-[#F59E0B]' : isHackathonOnly ? 'bg-[#334155]' : 'bg-[#2E3348]'}`}>
+                                {memberName?.[0]?.toUpperCase() || '?'}
                               </div>
                               <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-[2.5px] border-[#1A1D27] ${badge.dot}`} />
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className="font-bold text-sm text-[#F1F5F9] uppercase tracking-tight truncate">{tm.userId?.name}</span>
+                                <span className="font-bold text-sm text-[#F1F5F9] uppercase tracking-tight truncate">{memberName}</span>
                                 {tmIsLeader && (
                                   <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 uppercase tracking-widest flex items-center gap-1">
                                     <HiOutlineStar className="w-2.5 h-2.5" /> LEADER
                                   </span>
                                 )}
+                                {isHackathonOnly && (
+                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#94A3B8]/10 text-[#94A3B8] border border-[#94A3B8]/30 uppercase tracking-widest">
+                                    IMPORTED
+                                  </span>
+                                )}
                               </div>
-                              <p className="text-[10px] font-medium text-[#94A3B8] lowercase tracking-tight truncate mb-2">{tm.userId?.email}</p>
+                              <p className="text-[10px] font-medium text-[#94A3B8] lowercase tracking-tight truncate mb-2">{memberEmail}</p>
                               <div className="flex items-center gap-3">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
                                   <BadgeIcon className="w-3.5 h-3.5" /> {badge.label}
@@ -239,8 +251,8 @@ export default function Teams() {
                                 )}
                               </div>
                               <div className="flex flex-col gap-1 mt-3">
-                                {tm.userId?.phone && <span className="text-[9px] text-[#64748B] font-bold tracking-wider">☎ {tm.userId.phone}</span>}
-                                {tm.userId?.college && <span className="text-[9px] text-[#64748B] font-bold uppercase tracking-tight truncate max-w-[180px]">{tm.userId.college}</span>}
+                                {memberPhone && <span className="text-[9px] text-[#64748B] font-bold tracking-wider">☎ {memberPhone}</span>}
+                                {memberCollege && <span className="text-[9px] text-[#64748B] font-bold uppercase tracking-tight truncate max-w-[180px]">{memberCollege}</span>}
                               </div>
                             </div>
                           </div>

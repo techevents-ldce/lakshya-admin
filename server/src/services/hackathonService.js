@@ -362,12 +362,15 @@ const processImportRows = async (allRows, event, defaultStatus, adminId) => {
 
       const regStatus = selectionStatus === 'selected' ? 'pending' : 'waitlisted';
 
-      // ── Find-or-create Team ───────────────────────────────────────────────
+      // ── Find-or-create Team (atomic upsert prevents race-condition duplicates) ─────
       // If this leader already has a Team record (e.g. from portal), reuse it.
-      let team = await Team.findOne({ eventId: event._id, leaderId: leaderUser._id });
-      if (!team) {
-        team = await Team.create({ eventId: event._id, leaderId: leaderUser._id, teamName, status: 'active' });
-      }
+      // Using findOneAndUpdate with upsert avoids the window between findOne + create
+      // that allowed two Team documents to be created for the same (eventId, leaderId).
+      const team = await Team.findOneAndUpdate(
+        { eventId: event._id, leaderId: leaderUser._id },
+        { $setOnInsert: { eventId: event._id, leaderId: leaderUser._id, teamName, status: 'active' } },
+        { upsert: true, new: true }
+      );
       // Always ensure leader is in TeamMember
       const existingLeaderMember = await TeamMember.findOne({ teamId: team._id, userId: leaderUser._id });
       if (!existingLeaderMember) {

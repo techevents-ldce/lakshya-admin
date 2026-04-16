@@ -6,6 +6,7 @@ const authorize = require('../middleware/authorize');
 const readOnlyAdmin = require('../middleware/readOnlyAdmin');
 const verifyAdminPassword = require('../middleware/verifyAdminPassword');
 
+router.post('/dedup', protect, authorize('admin'), readOnlyAdmin, verifyAdminPassword, teamController.dedupTeams);
 router.get('/', protect, authorize('admin', 'coordinator'), teamController.getAll);
 router.get('/:id', protect, authorize('admin', 'coordinator'), teamController.getOne);
 router.delete('/:id/members/:userId', protect, authorize('admin'), readOnlyAdmin, verifyAdminPassword, teamController.removeMember);

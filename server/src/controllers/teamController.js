@@ -26,3 +26,9 @@ exports.cancelRegistration = asyncHandler(async (req, res) => {
   });
   res.json({ success: true, data: team });
 });
+
+exports.dedupTeams = asyncHandler(async (req, res) => {
+  const eventId = req.body.eventId || req.query.eventId || null;
+  const result = await teamService.dedupTeams(eventId);
+  res.json({ success: true, data: result });
+});

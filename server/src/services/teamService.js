@@ -53,10 +53,24 @@ const getTeams = async (query = {}) => {
       if (r.teamId) regCountMap[r.teamId.toString()] = r.memberCount;
     });
 
+    // Also check HackathonTeam.members[] for the most accurate imported member count
+    let htCountMap = {};
+    try {
+      const HackathonTeam = require('../models/HackathonTeam');
+      const hackathonTeams = await HackathonTeam.find(
+        { teamId: { $in: teamIds } },
+        { teamId: 1, 'members': 1 }
+      ).lean();
+      hackathonTeams.forEach((ht) => {
+        if (ht.teamId) htCountMap[ht.teamId.toString()] = (ht.members || []).length;
+      });
+    } catch (_) { /* HackathonTeam collection may not exist — ignore */ }
+
     teams.forEach((t) => {
       const tmCount  = countMap[t._id.toString()]    || 0;
       const regCount = regCountMap[t._id.toString()] || 0;
-      t.memberCount  = Math.max(tmCount, regCount);
+      const htCount  = htCountMap[t._id.toString()]  || 0;
+      t.memberCount  = Math.max(tmCount, regCount, htCount);
     });
   }
 
@@ -174,4 +188,60 @@ const cancelTeamRegistration = async (teamId, adminId, reqMeta = {}) => {
   return team;
 };
 
-module.exports = { getTeams, getTeamById, removeMember, cancelTeamRegistration };
+/**
+ * Find and remove duplicate Team documents for the same (eventId, leaderId) pair.
+ * Keeps the "best" document (one referenced by Registration or HackathonTeam),
+ * re-links orphan TeamMember and Registration records to the keeper, then deletes duplicates.
+ */
+const dedupTeams = async (eventId = null) => {
+  const HackathonTeam = require('../models/HackathonTeam');
+  const filter = eventId ? { eventId } : {};
+
+  // Find all (eventId, leaderId) groups with more than one Team document
+  const groups = await Team.aggregate([
+    { $match: filter },
+    { $group: { _id: { eventId: '$eventId', leaderId: '$leaderId' }, ids: { $push: '$_id' }, count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+  ]);
+
+  if (groups.length === 0) return { deduped: 0, groupsChecked: 0, details: [] };
+
+  const details = [];
+  let dedupedCount = 0;
+
+  for (const grp of groups) {
+    const allIds = grp.ids;
+
+    // Find the "best" ID: prefer the one referenced by HackathonTeam or Registration
+    const [htRef, regRef] = await Promise.all([
+      HackathonTeam.findOne({ teamId: { $in: allIds } }).select('teamId').lean(),
+      Registration.findOne({ teamId: { $in: allIds }, status: { $ne: 'cancelled' } }).select('teamId').lean(),
+    ]);
+
+    const preferredId = (htRef?.teamId || regRef?.teamId || allIds[0]).toString();
+    const orphanIds = allIds.filter((id) => id.toString() !== preferredId);
+
+    // Re-link TeamMember and Registration records pointing to orphan IDs → keeper
+    for (const orphanId of orphanIds) {
+      await TeamMember.updateMany({ teamId: orphanId }, { $set: { teamId: preferredId } });
+      await Registration.updateMany({ teamId: orphanId }, { $set: { teamId: preferredId } });
+      await HackathonTeam.updateMany({ teamId: orphanId }, { $set: { teamId: preferredId } });
+    }
+
+    // Delete the orphan Team documents
+    const deleteResult = await Team.deleteMany({ _id: { $in: orphanIds } });
+    dedupedCount += deleteResult.deletedCount;
+
+    details.push({
+      eventId: grp._id.eventId,
+      leaderId: grp._id.leaderId,
+      keptId: preferredId,
+      removedIds: orphanIds.map((id) => id.toString()),
+      removed: deleteResult.deletedCount,
+    });
+  }
+
+  return { deduped: dedupedCount, groupsChecked: groups.length, details };
+};
+
+module.exports = { getTeams, getTeamById, removeMember, cancelTeamRegistration, dedupTeams };
