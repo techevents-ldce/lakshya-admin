@@ -334,7 +334,7 @@ export default function Users() {
         confirmLabel={confirmModal.confirmLabel}
         variant={confirmModal.variant}
       />
-    </>
+    </div>
   );
 }
 
