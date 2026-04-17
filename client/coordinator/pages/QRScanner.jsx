@@ -33,10 +33,13 @@ export default function QRScanner() {
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText) => {
+          // Temporarily pause to process
           await html5QrCode.pause();
+          
           try {
             const { data } = await api.get(`/tickets/verify/${eventId}/${decodedText}`);
             setResult(data);
+            
             setScanHistory((prev) => [{
               id: Date.now(),
               ticketId: decodedText,
@@ -47,9 +50,25 @@ export default function QRScanner() {
               ticketEvent: data.ticketEvent,
               time: new Date(),
             }, ...prev]);
-            if (data.status === 'valid') toast.success(data.message || 'Entry verified!');
-            else if (data.status === 'wrong_event') toast.error(data.message || 'Wrong event!');
-            else toast(data.message || 'Ticket checked', { icon: '⚠️' });
+
+            if (data.status === 'valid') {
+              toast.success(data.message || 'Ticket Verified!');
+              // SUCCESS: Stop the scanner as requested by user
+              setTimeout(async () => {
+                await stopScanner();
+                // Clear result overlay after another 5 seconds so they can read the dashboard
+                setTimeout(() => setResult(null), 5000);
+              }, 1500);
+            } else {
+              if (data.status === 'wrong_event') toast.error(data.message || 'Wrong event!');
+              else toast(data.message || 'Ticket checked', { icon: '⚠️' });
+              
+              // RESUME for non-success cases after a delay
+              setTimeout(() => {
+                try { html5QrCode.resume(); } catch {}
+                setResult(null);
+              }, 4000);
+            }
           } catch (err) {
             const errData = err.response?.data || { status: 'invalid', message: 'Verification failed' };
             setResult(errData);
@@ -63,15 +82,28 @@ export default function QRScanner() {
               time: new Date(),
             }, ...prev]);
             toast.error(errData.message || 'Invalid ticket');
+            
+            // RESUME for errors after a delay
+            setTimeout(() => {
+              try { html5QrCode.resume(); } catch {}
+              setResult(null);
+            }, 4000);
           }
-          setTimeout(() => {
-            try { html5QrCode.resume(); } catch {}
-            setResult(null);
-          }, 4000);
         }
       );
     } catch (err) {
-      toast.error('Camera access denied or not available');
+      console.error('Scanner Error:', err);
+      let errorMsg = 'Camera access denied or not available';
+      
+      if (err.name === 'NotAllowedError' || err === 'NotAllowedError') {
+        errorMsg = 'Camera permission denied. Please allow camera access in your browser settings and refresh the page.';
+      } else if (err.name === 'NotFoundError' || err === 'NotFoundError') {
+        errorMsg = 'No camera hardware detected on this device.';
+      } else if (err.includes?.('ConstraintNotSatisfiedError')) {
+        errorMsg = 'Camera constraints not satisfied. Try using a different browser.';
+      }
+      
+      toast.error(errorMsg, { duration: 6000 });
       setScanning(false);
     }
   };

@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Verification Test Suite</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: #38bdf8; text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 40px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .ticket-card { background: #1e293b; border-radius: 16px; padding: 25px; text-align: center; border: 1px solid #334155; transition: transform 0.2s; }
+        .ticket-card:hover { transform: translateY(-5px); }
+        .ticket-card.valid { border-top: 5px solid #22c55e; }
+        .ticket-card.used { border-top: 5px solid #eab308; opacity: 0.8; }
+        h3 { margin: 0 0 5px 0; font-size: 1.4rem; }
+        p { margin: 0 0 15px 0; color: #94a3b8; }
+        .type-tag { font-[10px] font-bold tracking-widest text-[#38bdf8] mb-2; }
+        .meta { font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px; background: #0f172a; padding: 10px; border-radius: 8px; text-align: left; }
+        .ticket-id { font-family: monospace; background: #0f172a; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-bottom: 20px; color: #38bdf8; }
+        .status-badge { font-weight: bold; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+        .valid .status-badge { background: #14532d; color: #4ade80; }
+        .used .status-badge { background: #713f12; color: #fde047; }
+        img { width: 100%; max-width: 250px; background: white; padding: 10px; border-radius: 8px; }
+        .instructions { background: #1e293b; padding: 25px; border-radius: 12px; margin-bottom: 40px; border-left: 4px solid #38bdf8; }
+        .instructions ol { padding-left: 20px; margin-top: 10px; }
+        .instructions li { margin-bottom: 8px; }
+        code { background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎟️ Verification Test Suite</h1>
+        <p class="subtitle">System End-to-End Verification Dashboard</p>
+        
+        <div class="instructions">
+            <strong>How to test:</strong>
+            <ol>
+                <li>Open your application's <strong>Coordinator Portal</strong>.</li>
+                <li>Login with: <code>coordinator@test.com</code> / <code>TestPassword123</code></li>
+                <li>Navigate to the <strong>Assigned Events</strong> dashboard.</li>
+                <li>Choose either <strong>Solo</strong> or <strong>Team</strong> verification test.</li>
+                <li>Click <strong>Scan QR</strong> and scan the codes below.</li>
+            </ol>
+        </div>
+
+        <div class="grid">
+            
+    <div class="ticket-card valid">
+      <div class="type-tag">SOLO</div>
+      <h3>John Solo (Valid)</h3>
+      <p>participant.solo1@test.com</p>
+      <div class="meta">
+        
+        <strong>Event:</strong> Solo Verification Test
+      </div>
+      <div class="ticket-id">ID: TEST-8D926B70</div>
+      <div class="status-badge">VALID</div>
+      <img src="data:image/png;base64,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" alt="QR Code">
+    </div>
+  
+    <div class="ticket-card valid">
+      <div class="type-tag">SOLO</div>
+      <h3>Jane Solo (Valid)</h3>
+      <p>participant.solo2@test.com</p>
+      <div class="meta">
+        
+        <strong>Event:</strong> Solo Verification Test
+      </div>
+      <div class="ticket-id">ID: TEST-40C74FE4</div>
+      <div class="status-badge">VALID</div>
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAAklEQVR4AewaftIAAAcVSURBVO3B0Yol1JYEwNxJ/f8vr/FNGmGgUjm2dSPi3R8CAN/UAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAw+MoP994L/567y+K9l5/q7vJJ773w77m7/FQNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg8BX+4u7Cr957+aS7yye99/Jdd5ef7O7Cr9574U8NAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADA4Cv8Y957+S+4u/zu3ntZ3F1+d++9LO4uv7v3Xv4L7i78fQ0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMDgK/Aburss3ntZ3F2A72kAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGX4Ef5O6yeO/lu+4u8L+sAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGHyFf8zdhX/Gey8/1d3lp7q78L+jAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADL7CX7z3wn/T3WXx3sunvPeyuLt80nsv8P9pAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABu/+EPgh3nv53d1d4CdoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABl/54d57+a67y+K9l8Xd5Xf33ssn3V1+qvdeFneXT3rv5bvuLp/03svi7rJ47+W77i4/VQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADD4Cv+Yu8snvfeyuLt8193lk957+d3dXT7pvZfF3YVfvffC39cAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMvvLD3V0+5b2Xxd1lcXdZvPfyu7u7LN57Wdxd+NXd5bvee/mku8snvffCnxoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMDgKz/cey/8fXeXxXsv/Oq9l8Xd5ZPee/mUuwv/PQ0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMDgKz/c3eW73ntZ3F0W77180t3lu957Wdxd+NXdZfHey+Lusri7/O7ee+Hf0wDAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAze/SHwm3nvZXF3Wbz38il3l/+C914+5e7ySe+9LO4u/KkBgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYfOWHe++Ff8/d5ZPee1ncXb7rvZfFey+fdHfhV3cX/r4GAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg8BX+4u7Cr957+aS7y091d/mp7i6L914+6e6yeO/lu+4uP1UDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYfIV/zHsv/wV3F3713sunvPfyU733wv+OBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYPAVYHJ34Vfvvfxkdxf+1ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAy+Ar+h914Wd5ef6r2XT7q7/O7uLov3Xj7l7vJTNQAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIOv8I+5u/DPuLv8VO+9LO4uv7u7y+K9l0+6uyzee+FPDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwOAr/MV7L/y73nv5qe4ui/de+NV7L/x7GgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwODdHwIA39QAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABg0ADBoAGDQAMCgAYBBAwCDBgAGDQAMGgAYNAAwaABg0ADAoAGAQQMAgwYABg0ADBoAGDQAMGgAYNAAwKABgEEDAIMGAAYNAAwaABj8H4zl+hsKsbC/AAAAAElFTkSuQmCC" alt="QR Code">
+    </div>
+  
+    <div class="ticket-card valid">
+      <div class="type-tag">TEAM</div>
+      <h3>Team Leader</h3>
+      <p>leader.team1@test.com</p>
+      <div class="meta">
+        <strong>Team:</strong> Test Alpha Team<br>
+        <strong>Event:</strong> Team Verification Test
+      </div>
+      <div class="ticket-id">ID: TEST-12A55C81</div>
+      <div class="status-badge">VALID</div>
+      <img src="data:image/png;base64,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" alt="QR Code">
+    </div>
+  
+    <div class="ticket-card valid">
+      <div class="type-tag">TEAM</div>
+      <h3>Team Member 1</h3>
+      <p>member1.team1@test.com</p>
+      <div class="meta">
+        <strong>Team:</strong> Test Alpha Team<br>
+        <strong>Event:</strong> Team Verification Test
+      </div>
+      <div class="ticket-id">ID: TEST-BFF82CD8</div>
+      <div class="status-badge">VALID</div>
+      <img src="data:image/png;base64,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" alt="QR Code">
+    </div>
+  
+        </div>
+    </div>
+</body>
+</html>
+  
