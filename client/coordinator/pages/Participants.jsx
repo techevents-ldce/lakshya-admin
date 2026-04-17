@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -25,14 +25,14 @@ export default function Participants() {
     api.get(`/events/${eventId}`).then(({ data }) => {
       setEventTitle(data.data.title);
       setEventType(data.data.eventType || 'solo');
-    }).catch(() => {});
+    }).catch(() => { });
   }, [eventId]);
 
   const fetchRegs = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/registrations', { 
-        params: { eventId, page, limit: 20, groupTeams: true } 
+      const { data } = await api.get('/registrations', {
+        params: { eventId, page, limit: 20, groupTeams: true }
       });
       setRegs(data.registrations);
       setTotalPages(data.pages);
@@ -44,16 +44,15 @@ export default function Participants() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { 
+  useEffect(() => {
     setPage(1);
-    fetchRegs(); 
+    fetchRegs();
   }, [search]);
 
   useEffect(() => { fetchRegs(); }, [eventId, page]);
 
-  // Backend handles search/grouping, so we use regs directly
   const filtered = regs;
- 
+
   const displayTotal = statsTotalCount || filtered.length;
   const displayCheckedIn = statsCheckedInCount || filtered.filter((r) => r.checkedIn).length;
   const pendingCount = displayTotal - displayCheckedIn;
@@ -119,33 +118,33 @@ export default function Participants() {
             <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Total</p>
             <p className="text-2xl font-bold text-[#F1F5F9] leading-none">{displayTotal} <span className="text-xs font-medium text-[#64748B] ml-1">Registered</span></p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]"><HiOutlineUsers className="w-6 h-6"/></div>
+          <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]"><HiOutlineUsers className="w-6 h-6" /></div>
         </div>
         <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Scanned</p>
             <p className="text-2xl font-bold text-[#22C55E] leading-none">{displayCheckedIn} <span className="text-xs font-medium text-[#22C55E]/50 ml-1">Checked In</span></p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E]"><HiOutlineCheckCircle className="w-6 h-6"/></div>
+          <div className="w-12 h-12 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E]"><HiOutlineCheckCircle className="w-6 h-6" /></div>
         </div>
         <div className="bg-[#1A1D27] border border-[#2E3348] p-6 rounded-2xl flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Pending</p>
             <p className="text-2xl font-bold text-[#F1F5F9] leading-none">{pendingCount} <span className="text-xs font-medium text-[#64748B] ml-1">Not Yet</span></p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]"><HiOutlineSearch className="w-6 h-6"/></div>
+          <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]"><HiOutlineSearch className="w-6 h-6" /></div>
         </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative group flex-1">
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] group-focus-within:text-[#3B82F6] w-5 h-5 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Search by name, email or team..." 
-            value={search} 
-            onChange={(e) => setSearch(e.target.value)} 
-            className="w-full rounded-xl pl-12 pr-4 py-3 bg-[#1E2130] border border-[#2E3348] text-[#F1F5F9] placeholder-[#64748B] focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] outline-none transition-all shadow-sm" 
+          <input
+            type="text"
+            placeholder="Search by name, email or team..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl pl-12 pr-4 py-3 bg-[#1E2130] border border-[#2E3348] text-[#F1F5F9] placeholder-[#64748B] focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] outline-none transition-all shadow-sm"
           />
         </div>
       </div>
@@ -177,9 +176,10 @@ export default function Participants() {
                   const hasTeamMembers = r.teamMembers && r.teamMembers.length > 0;
                   const rowBg = expandedRow === r._id ? 'bg-[#6366F1]/10 border-l-2 border-l-[#6366F1]' : (i % 2 === 0 ? 'bg-transparent' : 'bg-[#22263A]/30');
                   return (
-                    <div key={r._id} className="contents">
-                      <tr 
-                        className={`group hover:bg-[#22263A] transition-colors ${hasTeamMembers ? 'cursor-pointer' : ''} ${rowBg}`} 
+                    // FIX 1: replaced React.Fragment with Fragment (imported above)
+                    <Fragment key={r._id}>
+                      <tr
+                        className={`group hover:bg-[#22263A] transition-colors ${hasTeamMembers ? 'cursor-pointer' : ''} ${rowBg}`}
                         onClick={() => hasTeamMembers && toggleExpand(r._id)}
                       >
                         <td className="px-6 py-4 text-center text-[#64748B]">
@@ -209,13 +209,13 @@ export default function Participants() {
                           )}
                         </td>
                         <td className="px-6 py-4 hidden sm:table-cell">
-                           <p className="text-xs text-[#94A3B8] font-medium lowercase tracking-tight max-w-[150px] truncate">{r.userId?.email}</p>
-                           {r.userId?.phone && <p className="text-[10px] text-[#64748B] font-bold mt-1 tracking-wider">☎ {r.userId.phone}</p>}
+                          <p className="text-xs text-[#94A3B8] font-medium lowercase tracking-tight max-w-[150px] truncate">{r.userId?.email}</p>
+                          {r.userId?.phone && <p className="text-[10px] text-[#64748B] font-bold mt-1 tracking-wider">☎ {r.userId.phone}</p>}
                         </td>
                         <td className="px-6 py-4 hidden lg:table-cell space-y-1">
                           <p className="text-[10px] text-[#94A3B8] font-bold uppercase truncate max-w-[150px]">{r.userId?.college || '—'}</p>
                           <p className="text-[9px] text-[#64748B] font-bold uppercase truncate">
-                             {r.userId?.branch ? `${r.userId.branch}` : ''} {r.userId?.year ? `· Year ${r.userId.year}` : ''}
+                            {r.userId?.branch ? `${r.userId.branch}` : ''} {r.userId?.year ? `· Year ${r.userId.year}` : ''}
                           </p>
                         </td>
                         <td className="px-6 py-4 text-center">
@@ -237,10 +237,10 @@ export default function Participants() {
                             </div>
                           ) : r.checkedIn ? (
                             <div className="flex flex-col items-end gap-1">
-                               <div className="flex items-center gap-1.5 text-[#22C55E]">
-                                  <span className="text-[9px] font-bold uppercase tracking-wider">Entered</span>
-                                  <HiOutlineCheckCircle className="w-4 h-4" />
-                               </div>
+                              <div className="flex items-center gap-1.5 text-[#22C55E]">
+                                <span className="text-[9px] font-bold uppercase tracking-wider">Entered</span>
+                                <HiOutlineCheckCircle className="w-4 h-4" />
+                              </div>
                               {r.checkedInAt && (
                                 <p className="text-[9px] text-[#64748B] font-bold tracking-tight">
                                   {new Date(r.checkedInAt).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'short' })}
@@ -257,12 +257,12 @@ export default function Participants() {
                         <tr className="bg-[#22263A] shadow-inner relative z-10 border-b border-[#2E3348]">
                           <td colSpan={6} className="px-10 py-6">
                             <div className="flex items-center justify-between mb-4">
-                               <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">
-                                 Team Roster — <span className="text-[#6366F1]">{r.teamId?.teamName}</span>
-                               </div>
-                               <div className="text-[9px] font-bold text-[#22C55E] uppercase tracking-widest bg-[#22C55E]/10 px-2 py-0.5 rounded border border-[#22C55E]/20">
-                                 {r.teamMembers.length} Members Linked
-                               </div>
+                              <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">
+                                Team Roster — <span className="text-[#6366F1]">{r.teamId?.teamName}</span>
+                              </div>
+                              <div className="text-[9px] font-bold text-[#22C55E] uppercase tracking-widest bg-[#22C55E]/10 px-2 py-0.5 rounded border border-[#22C55E]/20">
+                                {r.teamMembers.length} Members Linked
+                              </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                               {r.teamMembers.map((tm) => {
@@ -276,7 +276,7 @@ export default function Participants() {
                                     <div className="min-w-0">
                                       <div className="flex items-center gap-2 mb-0.5">
                                         <span className="font-bold text-sm text-[#F1F5F9] uppercase tracking-tight truncate">{tm.userId?.name}</span>
-                                        {tmIsLeader && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#F59E0B]/20 text-[#F59E0B] uppercase tracking-widest flex items-center gap-1"><HiOutlineStar className="w-2.5 h-2.5"/> LDR</span>}
+                                        {tmIsLeader && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#F59E0B]/20 text-[#F59E0B] uppercase tracking-widest flex items-center gap-1"><HiOutlineStar className="w-2.5 h-2.5" /> LDR</span>}
                                       </div>
                                       <p className="text-[10px] font-medium text-[#94A3B8] lowercase tracking-tight truncate mb-1.5">{tm.userId?.email}</p>
                                       {tm.userId?.phone && <p className="text-[9px] text-[#64748B] font-bold tracking-wider">☎ {tm.userId.phone}</p>}
@@ -289,7 +289,7 @@ export default function Participants() {
                           </td>
                         </tr>
                       )}
-                    </div>
+                    </Fragment>
                   );
                 })}
                 {filtered.length === 0 && (
@@ -309,9 +309,9 @@ export default function Participants() {
           {totalPages > 1 && (
             <div className="flex flex-wrap items-center justify-center gap-3 py-6 bg-[#22263A]/50 border-t border-[#2E3348]">
               {Array.from({ length: totalPages }, (_, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => setPage(i + 1)} 
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
                   className={`w-10 h-10 rounded-xl text-[10px] font-bold transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[#6366F1] active:scale-95 ${page === i + 1 ? 'bg-[#6366F1] text-[#F1F5F9]' : 'bg-[#1A1D27] border border-[#2E3348] text-[#94A3B8] hover:text-[#F1F5F9] hover:border-[#6366F1]'}`}
                 >
                   {(i + 1).toString().padStart(2, '0')}
