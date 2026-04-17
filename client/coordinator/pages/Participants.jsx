@@ -179,15 +179,13 @@ export default function Participants() {
                     // FIX 1: replaced React.Fragment with Fragment (imported above)
                     <Fragment key={r._id}>
                       <tr
-                        className={`group hover:bg-[#22263A] transition-colors ${hasTeamMembers ? 'cursor-pointer' : ''} ${rowBg}`}
-                        onClick={() => hasTeamMembers && toggleExpand(r._id)}
+                        className={`group hover:bg-[#22263A] transition-colors cursor-pointer ${rowBg}`}
+                        onClick={() => toggleExpand(r._id)}
                       >
                         <td className="px-6 py-4 text-center text-[#64748B]">
-                          {hasTeamMembers && (
-                            expandedRow === r._id
-                              ? <HiOutlineChevronUp className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
-                              : <HiOutlineChevronDown className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
-                          )}
+                          {expandedRow === r._id
+                            ? <HiOutlineChevronUp className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
+                            : <HiOutlineChevronDown className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />}
                         </td>
                         <td className="px-6 py-4">
                           {isTeamEvent && r.teamId ? (
@@ -253,38 +251,98 @@ export default function Participants() {
                         </td>
                       </tr>
 
-                      {expandedRow === r._id && hasTeamMembers && (
+                      {expandedRow === r._id && (
                         <tr className="bg-[#22263A] shadow-inner relative z-10 border-b border-[#2E3348]">
-                          <td colSpan={6} className="px-10 py-6">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">
-                                Team Roster — <span className="text-[#6366F1]">{r.teamId?.teamName}</span>
-                              </div>
-                              <div className="text-[9px] font-bold text-[#22C55E] uppercase tracking-widest bg-[#22C55E]/10 px-2 py-0.5 rounded border border-[#22C55E]/20">
-                                {r.teamMembers.length} Members Linked
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {r.teamMembers.map((tm) => {
-                                const tmIsLeader = r.teamId?.leaderId &&
-                                  ((r.teamId.leaderId._id || r.teamId.leaderId).toString() === (tm.userId?._id || tm.userId).toString());
-                                return (
-                                  <div key={tm._id} className="bg-[#1A1D27] rounded-xl border border-[#2E3348] p-4 flex items-start gap-4 hover:border-[#6366F1]/50 transition-all shadow-sm">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[#F1F5F9] text-sm font-bold flex-shrink-0 shadow-lg ${tmIsLeader ? 'bg-[#F59E0B]' : 'bg-[#2E3348]'}`}>
-                                      {tm.userId?.name?.[0]?.toUpperCase() || '?'}
+                          <td colSpan={6} className="px-10 py-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                              {/* Column 1: Core Info */}
+                              <div className="space-y-6">
+                                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></div> Profile Information
+                                </div>
+                                <div className="bg-[#1A1D27] rounded-2xl border border-[#2E3348] p-5 space-y-4 shadow-sm">
+                                  <div>
+                                    <p className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest mb-1">Full Name</p>
+                                    <p className="text-sm font-bold text-[#F1F5F9] uppercase">{r.userId?.name || '—'}</p>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest mb-1">Email</p>
+                                      <p className="text-xs font-medium text-[#94A3B8] lowercase break-all">{r.userId?.email || '—'}</p>
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="font-bold text-sm text-[#F1F5F9] uppercase tracking-tight truncate">{tm.userId?.name}</span>
-                                        {tmIsLeader && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#F59E0B]/20 text-[#F59E0B] uppercase tracking-widest flex items-center gap-1"><HiOutlineStar className="w-2.5 h-2.5" /> LDR</span>}
-                                      </div>
-                                      <p className="text-[10px] font-medium text-[#94A3B8] lowercase tracking-tight truncate mb-1.5">{tm.userId?.email}</p>
-                                      {tm.userId?.phone && <p className="text-[9px] text-[#64748B] font-bold tracking-wider">☎ {tm.userId.phone}</p>}
-                                      {tm.userId?.college && <p className="text-[9px] text-[#64748B] font-bold uppercase tracking-tight truncate max-w-[150px] mt-0.5">{tm.userId.college}</p>}
+                                    <div>
+                                      <p className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest mb-1">Phone</p>
+                                      <p className="text-xs font-bold text-[#F1F5F9]">{r.userId?.phone || '—'}</p>
                                     </div>
                                   </div>
-                                );
-                              })}
+                                  <div>
+                                    <p className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest mb-1">Institution</p>
+                                    <p className="text-xs font-bold text-[#F1F5F9] uppercase leading-relaxed">{r.userId?.college || '—'}</p>
+                                    <p className="text-[10px] font-medium text-[#64748B] mt-1 italic">{r.userId?.branch || 'General'} · Year {r.userId?.year || '—'}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Column 2: Custom Registration Data */}
+                              <div className="space-y-6">
+                                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></div> Event Specific Data
+                                </div>
+                                <div className="bg-[#1A1D27] rounded-2xl border border-[#2E3348] p-5 shadow-sm min-h-[100px]">
+                                  {r.registrationData && Object.keys(r.registrationData).length > 0 ? (
+                                    <div className="space-y-4">
+                                      {Object.entries(r.registrationData).map(([key, value]) => (
+                                        <div key={key} className="border-b border-[#2E3348] last:border-0 pb-3 last:pb-0">
+                                          <p className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
+                                          <p className="text-xs font-bold text-[#F1F5F9] break-words">
+                                            {typeof value === 'boolean' ? (value ? '✅ Yes' : '❌ No') : (value?.toString() || '—')}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="h-full flex flex-col items-center justify-center py-4 text-center">
+                                      <p className="text-[10px] font-bold text-[#475569] uppercase tracking-widest">No additional data</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Column 3: Team Info (if applicable) */}
+                              {isTeamEvent && (
+                                <div className="space-y-6">
+                                  <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]"></div> Team Roster
+                                  </div>
+                                  <div className="space-y-3">
+                                    {hasTeamMembers ? (
+                                      r.teamMembers.map((tm) => {
+                                        const tmIsLeader = r.teamId?.leaderId &&
+                                          ((r.teamId.leaderId._id || r.teamId.leaderId).toString() === (tm.userId?._id || tm.userId).toString());
+                                        return (
+                                          <div key={tm._id} className="bg-[#1A1D27] rounded-xl border border-[#2E3348] p-3 flex items-center gap-3 hover:border-[#6366F1]/50 transition-all shadow-sm">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[#F1F5F9] text-xs font-bold flex-shrink-0 shadow-lg ${tmIsLeader ? 'bg-[#F59E0B]' : 'bg-[#2E3348]'}`}>
+                                              {tm.userId?.name?.[0]?.toUpperCase() || '?'}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-center gap-1.5 mb-0.5">
+                                                <span className="font-bold text-[11px] text-[#F1F5F9] uppercase tracking-tight truncate">{tm.userId?.name}</span>
+                                                {tmIsLeader && <HiOutlineStar className="w-2.5 h-2.5 text-[#F59E0B]" />}
+                                              </div>
+                                              <p className="text-[9px] font-medium text-[#64748B] truncate lowercase">{tm.userId?.email}</p>
+                                            </div>
+                                            <div className={`w-2 h-2 rounded-full ${tm.checkedIn ? 'bg-[#22C55E]' : 'bg-[#475569]'}`}></div>
+                                          </div>
+                                        );
+                                      })
+                                    ) : (
+                                      <div className="bg-[#1A1D27] rounded-xl border border-[#2E3348] p-6 text-center">
+                                        <p className="text-[10px] font-bold text-[#475569] uppercase tracking-widest leading-relaxed">No members found</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </td>
                         </tr>

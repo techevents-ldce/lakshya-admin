@@ -40,20 +40,42 @@ const exportParticipants = async (filters = {}) => {
     throw new AppError('No participants found matching filters', 404, 'NO_PARTICIPANTS_FOUND');
   }
 
-  const data = regs.map((r) => ({
-    name: r.userId?.name || 'N/A',
-    email: r.userId?.email || 'N/A',
-    phone: r.userId?.phone || 'N/A',
-    college: r.userId?.college || 'N/A',
-    branch: r.userId?.branch || 'N/A',
-    year: r.userId?.year || 'N/A',
-    event: r.eventId?.title || 'N/A',
-    eventType: r.eventId?.eventType || 'N/A',
-    team: r.teamId?.teamName || 'N/A',
-    status: r.status,
-    referralCode: r.referralCodeUsed || 'N/A',
-    registeredAt: r.createdAt?.toISOString().split('T')[0],
-  }));
+  // Extract all unique keys from registrationData to create dynamic columns
+  const extraKeys = new Set();
+  regs.forEach(r => {
+    if (r.registrationData) {
+      Object.keys(r.registrationData).forEach(k => extraKeys.add(k));
+    }
+  });
+
+  const sortedExtraKeys = Array.from(extraKeys).sort();
+
+  const data = regs.map((r) => {
+    const row = {
+      name: r.userId?.name || 'N/A',
+      email: r.userId?.email || 'N/A',
+      phone: r.userId?.phone || 'N/A',
+      college: r.userId?.college || 'N/A',
+      branch: r.userId?.branch || 'N/A',
+      year: r.userId?.year || 'N/A',
+      event: r.eventId?.title || 'N/A',
+      eventType: r.eventId?.eventType || 'N/A',
+      team: r.teamId?.teamName || 'N/A',
+      status: r.status,
+      referralCode: r.referralCodeUsed || 'N/A',
+      registeredAt: r.createdAt?.toISOString().split('T')[0],
+    };
+
+    // Add dynamic registration data
+    sortedExtraKeys.forEach(k => {
+      let val = r.registrationData ? r.registrationData[k] : '';
+      if (typeof val === 'boolean') val = val ? 'Yes' : 'No';
+      if (val === null || val === undefined) val = '';
+      row[k] = val;
+    });
+
+    return row;
+  });
 
   if (format === 'excel') {
     const columns = [
@@ -70,10 +92,16 @@ const exportParticipants = async (filters = {}) => {
       { header: 'Referral Code', key: 'referralCode', width: 15 },
       { header: 'Registered At', key: 'registeredAt', width: 15 },
     ];
+
+    // Add dynamic columns to Excel
+    sortedExtraKeys.forEach(k => {
+      columns.push({ header: k, key: k, width: 20 });
+    });
+
     return generateExcel(data, columns, 'Participants');
   }
 
-  const fields = ['name', 'email', 'phone', 'college', 'branch', 'year', 'event', 'eventType', 'team', 'status', 'referralCode', 'registeredAt'];
+  const fields = ['name', 'email', 'phone', 'college', 'branch', 'year', 'event', 'eventType', 'team', 'status', 'referralCode', 'registeredAt', ...sortedExtraKeys];
   return generateCSV(data, fields);
 };
 
