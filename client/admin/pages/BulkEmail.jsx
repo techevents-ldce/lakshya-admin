@@ -68,6 +68,8 @@ export default function BulkEmail() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [senderIdentity, setSenderIdentity] = useState('updates');
+  const [ccInput, setCcInput] = useState('');
+  const [ccList, setCcList] = useState([]);
 
   // ─── UI state ─────────────────────────────────────────────────────────────────
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -104,6 +106,33 @@ export default function BulkEmail() {
 
   const removeUser = (userId) => {
     setSelectedUsers((prev) => prev.filter((u) => u._id !== userId));
+  };
+
+  // ─── CC Helpers ───────────────────────────────────────────────────────────────
+  const EMAIL_REGEX_CC = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const addCcFromInput = (raw) => {
+    const emails = raw.split(/[,;\s]+/).map((e) => e.trim().toLowerCase()).filter(Boolean);
+    const valid = emails.filter((e) => EMAIL_REGEX_CC.test(e));
+    if (valid.length > 0) {
+      setCcList((prev) => [...new Set([...prev, ...valid])]);
+    }
+    setCcInput('');
+  };
+
+  const handleCcKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ' || e.key === 'Tab') {
+      e.preventDefault();
+      addCcFromInput(ccInput);
+    }
+  };
+
+  const handleCcBlur = () => {
+    if (ccInput.trim()) addCcFromInput(ccInput);
+  };
+
+  const removeCc = (email) => {
+    setCcList((prev) => prev.filter((e) => e !== email));
   };
 
   // ─── File Upload Handler ──────────────────────────────────────────────────────
@@ -281,9 +310,9 @@ export default function BulkEmail() {
             const collegeText = sampleRecipient.college ? `<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span>` : '';
             headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Dear Head of Department,<br><span style="font-size:13px;color:#64748b;">Department of ${sampleRecipient.department}</span>${collegeText}</p>`;
           } else if (sampleRecipient.college) {
-            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir/Ma'am,<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span></p>`;
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir,<br><span style="font-size:13px;color:#64748b;">${sampleRecipient.college}</span></p>`;
           } else {
-            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir/Ma'am,</p>`;
+            headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b;">Respected Sir,</p>`;
           }
         } else {
           const primaryName = sampleRecipient.name || sampleRecipient.teamName;
@@ -294,14 +323,14 @@ export default function BulkEmail() {
           } else if (primaryName) {
             headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${primaryName},</p>`;
           } else {
-            headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
+            headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir,</p>`;
           }
         }
       } else if (!uploadPreview?.validEmails?.length) {
         if (template === 'formal') {
           headerHtml = `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; opacity: 0.6; font-style: italic;">[Preview] Dear {Name},</p>`;
         } else {
-          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Respected Sir/Ma'am,</p>`;
+          headerHtml = `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; opacity: 0.6; font-style: italic;">[Preview] Respected Sir,</p>`;
         }
       }
     }
@@ -350,6 +379,7 @@ export default function BulkEmail() {
         adminPassword: password,
         senderIdentity,
         sourceType,
+        cc: ccList,
       });
 
       toast.success(data.message || 'Bulk email job created!');
@@ -649,6 +679,49 @@ export default function BulkEmail() {
                 className="input-field py-3 text-base font-bold tracking-tight bg-slate-900/50 border-slate-800"
               />
             </div>
+
+            {/* CC Field */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-0.5 block">
+                CC <span className="text-slate-600 font-semibold normal-case tracking-normal">(optional — sent to every recipient)</span>
+              </label>
+              <div
+                className="flex flex-wrap gap-2 min-h-[44px] px-3 py-2 rounded-xl bg-slate-900/50 border border-slate-800 focus-within:border-indigo-500/50 transition-colors cursor-text"
+                onClick={() => document.getElementById('cc-input').focus()}
+              >
+                {ccList.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-md text-[10px] font-bold uppercase tracking-wide"
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeCc(email); }}
+                      className="hover:text-white transition-colors"
+                    >
+                      <HiOutlineX className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  id="cc-input"
+                  type="text"
+                  value={ccInput}
+                  onChange={(e) => setCcInput(e.target.value)}
+                  onKeyDown={handleCcKeyDown}
+                  onBlur={handleCcBlur}
+                  placeholder={ccList.length === 0 ? 'Type an email and press Enter or comma…' : ''}
+                  className="flex-1 min-w-[200px] bg-transparent text-xs font-medium text-white outline-none placeholder-slate-600"
+                />
+              </div>
+              {ccList.length > 0 && (
+                <p className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider ml-0.5">
+                  {ccList.length} CC address{ccList.length !== 1 ? 'es' : ''} — each recipient will see these in CC
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-0.5 block">Message Content</label>
               <textarea

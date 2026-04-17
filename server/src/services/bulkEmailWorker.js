@@ -111,7 +111,7 @@ async function processJob(jobId) {
 // ─── Batch Processing with Concurrency Control ───────────────────────────────
 
 async function processBatchWithConcurrency(batch, job, concurrencyLimit) {
-  const { subject, body, template, senderIdentity } = job;
+  const { subject, body, template, senderIdentity, cc } = job;
 
   // Simple concurrency limiter (like p-limit)
   let activeCount = 0;
@@ -124,7 +124,7 @@ async function processBatchWithConcurrency(batch, job, concurrencyLimit) {
         const recipient = batch[index++];
         activeCount++;
 
-        processRecipient(recipient, subject, body, template, senderIdentity, job._id)
+        processRecipient(recipient, subject, body, template, senderIdentity, job._id, cc || [])
           .then((result) => results.push(result))
           .catch(() => {}) // errors handled inside processRecipient
           .finally(() => {
@@ -141,7 +141,7 @@ async function processBatchWithConcurrency(batch, job, concurrencyLimit) {
   });
 }
 
-async function processRecipient(recipient, subject, body, template, senderIdentity, jobId) {
+async function processRecipient(recipient, subject, body, template, senderIdentity, jobId, cc = []) {
   try {
     const result = await sendSingleEmail(
       { 
@@ -156,7 +156,8 @@ async function processRecipient(recipient, subject, body, template, senderIdenti
       subject,
       body,
       template,
-      senderIdentity
+      senderIdentity,
+      cc
     );
 
     if (result.success) {

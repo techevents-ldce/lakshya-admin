@@ -132,9 +132,9 @@ const getPersonalizedHeader = (recipient, templateMode = 'default') => {
       return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Dear Head of Department,<br><span style="font-size:13px;color:#64748b;">Department of ${recipient.department}</span>${collegeText}</p>`;
     }
     if (recipient.college) {
-      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Respected Sir/Ma'am,<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span></p>`;
+      return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Respected Sir,<br><span style="font-size:13px;color:#64748b;">${recipient.college}</span></p>`;
     }
-    return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Respected Sir/Ma'am,</p>`;
+    return `<p style="margin: 0 0 20px 0; line-height: 1.6; color: #1e293b; font-size: 15px;">Respected Sir,</p>`;
   }
   
   if (recipient.clubName) {
@@ -150,7 +150,7 @@ const getPersonalizedHeader = (recipient, templateMode = 'default') => {
     return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Dear ${defaultName},</p>`;
   }
   
-  return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir/Ma'am,</p>`;
+  return `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">Respected Sir,</p>`;
 };
 
 const templates = {
@@ -263,9 +263,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {string} body
  * @param {string} template
  * @param {string} senderIdentity
+ * @param {string[]} [cc] - Optional CC email addresses
  * @returns {{ success: boolean, error?: string }}
  */
-const sendSingleEmail = async (recipient, subject, body, template = 'raw', senderIdentity = 'updates') => {
+const sendSingleEmail = async (recipient, subject, body, template = 'raw', senderIdentity = 'updates', cc = []) => {
   const fromAddress = SENDER_IDENTITIES[senderIdentity];
   if (!fromAddress) return { success: false, error: 'Invalid sender identity' };
 
@@ -278,6 +279,7 @@ const sendSingleEmail = async (recipient, subject, body, template = 'raw', sende
         from: fromAddress,
         replyTo: REPLY_TO_EMAIL,
         to: recipient.email,
+        ...(cc && cc.length > 0 ? { cc } : {}),
         subject,
         html,
       });

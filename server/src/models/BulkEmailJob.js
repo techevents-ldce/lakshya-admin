@@ -38,6 +38,8 @@ const bulkEmailJobSchema = new mongoose.Schema(
       enum: ['manual_selection', 'excel_upload'],
       default: 'manual_selection',
     },
+    // CC addresses (applied to every email in the job)
+    cc: { type: [String], default: [] },
     // Configurable per-job settings (fall back to env defaults in the worker)
     batchSize: { type: Number, default: 0 },       // 0 = use env default
     concurrency: { type: Number, default: 0 },      // 0 = use env default

@@ -38,7 +38,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 exports.createBulkEmailJob = asyncHandler(async (req, res) => {
   const {
     subject, body = '', template = 'raw', senderIdentity = 'updates',
-    recipients = [], roles = [], sourceType = 'manual_selection', // using renamed `recipients` array
+    recipients = [], roles = [], sourceType = 'manual_selection', cc = [], // using renamed `recipients` array
   } = req.body;
 
   if (!subject || (!body && template !== 'club' && template !== 'team_login')) {
@@ -79,6 +79,11 @@ exports.createBulkEmailJob = asyncHandler(async (req, res) => {
     throw new AppError('No valid recipients specified', 400, 'NO_RECIPIENTS');
   }
 
+  // Validate and normalize CC addresses
+  const ccList = (Array.isArray(cc) ? cc : [])
+    .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
+    .filter((e) => e && EMAIL_REGEX.test(e));
+
   // Create the job
   const job = await BulkEmailJob.create({
     createdBy: req.user.id,
@@ -87,6 +92,7 @@ exports.createBulkEmailJob = asyncHandler(async (req, res) => {
     body,
     template,
     sourceType,
+    cc: ccList,
     totalRecipients: finalRecipients.length,
     pendingCount: finalRecipients.length,
   });
