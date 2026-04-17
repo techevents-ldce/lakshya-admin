@@ -20,10 +20,14 @@ const normaliseItemReferralCode = (code) => {
 };
 
 const getOrders = async (query = {}) => {
-  const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+  const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, eventId, sortBy = 'createdAt', sortOrder = 'desc' } = query;
   const filter = {};
 
   if (status) filter.status = status;
+  if (eventId) {
+    const eventIdObj = new mongoose.Types.ObjectId(eventId);
+    filter.itemsSnapshot = { $elemMatch: { eventId: { $in: [eventId, eventIdObj] } } };
+  }
   if (dateFrom || dateTo) {
     filter.createdAt = {};
     if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);

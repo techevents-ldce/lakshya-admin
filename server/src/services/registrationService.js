@@ -37,24 +37,38 @@ const getRegistrations = async (query = {}) => {
         eventId,
         teamName: { $regex: search, $options: 'i' }
       }).select('_id leaderId');
-      
-      const teamIdsBySearch = matchingTeamsByName.map(t => t._id);
+
       const leaderIdsByTeamSearch = matchingTeamsByName.map(t => t.leaderId);
 
-      // Find team IDs where at least one member matches the user search
+      // Find solo registrations whose userId matches the search
       const matchedRegs = await Registration.find({
         eventId,
         userId: { $in: matchedUserIds }
       }).select('teamId userId');
 
-      const involvedTeamIdsFromMembers = matchedRegs.filter(r => r.teamId).map(r => r.teamId);
       const soloMatchedUserIds = matchedRegs.filter(r => !r.teamId).map(r => r.userId);
 
-      // Find the leaders of teams matched by member search
-      const teamsByMemberSearch = await Team.find({ _id: { $in: involvedTeamIdsFromMembers } }).select('leaderId');
+      // --- KEY FIX: also search TeamMember collection ---
+      // Non-leader team members only exist in TeamMember, not Registration.
+      // We need to find any team that has a matching member and then surface its leader.
+      const matchedTeamMembers = await TeamMember.find({
+        userId: { $in: matchedUserIds }
+      }).select('teamId');
+
+      const teamIdsFromMemberSearch = matchedTeamMembers.map(m => m.teamId);
+
+      // Also look for teams where the leader themselves matched the user search
+      const allInvolvedTeamIds = [
+        ...matchedTeamMembers.map(m => m.teamId),
+      ];
+
+      // Fetch the leaders of all involved teams (by member match or by leader being in matchedUserIds)
+      const teamsByMemberSearch = allInvolvedTeamIds.length > 0
+        ? await Team.find({ _id: { $in: allInvolvedTeamIds } }).select('leaderId')
+        : [];
       const leaderUserIdsFromMembers = teamsByMemberSearch.map(t => t.leaderId);
 
-      // Final filter: matching solo users OR leaders of teams matched by member OR leaders of teams matched by name
+      // Final filter: solo users OR leaders of teams matched by member OR leaders of teams matched by name
       filter.userId = { $in: [...soloMatchedUserIds, ...leaderUserIdsFromMembers, ...leaderIdsByTeamSearch] };
     } else {
       filter.userId = { $in: matchedUserIds };

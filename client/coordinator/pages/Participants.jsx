@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -20,6 +20,8 @@ export default function Participants() {
   const [statsCheckedInCount, setStatsCheckedInCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
 
   useEffect(() => {
     api.get(`/events/${eventId}`).then(({ data }) => {
@@ -28,11 +30,11 @@ export default function Participants() {
     }).catch(() => {});
   }, [eventId]);
 
-  const fetchRegs = async () => {
+  const fetchRegs = useCallback(async (currentPage, currentSearch) => {
     setLoading(true);
     try {
       const { data } = await api.get('/registrations', { 
-        params: { eventId, page, limit: 20, groupTeams: true } 
+        params: { eventId, page: currentPage, limit: 20, groupTeams: true, ...(currentSearch ? { search: currentSearch } : {}) } 
       });
       setRegs(data.registrations);
       setTotalPages(data.pages);
@@ -42,20 +44,65 @@ export default function Participants() {
       }
     } catch { toast.error('Failed to load participants'); }
     finally { setLoading(false); }
+  }, [eventId]);
+
+  // Debounce the search input to avoid firing a request on every keystroke
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(val);
+    }, 350);
   };
 
-  useEffect(() => { 
+  // Single unified effect: reset page when search changes, then fetch
+  useEffect(() => {
     setPage(1);
-    fetchRegs(); 
-  }, [search]);
+    fetchRegs(1, debouncedSearch);
+  }, [debouncedSearch, eventId]);
 
-  useEffect(() => { fetchRegs(); }, [eventId, page]);
+  // Fetch when page changes (but not when search resets page, since above effect handles that)
+  useEffect(() => {
+    if (page !== 1) fetchRegs(page, debouncedSearch);
+  }, [page]);
 
-  // Backend handles search/grouping, so we use regs directly
   const filtered = regs;
  
-  const displayTotal = statsTotalCount || filtered.length;
-  const displayCheckedIn = statsCheckedInCount || filtered.filter((r) => r.checkedIn).length;
+  // Flatten participants to just show individuals, not grouped teams
+  const flattenedParticipants = [];
+  filtered.forEach(r => {
+    // Add leader/solo participant
+    flattenedParticipants.push({
+      ...r,
+      rowKey: r._id + '_primary',
+      displayUser: r.userId,
+      isLeaderRole: isTeamEvent && !!r.teamId,
+      teamRef: r.teamId
+    });
+
+    // Add remaining team members as individual rows
+    if (isTeamEvent && r.teamMembers && r.teamMembers.length > 0) {
+      r.teamMembers.forEach(tm => {
+        // Ensure we don't duplicate the leader
+        if (tm.userId?._id !== r.userId?._id) {
+          flattenedParticipants.push({
+            ...r, // Inherit registration info
+            rowKey: tm._id,
+            displayUser: tm.userId,
+            status: tm.status === 'accepted' ? 'confirmed' : 'pending',
+            checkedIn: tm.checkedIn, // Note: member attendance might rely on ticket scans
+            checkedInAt: tm.checkedInAt,
+            isLeaderRole: false,
+            teamRef: r.teamId
+          });
+        }
+      });
+    }
+  });
+
+  const displayTotal = statsTotalCount || flattenedParticipants.length;
+  const displayCheckedIn = statsCheckedInCount || flattenedParticipants.filter((p) => p.checkedIn).length;
   const pendingCount = displayTotal - displayCheckedIn;
 
   const handleExport = async (format) => {
@@ -144,7 +191,7 @@ export default function Participants() {
             type="text" 
             placeholder="Search by name, email or team..." 
             value={search} 
-            onChange={(e) => setSearch(e.target.value)} 
+            onChange={handleSearchChange} 
             className="w-full rounded-xl pl-12 pr-4 py-3 bg-[#1E2130] border border-[#2E3348] text-[#F1F5F9] placeholder-[#64748B] focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] outline-none transition-all shadow-sm" 
           />
         </div>
@@ -172,127 +219,64 @@ export default function Participants() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#2E3348]">
-                {filtered.map((r, i) => {
-                  const leader = isLeader(r);
-                  const hasTeamMembers = r.teamMembers && r.teamMembers.length > 0;
-                  const rowBg = expandedRow === r._id ? 'bg-[#6366F1]/10 border-l-2 border-l-[#6366F1]' : (i % 2 === 0 ? 'bg-transparent' : 'bg-[#22263A]/30');
+                {flattenedParticipants.map((p, i) => {
+                  const rowBg = i % 2 === 0 ? 'bg-transparent' : 'bg-[#22263A]/30';
                   return (
-                    <div key={r._id} className="contents">
-                      <tr 
-                        className={`group hover:bg-[#22263A] transition-colors ${hasTeamMembers ? 'cursor-pointer' : ''} ${rowBg}`} 
-                        onClick={() => hasTeamMembers && toggleExpand(r._id)}
-                      >
-                        <td className="px-6 py-4 text-center text-[#64748B]">
-                          {hasTeamMembers && (
-                            expandedRow === r._id
-                              ? <HiOutlineChevronUp className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
-                              : <HiOutlineChevronDown className="w-4 h-4 group-hover:text-[#F1F5F9] transition-colors" />
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {isTeamEvent && r.teamId ? (
-                            <div>
-                              <p className="font-bold text-sm text-[#F1F5F9] group-hover:text-[#6366F1] transition-colors uppercase tracking-tight">
-                                {r.teamId.teamName}
+                    <tr key={p.rowKey} className={`group hover:bg-[#22263A] transition-colors ${rowBg}`}>
+                      <td className="px-6 py-4 text-center text-[#64748B]">
+                         <div className="w-8 h-8 rounded-full bg-[#1A1D27] border border-[#2E3348] flex items-center justify-center mx-auto shadow-sm">
+                           {p.displayUser?.name?.[0]?.toUpperCase() || '?'}
+                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-sm text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors uppercase tracking-tight">
+                          {p.displayUser?.name || 'Unknown User'}
+                        </p>
+                        {isTeamEvent && p.teamRef && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className={`text-[9px] font-bold uppercase tracking-widest flex items-center gap-1 ${p.isLeaderRole ? 'text-[#F59E0B]' : 'text-[#94A3B8]'}`}>
+                              {p.isLeaderRole && <HiOutlineStar className="w-2.5 h-2.5" />}
+                              Team: {p.teamRef.teamName}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 hidden sm:table-cell">
+                         <p className="text-xs text-[#94A3B8] font-medium lowercase tracking-tight max-w-[150px] truncate">{p.displayUser?.email || 'N/A'}</p>
+                         {p.displayUser?.phone && <p className="text-[10px] text-[#64748B] font-bold mt-1 tracking-wider">☎ {p.displayUser.phone}</p>}
+                      </td>
+                      <td className="px-6 py-4 hidden lg:table-cell space-y-1">
+                        <p className="text-[10px] text-[#94A3B8] font-bold uppercase truncate max-w-[150px]">{p.displayUser?.college || '—'}</p>
+                        <p className="text-[9px] text-[#64748B] font-bold uppercase truncate">
+                           {p.displayUser?.branch ? `${p.displayUser.branch}` : ''} {p.displayUser?.year ? `· Year ${p.displayUser.year}` : ''}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${p.status === 'confirmed' ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]' : p.status === 'pending' ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]' : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'}`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {p.checkedIn ? (
+                          <div className="flex flex-col items-end gap-1">
+                             <div className="flex items-center gap-1.5 text-[#22C55E]">
+                                <span className="text-[9px] font-bold uppercase tracking-wider">Present</span>
+                                <HiOutlineCheckCircle className="w-4 h-4" />
+                             </div>
+                            {p.checkedInAt && (
+                              <p className="text-[9px] text-[#64748B] font-bold tracking-tight">
+                                {new Date(p.checkedInAt).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'short' })}
                               </p>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <span className="text-[9px] text-[#F59E0B] font-bold uppercase tracking-widest flex items-center gap-1">
-                                  <HiOutlineStar className="w-2.5 h-2.5" /> {r.userId?.name}
-                                </span>
-                                <span className="text-[9px] text-[#64748B] uppercase tracking-widest leading-none">· Leader</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="font-bold text-sm text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors uppercase tracking-tight">
-                              {r.userId?.name}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 hidden sm:table-cell">
-                           <p className="text-xs text-[#94A3B8] font-medium lowercase tracking-tight max-w-[150px] truncate">{r.userId?.email}</p>
-                           {r.userId?.phone && <p className="text-[10px] text-[#64748B] font-bold mt-1 tracking-wider">☎ {r.userId.phone}</p>}
-                        </td>
-                        <td className="px-6 py-4 hidden lg:table-cell space-y-1">
-                          <p className="text-[10px] text-[#94A3B8] font-bold uppercase truncate max-w-[150px]">{r.userId?.college || '—'}</p>
-                          <p className="text-[9px] text-[#64748B] font-bold uppercase truncate">
-                             {r.userId?.branch ? `${r.userId.branch}` : ''} {r.userId?.year ? `· Year ${r.userId.year}` : ''}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider border ${r.status === 'confirmed' ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]' : r.status === 'pending' ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]' : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'}`}>
-                            {r.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {isTeamEvent ? (
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">
-                                {r.teamMembers ? r.teamMembers.filter(m => m.status === 'accepted').length : 0} Connected
-                              </span>
-                              <div className="flex items-center gap-1 text-[#22C55E]">
-                                <span className="text-[10px] font-bold">
-                                  {r.teamMembers ? r.teamMembers.filter(m => m.checkedIn).length : (r.checkedIn ? 1 : 0)} Checked In
-                                </span>
-                              </div>
-                            </div>
-                          ) : r.checkedIn ? (
-                            <div className="flex flex-col items-end gap-1">
-                               <div className="flex items-center gap-1.5 text-[#22C55E]">
-                                  <span className="text-[9px] font-bold uppercase tracking-wider">Entered</span>
-                                  <HiOutlineCheckCircle className="w-4 h-4" />
-                               </div>
-                              {r.checkedInAt && (
-                                <p className="text-[9px] text-[#64748B] font-bold tracking-tight">
-                                  {new Date(r.checkedInAt).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'short' })}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Pending</span>
-                          )}
-                        </td>
-                      </tr>
-
-                      {expandedRow === r._id && hasTeamMembers && (
-                        <tr className="bg-[#22263A] shadow-inner relative z-10 border-b border-[#2E3348]">
-                          <td colSpan={6} className="px-10 py-6">
-                            <div className="flex items-center justify-between mb-4">
-                               <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">
-                                 Team Roster — <span className="text-[#6366F1]">{r.teamId?.teamName}</span>
-                               </div>
-                               <div className="text-[9px] font-bold text-[#22C55E] uppercase tracking-widest bg-[#22C55E]/10 px-2 py-0.5 rounded border border-[#22C55E]/20">
-                                 {r.teamMembers.length} Members Linked
-                               </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {r.teamMembers.map((tm) => {
-                                const tmIsLeader = r.teamId?.leaderId &&
-                                  ((r.teamId.leaderId._id || r.teamId.leaderId).toString() === (tm.userId?._id || tm.userId).toString());
-                                return (
-                                  <div key={tm._id} className="bg-[#1A1D27] rounded-xl border border-[#2E3348] p-4 flex items-start gap-4 hover:border-[#6366F1]/50 transition-all shadow-sm">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[#F1F5F9] text-sm font-bold flex-shrink-0 shadow-lg ${tmIsLeader ? 'bg-[#F59E0B]' : 'bg-[#2E3348]'}`}>
-                                      {tm.userId?.name?.[0]?.toUpperCase() || '?'}
-                                    </div>
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="font-bold text-sm text-[#F1F5F9] uppercase tracking-tight truncate">{tm.userId?.name}</span>
-                                        {tmIsLeader && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#F59E0B]/20 text-[#F59E0B] uppercase tracking-widest flex items-center gap-1"><HiOutlineStar className="w-2.5 h-2.5"/> LDR</span>}
-                                      </div>
-                                      <p className="text-[10px] font-medium text-[#94A3B8] lowercase tracking-tight truncate mb-1.5">{tm.userId?.email}</p>
-                                      {tm.userId?.phone && <p className="text-[9px] text-[#64748B] font-bold tracking-wider">☎ {tm.userId.phone}</p>}
-                                      {tm.userId?.college && <p className="text-[9px] text-[#64748B] font-bold uppercase tracking-tight truncate max-w-[150px] mt-0.5">{tm.userId.college}</p>}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Pending</span>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
-                {filtered.length === 0 && (
+                {flattenedParticipants.length === 0 && (
                   <tr>
                     <td colSpan={6} className="text-center py-24 bg-[#1A1D27]">
                       <div className="w-16 h-16 bg-[#22263A] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#2E3348]">

@@ -138,9 +138,51 @@ const toggleTicketStatus = async (ticketId, newStatus, coordinatorId) => {
  */
 const getTeamWiseAttendance = async (eventId, query = {}) => {
   const { search } = query;
+  let filter = { eventId, status: { $ne: 'withdrawn' } };
+
+  if (search) {
+    const User = require('../models/User');
+    const matchingUsers = await User.find({
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ],
+    }).select('_id');
+    const matchedUserIds = matchingUsers.map((u) => u._id);
+
+    const matchingTeams = await Team.find({
+      eventId,
+      status: { $ne: 'withdrawn' },
+      $or: [
+        { teamName: { $regex: search, $options: 'i' } },
+        { leaderId: { $in: matchedUserIds } }
+      ]
+    }).select('_id');
+    const teamIdsFromTeams = matchingTeams.map(t => t._id);
+
+    const matchingTeamMembers = await TeamMember.find({
+      userId: { $in: matchedUserIds }
+    }).select('teamId');
+    const teamIdsFromMembers = matchingTeamMembers.map(m => m.teamId);
+
+    let teamIdsFromHackathon = [];
+    try {
+      const HackathonTeam = require('../models/HackathonTeam');
+      const matchingHt = await HackathonTeam.find({
+        $or: [
+          { 'members.name': { $regex: search, $options: 'i' } },
+          { 'members.email': { $regex: search, $options: 'i' } }
+        ]
+      }).select('teamId');
+      teamIdsFromHackathon = matchingHt.map(ht => ht.teamId);
+    } catch (_) {}
+
+    const allMatchedTeamIds = [...teamIdsFromTeams, ...teamIdsFromMembers, ...teamIdsFromHackathon].filter(Boolean);
+    filter._id = { $in: allMatchedTeamIds };
+  }
 
   // Align team "units" with analytics: exclude withdrawn teams.
-  const teams = await Team.find({ eventId, status: { $ne: 'withdrawn' } })
+  const teams = await Team.find(filter)
     .populate('leaderId', 'name email phone college')
     .sort({ createdAt: -1 })
     .lean();
@@ -221,17 +263,6 @@ const getTeamWiseAttendance = async (eventId, query = {}) => {
     const presentCount = teamMembers.filter((m) => m.attendanceStatus === 'present').length;
     return { ...t, members: teamMembers, memberCount: teamMembers.length, presentCount, allPresent: teamMembers.length > 0 && presentCount === teamMembers.length };
   });
-
-  if (search) {
-    const q = search.toLowerCase();
-    result = result.filter((t) =>
-      t.teamName?.toLowerCase().includes(q) || t.leaderId?.name?.toLowerCase().includes(q) ||
-      t.members.some((m) =>
-        m.userId?.name?.toLowerCase().includes(q) || m.userId?.email?.toLowerCase().includes(q) ||
-        m.displayName?.toLowerCase().includes(q) || m.displayEmail?.toLowerCase().includes(q)
-      )
-    );
-  }
 
   const totalMembers = result.reduce((s, t) => s + t.memberCount, 0);
   const presentMembers = result.reduce((s, t) => s + t.presentCount, 0);

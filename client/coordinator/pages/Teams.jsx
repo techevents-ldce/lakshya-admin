@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -26,6 +26,15 @@ export default function Teams() {
   const [attendanceFilter, setAttendanceFilter] = useState('all'); // all | some | none | full
   const [loading, setLoading] = useState(true);
   const [expandedTeam, setExpandedTeam] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedSearch(val), 350);
+  };
 
   useEffect(() => {
     api.get(`/events/${eventId}`).then(({ data }) => setEventTitle(data.data.title)).catch(() => {});
@@ -35,14 +44,14 @@ export default function Teams() {
     const fetchTeams = async () => {
       setLoading(true);
       try {
-        const { data } = await api.get(`/attendance/${eventId}/teams`, { params: { search } });
+        const { data } = await api.get(`/attendance/${eventId}/teams`, { params: { search: debouncedSearch } });
         setTeams(data.teams || []);
         setSummary(data.summary || {});
       } catch { toast.error('Failed to load teams'); }
       finally { setLoading(false); }
     };
     fetchTeams();
-  }, [eventId, search]);
+  }, [eventId, debouncedSearch]);
 
   const filtered = teams.filter((t) => {
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
@@ -116,7 +125,7 @@ export default function Teams() {
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative group flex-1">
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] group-focus-within:text-[#3B82F6] w-5 h-5 transition-colors" />
-          <input type="text" placeholder="Search by team name, leader, or member..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl pl-12 pr-4 py-3 bg-[#1E2130] border border-[#2E3348] text-[#F1F5F9] placeholder-[#64748B] focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] outline-none transition-all shadow-sm" />
+          <input type="text" placeholder="Search by team name, leader, or member..." value={search} onChange={handleSearchChange} className="w-full rounded-xl pl-12 pr-4 py-3 bg-[#1E2130] border border-[#2E3348] text-[#F1F5F9] placeholder-[#64748B] focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] outline-none transition-all shadow-sm" />
         </div>
         <div className="flex gap-4">
           <div className="relative w-40">

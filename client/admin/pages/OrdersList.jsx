@@ -15,6 +15,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineXCircle,
   HiOutlineClock,
+  HiOutlineCollection,
 } from 'react-icons/hi';
 
 const STATUS_CONFIG = {
@@ -35,15 +36,24 @@ export default function OrdersList() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [eventFilter, setEventFilter] = useState('');
+  const [events, setEvents] = useState([]);
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  useEffect(() => {
+    api.get('/events', { params: { limit: 200 } })
+      .then(({ data }) => setEvents(data.events || []))
+      .catch(() => {});
+  }, []);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const params = { page, limit: 20 };
       if (statusFilter) params.status = statusFilter;
+      if (eventFilter) params.eventId = eventFilter;
       if (search) params.search = search;
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
@@ -58,7 +68,7 @@ export default function OrdersList() {
     }
   };
 
-  useEffect(() => { fetchOrders(); }, [page, statusFilter, search, dateFrom, dateTo]);
+  useEffect(() => { fetchOrders(); }, [page, statusFilter, eventFilter, search, dateFrom, dateTo]);
 
   const copyToClipboard = (text) => {
     if (!text) return;
@@ -111,6 +121,22 @@ export default function OrdersList() {
                  <option key={key} value={key} className="bg-slate-900">{cfg.label}</option>
                ))}
              </select>
+          </div>
+
+          <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
+
+          <div className="flex items-center gap-2 group px-3 py-2 hover:bg-white/[0.03] rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer">
+            <HiOutlineCollection className="w-4 h-4 text-slate-500 group-hover:text-indigo-400" />
+            <select
+              value={eventFilter}
+              onChange={(e) => { setEventFilter(e.target.value); setPage(1); }}
+              className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer max-w-[160px] truncate"
+            >
+              <option value="" className="bg-slate-900">All Events</option>
+              {events.map((ev) => (
+                <option key={ev._id} value={ev._id} className="bg-slate-900">{ev.title}</option>
+              ))}
+            </select>
           </div>
 
           <div className="h-8 w-px bg-slate-800 hidden lg:block"></div>
