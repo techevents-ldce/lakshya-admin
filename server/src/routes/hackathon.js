@@ -31,6 +31,8 @@ router.post('/import-execute', verifyAdminPassword, hackathonController.importEx
 
 // ── List & Detail ────────────────────────────────────────────────────────────
 router.get('/teams',          hackathonController.listTeams);
+router.get('/stats',          hackathonController.getStats);
+router.get('/export',         hackathonController.exportTeams);
 router.get('/teams/:id',      hackathonController.getTeamDetail);
 router.get('/batches',        hackathonController.listBatches);
 

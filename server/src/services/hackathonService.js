@@ -507,6 +507,12 @@ const listTeams = async (query = {}) => {
   if (eventId)         filter.eventId         = eventId;
   if (selectionStatus) filter.selectionStatus = selectionStatus;
   if (importBatch)     filter.importBatch      = importBatch;
+  if (query.memberCount) {
+    const count = parseInt(query.memberCount, 10);
+    if (!isNaN(count)) {
+      filter.members = { $size: count };
+    }
+  }
   if (search) {
     filter.$or = [
       { teamName:    { $regex: search, $options: 'i' } },
@@ -773,6 +779,163 @@ const finalizeImport = async (filePath, mappings, adminId) => {
   return processImportRows(mappedRows, event, 'selected', adminId);
 };
 
+const getStats = async (query = {}) => {
+  const { eventId, selectionStatus, search, paymentStatus, importBatch, memberCount } = query;
+  
+  const filter = {};
+  if (eventId && eventId !== 'hackathon') filter.eventId = eventId;
+  if (selectionStatus) filter.selectionStatus = selectionStatus;
+  if (importBatch)     filter.importBatch      = importBatch;
+  if (memberCount) {
+    const count = parseInt(memberCount, 10);
+    if (!isNaN(count)) filter.members = { $size: count };
+  }
+  if (search) {
+    filter.$or = [
+      { teamName:    { $regex: search, $options: 'i' } },
+      { leaderEmail: { $regex: search, $options: 'i' } },
+      { leaderName:  { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  let teams = await HackathonTeam.find(filter).lean();
+  
+  // Filtering by payment status requires fetching registrations
+  const regIds = teams.map(t => t.registrationId).filter(Boolean);
+  const regs = await Registration.find({ _id: { $in: regIds } }).select('_id status orderId').lean();
+  const regMap = Object.fromEntries(regs.map(r => [r._id.toString(), r]));
+  
+  const orderIds = regs.map(r => r.orderId).filter(Boolean);
+  let orderMap = {};
+  if (orderIds.length > 0) {
+    const orders = await Order.find({ _id: { $in: orderIds } }).select('_id status').lean();
+    orderMap = Object.fromEntries(orders.map(o => [o._id.toString(), o]));
+  }
+
+  // Enrich with isPaid
+  teams.forEach(t => {
+    const reg = regMap[t.registrationId?.toString()];
+    const order = reg?.orderId ? orderMap[reg.orderId.toString()] : null;
+    t.isPaid = order?.status === 'success' && reg?.status === 'confirmed';
+  });
+
+  // Apply payment filter
+  if (paymentStatus === 'paid') teams = teams.filter(t => t.isPaid);
+  if (paymentStatus === 'unpaid') teams = teams.filter(t => !t.isPaid);
+
+  // 1. Team Size Distribution
+  const sizeDist = {};
+  teams.forEach(t => {
+    const size = t.members?.length || 0;
+    sizeDist[size] = (sizeDist[size] || 0) + 1;
+  });
+
+  // 2. Status Distribution
+  const statusDist = { selected: 0, waitlisted: 0, suspended: 0, removed: 0 };
+  teams.forEach(t => {
+    if (statusDist[t.selectionStatus] !== undefined) statusDist[t.selectionStatus]++;
+  });
+
+  // 3. Payment Distribution
+  let paidCount = 0; let unpaidCount = 0;
+  teams.forEach(t => {
+    if (t.isPaid) paidCount++;
+    else unpaidCount++;
+  });
+
+  return {
+    totalTeams: teams.length,
+    teamSizeDistribution: sizeDist,
+    statusDistribution: statusDist,
+    paymentDistribution: {
+      paid: paidCount,
+      unpaid: unpaidCount
+    }
+  };
+};
+
+const exportTeams = async (query = {}) => {
+  const { eventId, selectionStatus, search, paymentStatus, importBatch, memberCount } = query;
+  
+  const filter = {};
+  if (eventId && eventId !== 'hackathon') filter.eventId = eventId;
+  if (selectionStatus) filter.selectionStatus = selectionStatus;
+  if (importBatch)     filter.importBatch      = importBatch;
+  if (memberCount) {
+    const count = parseInt(memberCount, 10);
+    if (!isNaN(count)) filter.members = { $size: count };
+  }
+  if (search) {
+    filter.$or = [
+      { teamName:    { $regex: search, $options: 'i' } },
+      { leaderEmail: { $regex: search, $options: 'i' } },
+      { leaderName:  { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  let teams = await HackathonTeam.find(filter)
+    .populate('eventId', 'title')
+    .populate('leaderId', 'name email phone')
+    .lean();
+
+  if (!teams.length) return [];
+
+  // Fetch registration and order info for payment status
+  const regIds = teams.map(t => t.registrationId).filter(Boolean);
+  const regs = await Registration.find({ _id: { $in: regIds } }).select('_id status orderId').lean();
+  const regMap = Object.fromEntries(regs.map(r => [r._id.toString(), r]));
+  const orderIds = regs.map(r => r.orderId).filter(Boolean);
+  let orderMap = {};
+  if (orderIds.length > 0) {
+    const orders = await Order.find({ _id: { $in: orderIds } }).select('_id status').lean();
+    orderMap = Object.fromEntries(orders.map(o => [o._id.toString(), o]));
+  }
+
+  // Enrich with isPaid
+  teams.forEach(t => {
+    const reg = regMap[t.registrationId?.toString()];
+    const order = reg?.orderId ? orderMap[reg.orderId.toString()] : null;
+    t.isPaid = order?.status === 'success' && reg?.status === 'confirmed';
+  });
+
+  // Apply payment filter
+  if (paymentStatus === 'paid') teams = teams.filter(t => t.isPaid);
+  if (paymentStatus === 'unpaid') teams = teams.filter(t => !t.isPaid);
+
+  const flatData = [];
+  teams.forEach(t => {
+    const reg = regMap[t.registrationId?.toString()];
+    
+    // One row per member
+    t.members.forEach(m => {
+      // Filter by role if requested (e.g., 'leader' only)
+      if (query.role && m.teamRole !== query.role) return;
+      
+      flatData.push({
+        teamName: t.teamName,
+        unstopTeamId: t.unstopTeamId || 'N/A',
+        memberCount: t.members?.length || 0,
+        selectionStatus: t.selectionStatus,
+        paymentStatus: t.isPaid ? 'Paid' : 'Unpaid',
+        importBatch: t.importBatch || 'Direct',
+        memberName: m.name,
+        memberEmail: m.email,
+        memberPhone: m.phone || 'N/A',
+        memberRole: m.teamRole,
+        memberGender: m.gender || 'N/A',
+        memberCollege: m.collegeName || t.collegeName || 'N/A',
+        memberDepartment: m.department || 'N/A',
+        memberYear: m.year || 'N/A',
+        linkedin: m.linkedin || 'N/A',
+        github: m.github || 'N/A',
+        referralCode: reg?.referralCodeUsed || 'N/A',
+      });
+    });
+  });
+
+  return flatData;
+};
+
 module.exports = { 
   importTeams, 
   getHeadersAndPreview, 
@@ -786,5 +949,7 @@ module.exports = {
   restoreTeam, 
   listImportBatches, 
   deleteTeam, 
-  deleteBatch 
+  deleteBatch,
+  getStats,
+  exportTeams
 };

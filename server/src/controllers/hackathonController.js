@@ -130,3 +130,53 @@ exports.deleteBatch = asyncHandler(async (req, res) => {
   });
   res.json({ success: true, data: result, message: `Deleted ${result.deletedCount} of ${result.total} teams in batch "${importBatch}"` });
 });
+/** GET /api/hackathon/stats */
+exports.getStats = asyncHandler(async (req, res) => {
+  const stats = await hackathonService.getStats(req.query);
+  res.json({ success: true, data: stats });
+});
+
+/** GET /api/hackathon/export */
+exports.exportTeams = asyncHandler(async (req, res) => {
+  const data = await hackathonService.exportTeams(req.query);
+  const { generateCSV, generateExcel } = require('../utils/export');
+  
+  const format = req.query.format || 'csv';
+  const ext = format === 'excel' ? 'xlsx' : 'csv';
+
+  if (format === 'excel') {
+    const columns = [
+      { header: 'Team Name', key: 'teamName', width: 25 },
+      { header: 'Unstop ID', key: 'unstopTeamId', width: 15 },
+      { header: 'Size', key: 'memberCount', width: 10 },
+      { header: 'Status', key: 'selectionStatus', width: 12 },
+      { header: 'Payment', key: 'paymentStatus', width: 12 },
+      { header: 'Batch', key: 'importBatch', width: 20 },
+      { header: 'Member Name', key: 'memberName', width: 25 },
+      { header: 'Email', key: 'memberEmail', width: 30 },
+      { header: 'Phone', key: 'memberPhone', width: 15 },
+      { header: 'Role', key: 'memberRole', width: 10 },
+      { header: 'Gender', key: 'memberGender', width: 10 },
+      { header: 'College', key: 'memberCollege', width: 30 },
+      { header: 'Department', key: 'memberDepartment', width: 20 },
+      { header: 'Year', key: 'memberYear', width: 8 },
+      { header: 'LinkedIn', key: 'linkedin', width: 30 },
+      { header: 'GitHub', key: 'github', width: 30 },
+      { header: 'Referral', key: 'referralCode', width: 15 },
+    ];
+    const buffer = await generateExcel(data, columns, 'Hackathon Teams');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=hackathon_teams.${ext}`);
+    return res.send(buffer);
+  }
+
+  const fields = [
+    'teamName', 'unstopTeamId', 'memberCount', 'selectionStatus', 'paymentStatus', 'importBatch',
+    'memberName', 'memberEmail', 'memberPhone', 'memberRole', 'memberGender',
+    'memberCollege', 'memberDepartment', 'memberYear', 'linkedin', 'github', 'referralCode'
+  ];
+  const csv = generateCSV(data, fields);
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=hackathon_teams.csv`);
+  return res.send(csv);
+});
