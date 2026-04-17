@@ -70,10 +70,25 @@ const getTicketByUserId = async (userId, eventId) => {
 
 // ── New admin functions ──
 
-const getTickets = async (query = {}) => {
+const getTickets = async (query = {}, viewer = null) => {
   const { page = 1, limit = 20, eventId, status, search } = query;
   const filter = {};
-  if (eventId) filter.eventId = eventId;
+
+  // Role-based scoping for coordinators
+  if (viewer && viewer.role === 'coordinator') {
+    const assignedIds = (viewer.assignedEvents || []).map(id => id.toString());
+    if (eventId) {
+      if (!assignedIds.includes(eventId.toString())) {
+        filter.eventId = { $in: assignedIds };
+      } else {
+        filter.eventId = eventId;
+      }
+    } else {
+      filter.eventId = { $in: assignedIds };
+    }
+  } else if (eventId) {
+    filter.eventId = eventId;
+  }
   if (status) filter.status = status;
 
   if (search) {

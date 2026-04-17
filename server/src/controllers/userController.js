@@ -2,7 +2,7 @@ const userService = require('../services/userService');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAll = asyncHandler(async (req, res) => {
-  const result = await userService.getUsers(req.query);
+  const result = await userService.getUsers(req.query, req.user);
   res.json({ success: true, ...result });
 });
 

@@ -10,10 +10,26 @@ const QRCode = require('qrcode');
 
 const { normalizeReferralCode } = require('../utils/referralCode');
 
-const getRegistrations = async (query = {}) => {
+const getRegistrations = async (query = {}, viewer = null) => {
   const { page = 1, limit = 20, eventId, status, search, referralCode } = query;
   const filter = {};
-  if (eventId) filter.eventId = eventId;
+
+  // Role-based scoping
+  if (viewer && viewer.role === 'coordinator') {
+    const assignedEvents = (viewer.assignedEvents || []).map(id => id.toString());
+    if (eventId) {
+      if (!assignedEvents.includes(eventId.toString())) {
+        // Requested an event they don't coordinate — limit to assigned only
+        filter.eventId = { $in: assignedEvents };
+      } else {
+        filter.eventId = eventId;
+      }
+    } else {
+      filter.eventId = { $in: assignedEvents };
+    }
+  } else if (eventId) {
+    filter.eventId = eventId;
+  }
   if (status) filter.status = status;
   if (referralCode) {
     const n = normalizeReferralCode(referralCode);
@@ -27,6 +43,7 @@ const getRegistrations = async (query = {}) => {
       $or: [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
       ],
     }).select('_id');
     const matchedUserIds = matchingUsers.map((u) => u._id);

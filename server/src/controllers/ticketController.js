@@ -24,7 +24,7 @@ exports.getMyTicket = asyncHandler(async (req, res) => {
 // ── Admin endpoints ──
 
 exports.getAll = asyncHandler(async (req, res) => {
-  const result = await ticketService.getTickets(req.query);
+  const result = await ticketService.getTickets(req.query, req.user);
   res.json({ success: true, ...result });
 });
 

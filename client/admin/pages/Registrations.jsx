@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import { 
   HiOutlineLockClosed, 
   HiOutlineShieldCheck, 
@@ -365,7 +366,7 @@ export default function Registrations() {
                              <div className="flex items-center justify-between pt-10 border-t border-white/[0.05]">
                                 <button onClick={(e) => { e.stopPropagation(); navigate(`/registrations/${r._id}`); }} 
                                         className="btn-outline text-[10px] font-bold uppercase tracking-widest px-8 py-3 active:scale-95 transition-all">
-                                  Full Audit Profile →
+                                   Full Audit Profile →
                                 </button>
                                 {user?.role === 'superadmin' && (
                                   <button
@@ -395,19 +396,7 @@ export default function Registrations() {
           </div>
           
           {/* Pagination */}
-          {total > 1 && (
-            <div className="flex items-center justify-center gap-3 py-8 bg-slate-900/40 border-t border-slate-800">
-                {[...Array(total)].map((_, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => setPage(i + 1)} 
-                    className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'bg-slate-950 text-slate-500 hover:text-white border border-white/[0.05]'}`}
-                  >
-                    {(i + 1).toString().padStart(2, '0')}
-                  </button>
-                ))}
-            </div>
-          )}
+          <Pagination page={page} pages={total} onPage={setPage} />
         </div>
       )}
 

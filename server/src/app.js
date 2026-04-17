@@ -68,6 +68,8 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/teams', require('./routes/teams'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/admin/event-summary', require('./routes/eventSummary'));
+app.use('/api/admin/event-insights', require('./routes/eventInsights'));
 
 // Rate limit export endpoints
 const exportLimiter = rateLimit({

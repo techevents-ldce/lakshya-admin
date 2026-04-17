@@ -22,6 +22,7 @@ const getPayments = async (query = {}) => {
       $or: [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
       ],
     }).select('_id');
     filter.$or = [
@@ -52,7 +53,10 @@ const getPayments = async (query = {}) => {
   const payments = transactions.map((tx) => ({
     _id: tx._id,
     userId: tx.user_id || null,
+    // Keep legacy eventId for backward compatibility (first event)
     eventId: Array.isArray(tx.event_ids) && tx.event_ids.length > 0 ? tx.event_ids[0] : null,
+    // Provide all event objects for multi-event display
+    eventObjects: tx.event_ids || [],
     amount: Number(tx.amount || 0),
     currency: tx.currency || 'INR',
     status: statusMap[tx.status] || 'pending',

@@ -12,9 +12,25 @@ const QRCode = require('qrcode');
 const mongoose = require('mongoose');
 const Transaction = require('../models/Transaction');
 
-const getOrders = async (query = {}) => {
-  const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+const getOrders = async (query = {}, viewer = null) => {
+  const { page = 1, limit = 20, status, search, dateFrom, dateTo, amountMin, amountMax, sortBy = 'createdAt', sortOrder = 'desc', eventId } = query;
   const filter = {};
+
+  // Role-based scoping for coordinators
+  if (viewer && viewer.role === 'coordinator') {
+    const assignedIds = (viewer.assignedEvents || []).map(id => id.toString());
+    if (eventId) {
+      if (!assignedIds.includes(eventId.toString())) {
+        filter['itemsSnapshot.eventId'] = { $in: assignedIds };
+      } else {
+        filter['itemsSnapshot.eventId'] = eventId;
+      }
+    } else {
+      filter['itemsSnapshot.eventId'] = { $in: assignedIds };
+    }
+  } else if (eventId) {
+    filter['itemsSnapshot.eventId'] = eventId;
+  }
 
   if (status) filter.status = status;
   if (dateFrom || dateTo) {

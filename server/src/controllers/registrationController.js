@@ -2,7 +2,7 @@ const registrationService = require('../services/registrationService');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAll = asyncHandler(async (req, res) => {
-  const result = await registrationService.getRegistrations(req.query);
+  const result = await registrationService.getRegistrations(req.query, req.user);
   res.json({ success: true, ...result });
 });
 

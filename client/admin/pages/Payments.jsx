@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import { 
   HiOutlineCheckCircle, 
   HiOutlineLockClosed, 
@@ -220,7 +221,17 @@ export default function Payments() {
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <p className="text-xs font-semibold text-slate-400 tracking-tight truncate max-w-[200px]">{p.eventId?.title || 'System Payment'}</p>
+                        <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                          {p.eventObjects && p.eventObjects.length > 0 ? (
+                            p.eventObjects.map((ev, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.05] text-[9px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[120px]" title={ev.title}>
+                                {ev.title}
+                              </span>
+                            ))
+                          ) : (
+                            <p className="text-xs font-semibold text-slate-400 tracking-tight truncate max-w-[200px]">{p.eventId?.title || 'System Payment'}</p>
+                          )}
+                        </div>
                       </td>
                       <td className="px-8 py-6">
                          <div className="flex items-center gap-1.5 text-lg font-bold text-white tabular-nums tracking-tighter">
@@ -261,19 +272,7 @@ export default function Payments() {
             </table>
           </div>
           {/* Pagination */}
-          {total > 1 && (
-            <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
-              {[...Array(total)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={`w-10 h-10 rounded-lg text-[11px] font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-slate-800'}`}
-                >
-                  {(i + 1).toString().padStart(2, '0')}
-                </button>
-              ))}
-            </div>
-          )}
+          <Pagination page={page} pages={total} onPage={setPage} />
         </div>
       )}
 

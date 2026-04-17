@@ -2,7 +2,7 @@ const orderService = require('../services/orderService');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAll = asyncHandler(async (req, res) => {
-  const result = await orderService.getOrders(req.query);
+  const result = await orderService.getOrders(req.query, req.user);
   res.json({ success: true, ...result });
 });
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import {
   HiOutlineSearch,
   HiOutlinePlus,
@@ -12,6 +13,7 @@ import {
   HiOutlineFilter,
   HiOutlineRefresh,
   HiOutlineTrendingUp,
+  HiOutlineShieldCheck,
 } from 'react-icons/hi';
 import { useAuth } from '../context/AuthContext';
 
@@ -310,20 +312,11 @@ export default function Referrals() {
             </div>
           </div>
 
-          {mapTotal > 20 && (
-            <div className="flex items-center justify-center gap-3 py-10 border-t border-white/[0.05] bg-white/[0.01]">
-              <button disabled={mapPage <= 1} onClick={() => setMapPage((p) => Math.max(1, p - 1))} className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white disabled:opacity-20 transition-all active:scale-95">
-                 ←
-              </button>
-              <div className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
-                 <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Page</span>
-                 <span className="text-xs font-bold text-white">{mapPage}</span>
-              </div>
-              <button disabled={mapPage * 20 >= mapTotal} onClick={() => setMapPage((p) => p + 1)} className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white disabled:opacity-20 transition-all active:scale-95">
-                 →
-              </button>
-            </div>
-          )}
+          <Pagination
+            page={mapPage}
+            pages={Math.ceil(mapTotal / 20)}
+            onPage={setMapPage}
+          />
         </div>
       )}
 

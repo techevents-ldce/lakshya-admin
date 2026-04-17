@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../src/services/api';
+import { useAuth } from '../context/AuthContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { 
@@ -61,6 +62,8 @@ const doughnutOptions = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState('');
@@ -71,10 +74,29 @@ export default function Dashboard() {
   const [reconLoading, setReconLoading] = useState(false);
   const [reconData, setReconData] = useState(null);
   const [reconError, setReconError] = useState('');
+  const [eventSummary, setEventSummary] = useState(null);
 
   useEffect(() => {
     api.get('/events', { params: { limit: 200 } }).then(({ data }) => setEvents(data.events || [])).catch(() => {});
+    // Event summary depends on the selected filters (date range + event).
+    // Refetch is handled by a dedicated effect below.
   }, []);
+
+  const fetchEventSummary = async () => {
+    try {
+      const params = {};
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      if (eventId) params.eventId = eventId;
+
+      const { data } = await api.get('/admin/event-summary', { params });
+      if (data.success) {
+        setEventSummary(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch event summary:', err);
+    }
+  };
 
   const fetchStats = () => {
     setLoading(true);
@@ -89,6 +111,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => { fetchStats(); }, [dateFrom, dateTo, eventId]);
+  useEffect(() => { fetchEventSummary(); }, [dateFrom, dateTo, eventId]);
 
   const openReconciliation = async () => {
     setReconOpen(true);
@@ -112,10 +135,12 @@ export default function Dashboard() {
     </div>
   );
 
+  const canViewPaymentFailures = !!stats?.canViewPaymentFailures;
+
   const mainStats = [
     { label: 'Total Users', value: stats?.totalUsers || 0, icon: HiOutlineUsers, accent: 'from-blue-500/10 to-blue-600/10', color: 'text-blue-400' },
     { label: 'Total Events', value: stats?.totalEvents || 0, icon: HiOutlineCalendar, accent: 'from-emerald-500/10 to-emerald-600/10', color: 'text-emerald-400' },
-    { label: 'Registrations', value: stats?.totalRegistrations || 0, icon: HiOutlineTicket, accent: 'from-violet-500/10 to-violet-600/10', color: 'text-violet-400' },
+    { label: 'Total Participants', value: stats?.totalParticipants || 0, icon: HiOutlineUserGroup, accent: 'from-violet-500/10 to-violet-600/10', color: 'text-violet-400' },
     { label: 'Total Revenue', value: `₹${(Number((stats?.orderRevenue || stats?.totalRevenue) || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, icon: HiOutlineCurrencyRupee, accent: 'from-amber-500/10 to-amber-600/10', color: 'text-amber-400' },
   ];
 
@@ -128,9 +153,11 @@ export default function Dashboard() {
 
   const transactionStats = [
     { label: 'Paid Transactions', value: getOrderCount(['success']), icon: HiOutlineCheckCircle, color: 'text-emerald-400' },
-    { label: 'Pending Transactions', value: getOrderCount(['pending', 'payment_initiated', 'fulfilling']), icon: HiOutlineClock, color: 'text-amber-400' },
-    { label: 'Failed Transactions', value: getOrderCount(['failed', 'cancelled']), icon: HiOutlineXCircle, color: 'text-red-400' },
-    { label: 'Refunded Transactions', value: getOrderCount(['refunded']), icon: HiOutlineReply, color: 'text-slate-400' },
+    ...(canViewPaymentFailures ? [
+      { label: 'Pending Transactions', value: getOrderCount(['pending', 'payment_initiated', 'fulfilling']), icon: HiOutlineClock, color: 'text-amber-400' },
+      { label: 'Failed Transactions', value: getOrderCount(['failed', 'cancelled']), icon: HiOutlineXCircle, color: 'text-red-400' },
+      { label: 'Refunded Transactions', value: getOrderCount(['refunded']), icon: HiOutlineReply, color: 'text-slate-400' },
+    ] : []),
   ];
 
   const secondaryStats = [
@@ -180,16 +207,34 @@ export default function Dashboard() {
     }]
   };
 
+  const participantLabelObjects = (stats?.topColleges || []).slice(0, 10).map((d) => ({
+    rawId: d._id,
+    label: d._id.slice(0, 15) + '...',
+    count: d.count,
+  }));
+  const teamsByRawId = new Map((stats?.topCollegesTeams || []).map((d) => [d._id, d.count]));
+  const teamCountsForParticipantsLabels = participantLabelObjects.map((p) => teamsByRawId.get(p.rawId) || 0);
+
   const topCollegesData = {
-    labels: stats?.topColleges?.map(d => d._id.slice(0, 15) + '...') || [],
-    datasets: [{
-      label: 'Students',
-      data: stats?.topColleges?.map(d => d.count) || [],
-      backgroundColor: 'rgba(139, 92, 246, 0.5)',
-      borderColor: '#8b5cf6',
-      borderWidth: 1,
-      borderRadius: 8,
-    }]
+    labels: participantLabelObjects.map((d) => d.label),
+    datasets: [
+      {
+        label: 'Participants',
+        data: participantLabelObjects.map((d) => d.count),
+        backgroundColor: 'rgba(139, 92, 246, 0.45)',
+        borderColor: '#8b5cf6',
+        borderWidth: 1,
+        borderRadius: 8,
+      },
+      {
+        label: 'Teams',
+        data: teamCountsForParticipantsLabels,
+        backgroundColor: 'rgba(99, 102, 241, 0.35)',
+        borderColor: '#6366f1',
+        borderWidth: 1,
+        borderRadius: 8,
+      },
+    ],
   };
 
   const chartOptions = {
@@ -202,77 +247,83 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="animate-fade-in space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    <div className="animate-fade-in space-y-6 sm:space-y-8">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">Analytics Overview</h1>
-          <p className="text-slate-500 font-medium">Real-time performance and registration metrics</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-none mb-2">Analytics Overview</h1>
+          <p className="text-slate-500 font-medium text-sm sm:text-base">Real-time performance and registration metrics</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 backdrop-blur-md shadow-lg">
-          <div className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/[0.04] rounded-lg group transition-all cursor-pointer">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/[0.04] rounded-lg group transition-all cursor-pointer flex-1 sm:flex-none">
              <HiOutlineFilter className="w-4 h-4 text-slate-500" />
              <select 
                value={eventId} 
                onChange={(e) => setEventId(e.target.value)}
-               className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer"
+               className="bg-transparent text-xs font-semibold text-slate-400 outline-none cursor-pointer w-full sm:w-auto"
              >
                <option value="" className="bg-slate-900">All Events</option>
                {events.map((ev) => <option key={ev._id} value={ev._id} className="bg-slate-900">{ev.title}</option>)}
              </select>
           </div>
-          <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
-          <div className="flex items-center gap-3 px-2">
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-transparent text-[11px] font-bold text-slate-500 uppercase tracking-wider outline-none cursor-pointer hover:text-white transition-all invert opacity-70" />
-            <span className="text-slate-700 font-medium">to</span>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-transparent text-[11px] font-bold text-slate-500 uppercase tracking-wider outline-none cursor-pointer hover:text-white transition-all invert opacity-70" />
+          <div className="h-6 w-px bg-slate-800 hidden sm:block"></div>
+          <div className="flex items-center gap-2 sm:gap-3 px-2">
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider outline-none cursor-pointer hover:text-white transition-all invert opacity-70 flex-1 sm:flex-none" />
+            <span className="text-slate-700 font-medium text-xs sm:text-sm hidden sm:inline">to</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider outline-none cursor-pointer hover:text-white transition-all invert opacity-70 flex-1 sm:flex-none" />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {mainStats.map((card, i) => (
-          <div key={i} className="card p-6 border-slate-800/40 relative overflow-hidden group hover:bg-slate-800/40 transition-all duration-300 shadow-lg rounded-2xl">
+          <div key={i} className="card p-4 sm:p-6 border-slate-800/40 relative overflow-hidden group hover:bg-slate-800/40 transition-all duration-300 shadow-lg rounded-2xl">
             <div className="flex items-start justify-between relative z-10">
-               <div>
+               <div className="flex-1">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{card.label}</p>
-                  <p className="text-3xl font-bold text-white tracking-tight tabular-nums">{card.value}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight tabular-nums">{card.value}</p>
+                  {/* Show team/solo units + participants for selected event */}
+                  {card.label === 'Total Participants' && eventSummary && (
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-2 font-medium">
+                      Team Units: {eventSummary.totalTeams} • Solo Units: {eventSummary.totalSolo} • Total Participants: {eventSummary.totalParticipants}
+                    </p>
+                  )}
                </div>
-               <div className={`w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center ${card.color} shadow-sm group-hover:border-indigo-500/30 transition-all duration-300`}>
-                  <card.icon className="w-6 h-6" />
+               <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center ${card.color} shadow-sm group-hover:border-indigo-500/30 transition-all duration-300 flex-shrink-0 ml-3`}>
+                  <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                </div>
             </div>
-            <div className="mt-4 flex items-center gap-2 relative z-10">
+            <div className="mt-3 sm:mt-4 flex items-center gap-2 relative z-10">
                <div className={`w-1.5 h-1.5 rounded-full ${card.color.replace('text', 'bg')} opacity-60`}></div>
-               <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Updated live</span>
+               <span className="text-[9px] sm:text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Updated live</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {transactionStats.map((card, i) => (
-          <div key={`tx-${i}`} className="card p-6 border-slate-800/40 relative overflow-hidden group hover:bg-slate-800/40 transition-all duration-300 shadow-lg rounded-2xl bg-slate-900/40 backdrop-blur-sm">
+          <div key={`tx-${i}`} className="card p-4 sm:p-6 border-slate-800/40 relative overflow-hidden group hover:bg-slate-800/40 transition-all duration-300 shadow-lg rounded-2xl bg-slate-900/40 backdrop-blur-sm">
             <div className="flex items-start justify-between relative z-10">
-               <div>
+               <div className="flex-1">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{card.label}</p>
-                  <p className="text-3xl font-bold text-white tracking-tight tabular-nums">{card.value}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight tabular-nums">{card.value}</p>
                </div>
-               <div className={`w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center ${card.color} shadow-sm group-hover:border-slate-700 transition-all duration-300`}>
-                  <card.icon className="w-6 h-6" />
+               <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center ${card.color} shadow-sm group-hover:border-slate-700 transition-all duration-300 flex-shrink-0 ml-3`}>
+                  <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                </div>
             </div>
-            <div className="mt-4 flex items-center gap-2 relative z-10">
+            <div className="mt-3 sm:mt-4 flex items-center gap-2 relative z-10">
                <div className={`w-1.5 h-1.5 rounded-full ${card.color.replace('text', 'bg')} opacity-60`}></div>
-               <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Live tracking</span>
+               <span className="text-[9px] sm:text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Live tracking</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="card border-slate-800/40 p-8 space-y-6 flex flex-col bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl relative overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+          <div className="card border-slate-800/40 p-4 sm:p-8 space-y-6 flex flex-col bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl relative overflow-hidden">
              <div className="flex items-center justify-between relative z-10">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
@@ -280,66 +331,78 @@ export default function Dashboard() {
                 </h3>
                 <HiOutlineTrendingUp className="w-5 h-5 text-indigo-500/50" />
              </div>
-             <div className="flex-1 min-h-[350px] relative z-10">
+             <div className="flex-1 min-h-[250px] sm:min-h-[350px] relative z-10">
                 <Line data={regTrendData} options={{ ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, ticks: { padding: 8 } } } }} />
              </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className="card border-slate-800/40 p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+             <div className="card border-slate-800/40 p-4 sm:p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Revenue Distribution</h3>
-                <div className="h-60">
+                <div className="h-48 sm:h-60">
                    <Bar data={revenueTrendData} options={chartOptions} />
                 </div>
-                <div className="pt-5 border-t border-slate-800/60 flex items-center justify-between">
+                <div className="pt-4 sm:pt-5 border-t border-slate-800/60 flex items-center justify-between">
                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Growth Indicator</p>
                    <p className="text-sm font-bold text-emerald-400">+12.4%</p>
                 </div>
              </div>
 
-             <div className="card border-slate-800/40 p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
+             <div className="card border-slate-800/40 p-4 sm:p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Registration Status</h3>
-                <div className="relative h-60">
+                <div className="relative h-48 sm:h-60">
                    <Doughnut data={regStatusData} options={doughnutOptions} />
                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <p className="text-3xl font-bold text-white tracking-tight tabular-nums">{stats?.totalRegistrations || 0}</p>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Total Registrations</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-indigo-300 tracking-tight tabular-nums drop-shadow-[0_0_10px_rgba(99,102,241,0.25)]">
+                        {stats?.totalParticipants || 0}
+                      </p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Participants</p>
                    </div>
                 </div>
              </div>
           </div>
 
-          <div className="card border-slate-800/40 p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden relative">
-             <div className="flex items-center justify-between mb-2">
+          <div className="card border-slate-800/40 p-4 sm:p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden relative">
+             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-3">
                    <HiOutlineGlobeAlt className="w-5 h-5 text-indigo-400" /> Geographical Reach (Top Institutions)
                 </h3>
                 <button className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider hover:text-white transition-colors">Explorer</button>
              </div>
-             <div className="h-72">
-                <Bar data={topCollegesData} options={{ ...chartOptions, indexAxis: 'y' }} />
+             <div className="h-56 sm:h-72">
+                <Bar
+                  data={topCollegesData}
+                  options={{
+                    ...chartOptions,
+                    indexAxis: 'y',
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: true, position: 'bottom' },
+                    },
+                  }}
+                />
              </div>
           </div>
         </div>
 
-        <div className="space-y-8">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6 sm:space-y-8">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
              {secondaryStats.map((s, i) => (
-                <div key={i} className="card p-5 border-slate-800/40 bg-slate-900/20 hover:bg-slate-800/40 transition-all rounded-2xl text-center space-y-2 group">
-                   <div className={`w-9 h-9 rounded-lg mx-auto flex items-center justify-center ${s.color} bg-slate-800 border border-slate-700 shadow-sm group-hover:border-indigo-500/30 transition-all`}>
-                      <s.icon className="w-5 h-5" />
+                <div key={i} className="card p-3 sm:p-5 border-slate-800/40 bg-slate-900/20 hover:bg-slate-800/40 transition-all rounded-2xl text-center space-y-2 group">
+                   <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg mx-auto flex items-center justify-center ${s.color} bg-slate-800 border border-slate-700 shadow-sm group-hover:border-indigo-500/30 transition-all`}>
+                      <s.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                    </div>
                    <div>
-                      <p className="text-xl font-bold text-white tracking-tight tabular-nums">{s.value}</p>
-                      <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{s.label}</p>
+                      <p className="text-lg sm:text-xl font-bold text-white tracking-tight tabular-nums">{s.value}</p>
+                      <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-wider">{s.label}</p>
                    </div>
                 </div>
              ))}
           </div>
 
-          <div className="card border-slate-800/40 p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-800/60 pb-5">Event Popularity</h3>
-            <div className="relative h-64">
+          <div className="card border-slate-800/40 p-4 sm:p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-800/60 pb-4 sm:pb-5">Event Popularity</h3>
+            <div className="relative h-48 sm:h-64">
               <Doughnut 
                 data={{
                   labels: stats?.eventPopularity?.map(d => d.eventTitle) || [],
@@ -355,16 +418,20 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card border-slate-800/40 p-8 flex flex-col gap-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
+          <div className="card border-slate-800/40 p-4 sm:p-8 flex flex-col gap-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl">
              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-3">
                 <HiOutlineUserGroup className="w-5 h-5 text-indigo-400" /> Registration Mode
              </h3>
-             <div className="space-y-5">
+             <div className="space-y-4 sm:space-y-5">
                 {stats?.teamVsIndividual?.map((s, i) => (
-                  <div key={i} className="space-y-2.5">
+                  <div key={i} className="space-y-2 sm:space-y-2.5">
                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s._id} ENTRIES</p>
-                        <p className="text-[11px] font-bold text-white tabular-nums">{s.count} <span className="text-slate-600 text-[9px] ml-0.5">UNITS</span></p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                          {s._id === 'team' ? 'Team Participants' : 'Solo Participants'}
+                        </p>
+                        <p className="text-[11px] font-bold text-white tabular-nums">
+                          {s.count} <span className="text-slate-600 text-[9px] ml-0.5">Participants</span>
+                        </p>
                      </div>
                      <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                         <div 
@@ -377,27 +444,29 @@ export default function Dashboard() {
              </div>
           </div>
 
-          <div className="p-8 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 space-y-4 relative overflow-hidden group shadow-lg">
-             <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md mb-4">
-                <HiOutlineSparkles className="w-6 h-6" />
+          {isSuperadmin && (
+          <div className="p-4 sm:p-8 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 space-y-4 relative overflow-hidden group shadow-lg">
+             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md mb-3 sm:mb-4">
+                <HiOutlineSparkles className="w-5 h-5 sm:w-6 sm:h-6" />
              </div>
-             <h4 className="text-lg font-bold text-white tracking-tight">System Status</h4>
-             <p className="text-xs text-slate-400 font-medium leading-relaxed">
+             <h4 className="text-base sm:text-lg font-bold text-white tracking-tight">System Status</h4>
+             <p className="text-[10px] sm:text-xs text-slate-400 font-medium leading-relaxed">
                 Security metrics are within normal parameters. Last synchronization completed successfully at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
              </p>
-             <div className="flex items-center justify-between gap-4">
-               <button className="flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-white transition-colors">
-                View audit logs <HiOutlineArrowRight className="w-4 h-4" />
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+               <button className="flex items-center gap-2 text-[10px] sm:text-xs font-bold text-indigo-400 hover:text-white transition-colors">
+                View audit logs <HiOutlineArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                </button>
                <button
                  onClick={openReconciliation}
                  className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-400 hover:text-white transition-colors"
                  title="Open reconciliation report (captured but not fulfilled)"
                >
-                 Reconcile <HiOutlineArrowRight className="w-4 h-4" />
+                 Reconcile <HiOutlineArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                </button>
              </div>
           </div>
+          )}
         </div>
       </div>
 

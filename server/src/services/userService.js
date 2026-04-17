@@ -2,13 +2,14 @@ const User = require('../models/User');
 const { hashPassword } = require('../utils/password');
 const AppError = require('../middleware/AppError');
 
-const getUsers = async (query = {}) => {
+const getUsers = async (query = {}, viewer = null) => {
   const { page = 1, limit = 20, search, role, isActive } = query;
   const filter = {};
   if (search) {
     filter.$or = [
       { name: { $regex: search, $options: 'i' } },
       { email: { $regex: search, $options: 'i' } },
+      { phone: { $regex: search, $options: 'i' } },
     ];
   }
   if (role) filter.role = role;

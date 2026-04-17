@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../src/services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../../src/components/Pagination';
 import { 
   HiOutlineSearch, 
   HiOutlineClipboardCopy, 
@@ -138,6 +139,7 @@ export default function OrdersList() {
                 <tr className="bg-white/[0.01]">
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Order ID / User</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Date</th>
+                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Included Events</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Amount</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Status</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Actions</th>
@@ -161,6 +163,19 @@ export default function OrdersList() {
                       </td>
                       <td className="px-6 py-6">
                          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{formatDate(order.createdAt)}</p>
+                      </td>
+                      <td className="px-6 py-6">
+                         <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+                            {order.itemsSnapshot && order.itemsSnapshot.length > 0 ? (
+                              order.itemsSnapshot.map((item, idx) => (
+                                <span key={idx} className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.05] text-[9px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[140px]" title={item.eventTitle || item.title || 'Event'}>
+                                  {item.eventTitle || item.title || 'Event'}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[10px] text-slate-700 italic">No items recorded</span>
+                            )}
+                         </div>
                       </td>
                       <td className="px-6 py-6">
                          <div className="flex items-center gap-1.5 font-bold text-white text-[15px] tracking-tight text-emerald-400/90 tabular-nums">
@@ -190,35 +205,7 @@ export default function OrdersList() {
           </div>
 
           {/* Pagination */}
-          {pages > 1 && (
-            <div className="flex items-center justify-center gap-3 py-10 bg-white/[0.01] border-t border-white/[0.05]">
-              <button 
-                disabled={page === 1} 
-                onClick={() => setPage(p => p - 1)} 
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-all active:scale-95 shadow-md"
-              >
-                <HiOutlineArrowsExpand className="w-4 h-4 rotate-180" />
-              </button>
-              <div className="flex gap-2">
-                {[...Array(pages)].map((_, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => setPage(i + 1)} 
-                    className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white border border-white/[0.05]'}`}
-                  >
-                    {(i + 1).toString().padStart(2, '0')}
-                  </button>
-                ))}
-              </div>
-              <button 
-                disabled={page === pages} 
-                onClick={() => setPage(p => p + 1)} 
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-all active:scale-95 shadow-md"
-              >
-                <HiOutlineArrowsExpand className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <Pagination page={page} pages={pages} onPage={setPage} />
         </div>
       )}
     </div>
