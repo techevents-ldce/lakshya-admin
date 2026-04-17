@@ -165,6 +165,7 @@ export default function OrdersList() {
                 <tr className="bg-white/[0.01]">
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Order ID / User</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Date</th>
+                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Events</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Amount</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">Status</th>
                    <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/[0.05] text-right">Actions</th>
@@ -188,6 +189,9 @@ export default function OrdersList() {
                       </td>
                       <td className="px-6 py-6">
                          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{formatDate(order.createdAt)}</p>
+                      </td>
+                      <td className="px-6 py-6 max-w-[250px]">
+                         <p className="text-[11px] font-bold text-slate-400 capitalize whitespace-normal break-words leading-relaxed">{order.eventsSummary || '—'}</p>
                       </td>
                       <td className="px-6 py-6">
                          <div className="flex items-center gap-1.5 font-bold text-white text-[15px] tracking-tight text-emerald-400/90 tabular-nums">

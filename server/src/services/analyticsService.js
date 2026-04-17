@@ -189,7 +189,7 @@ const getDashboardStats = async (filters = {}, viewerRole = null) => {
       ]),
       // Revenue trend (from Transactions, respect eventId)
       Transaction.aggregate([
-        { $match: txFilter.created_at ? txFilter : { status: 'SUCCESS', created_at: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
+        { $match: Object.keys(txFilter).length > 1 || txFilter.created_at ? txFilter : { status: 'SUCCESS', created_at: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
         {
           $group: {
             _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
@@ -206,7 +206,7 @@ const getDashboardStats = async (filters = {}, viewerRole = null) => {
       ]),
       // Top paying events (from transactions)
       Transaction.aggregate([
-        { $match: { status: 'SUCCESS' } },
+        { $match: Object.keys(txFilter).length > 1 ? txFilter : { status: 'SUCCESS' } },
         { $unwind: '$event_ids' },
         { $group: { _id: '$event_ids', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
         { $sort: { totalRevenue: -1 } },

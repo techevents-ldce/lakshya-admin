@@ -67,7 +67,11 @@ const getPayments = async (query = {}, viewerRole = null) => {
   const payments = transactions.map((tx) => ({
     _id: tx._id,
     userId: tx.user_id || null,
-    eventId: Array.isArray(tx.event_ids) && tx.event_ids.length > 0 ? tx.event_ids[0] : null,
+    eventId: { 
+      title: Array.isArray(tx.event_ids) && tx.event_ids.length > 0 
+        ? tx.event_ids.map(e => e.title || '').filter(Boolean).join(' + ') 
+        : null 
+    },
     amount: Number(tx.amount || 0),
     currency: tx.currency || 'INR',
     status: statusMap[tx.status] || 'pending',

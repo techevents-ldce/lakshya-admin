@@ -220,8 +220,8 @@ export default function Payments() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <p className="text-xs font-semibold text-slate-400 tracking-tight truncate max-w-[200px]">{p.eventId?.title || 'System Payment'}</p>
+                      <td className="px-8 py-6 max-w-[250px]">
+                        <p className="text-[11.5px] font-bold text-slate-400 capitalize whitespace-normal break-words leading-relaxed">{p.eventId?.title || 'System Payment'}</p>
                       </td>
                       <td className="px-8 py-6">
                          <div className="flex items-center gap-1.5 text-lg font-bold text-white tabular-nums tracking-tighter">

@@ -58,7 +58,7 @@ const getOrders = async (query = {}) => {
   const skip = (Number(page) - 1) * Number(limit);
   const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
 
-  const [orders, total] = await Promise.all([
+  const [ordersRaw, total] = await Promise.all([
     Order.find(filter)
       .skip(skip)
       .limit(Number(limit))
@@ -67,6 +67,31 @@ const getOrders = async (query = {}) => {
       .lean(),
     Order.countDocuments(filter),
   ]);
+
+  // Augment orders with comprehensive event titles from itemsSnapshot
+  const Event = require('../models/Event');
+  const allEvents = await Event.find({}).select('title').lean();
+  const eventMap = {};
+  allEvents.forEach(e => { eventMap[e._id.toString()] = e.title; });
+
+  const orders = ordersRaw.map(o => {
+    let combinedTitles = [];
+    if (Array.isArray(o.itemsSnapshot)) {
+      o.itemsSnapshot.forEach(item => {
+        const id = item.eventId?.toString();
+        if (id && eventMap[id]) {
+          combinedTitles.push(eventMap[id]);
+        }
+      });
+    }
+    // Deduplicate just in case
+    combinedTitles = [...new Set(combinedTitles)];
+    
+    return {
+      ...o,
+      eventsSummary: combinedTitles.length > 0 ? combinedTitles.join(' + ') : 'Unknown Events'
+    };
+  });
 
   return { orders, total, page: Number(page), pages: Math.ceil(total / Number(limit)) };
 };

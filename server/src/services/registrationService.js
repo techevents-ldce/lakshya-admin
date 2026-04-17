@@ -64,7 +64,7 @@ const getRegistrations = async (query = {}) => {
 
       // Fetch the leaders of all involved teams (by member match or by leader being in matchedUserIds)
       const teamsByMemberSearch = allInvolvedTeamIds.length > 0
-        ? await Team.find({ _id: { $in: allInvolvedTeamIds } }).select('leaderId')
+        ? await Team.find({ _id: { $in: allInvolvedTeamIds }, ...(eventId && { eventId }) }).select('leaderId')
         : [];
       const leaderUserIdsFromMembers = teamsByMemberSearch.map(t => t.leaderId);
 
