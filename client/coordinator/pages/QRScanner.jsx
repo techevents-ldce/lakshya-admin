@@ -40,10 +40,26 @@ export default function QRScanner() {
           setAnalyzing(true);
           
           try {
+            // STEP 2: Extract ID robustly
+            let extractedId = decodedText.trim();
+            if (extractedId.startsWith('http://') || extractedId.startsWith('https://')) {
+              try {
+                const url = new URL(extractedId);
+                const segments = url.pathname.split('/').filter(Boolean);
+                if (segments.length > 0) extractedId = segments[segments.length - 1];
+              } catch(e) {}
+            } else if (extractedId.startsWith('{')) {
+              try {
+                const parsed = JSON.parse(extractedId);
+                if (parsed.ticketId) extractedId = parsed.ticketId;
+                else if (parsed.id) extractedId = parsed.id;
+              } catch(e) {}
+            }
+
             // Mock delay for "Analyzing" feel
             await new Promise(r => setTimeout(r, 800));
             
-            const { data } = await api.get(`/tickets/verify/${eventId}/${decodedText}`);
+            const { data } = await api.get(`/tickets/verify/${eventId}/${encodeURIComponent(extractedId)}`);
             setResult(data);
             setAnalyzing(false);
             setShowModal(true);

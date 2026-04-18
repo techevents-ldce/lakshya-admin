@@ -3,11 +3,12 @@ const Registration = require('../models/Registration');
 const AppError = require('../middleware/AppError');
 const { writeAuditLog } = require('../middleware/auditLog');
 
-const verifyTicket = async (ticketId, eventId, scannedByUserId) => {
+const verifyTicket = async (originalTicketId, eventId, scannedByUserId) => {
+  const ticketId = originalTicketId ? originalTicketId.trim() : '';
   console.log(`[TicketService] Verifying ticket. ID: ${ticketId}, Event: ${eventId}, ScannedBy: ${scannedByUserId}`);
 
-  // Attempt to find by human-readable ticketId (UUID)
-  let ticket = await Ticket.findOne({ ticketId })
+  // Attempt to find by human-readable ticketId (case-insensitive to handle QR encoding variances)
+  let ticket = await Ticket.findOne({ ticketId: new RegExp(`^${ticketId}$`, 'i') })
     .populate('userId', 'name email')
     .populate('eventId', 'title');
 
