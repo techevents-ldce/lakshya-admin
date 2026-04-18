@@ -3,6 +3,8 @@ const asyncHandler = require('../utils/asyncHandler');
 
 exports.verify = asyncHandler(async (req, res) => {
   const { ticketId, eventId } = req.params;
+  console.log(`[TicketController] VERIFY REQUEST: ticketId=${ticketId}, eventId=${eventId}`);
+  
   const result = await ticketService.verifyTicket(ticketId, eventId, req.user.id);
   const statusCode = result.status === 'valid' ? 200
     : result.status === 'already_used' ? 200

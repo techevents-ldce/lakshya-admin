@@ -4,16 +4,32 @@ const AppError = require('../middleware/AppError');
 const { writeAuditLog } = require('../middleware/auditLog');
 
 const verifyTicket = async (ticketId, eventId, scannedByUserId) => {
-  const ticket = await Ticket.findOne({ ticketId })
+  console.log(`[TicketService] Verifying ticket. ID: ${ticketId}, Event: ${eventId}, ScannedBy: ${scannedByUserId}`);
+
+  // Attempt to find by human-readable ticketId (UUID)
+  let ticket = await Ticket.findOne({ ticketId })
     .populate('userId', 'name email')
     .populate('eventId', 'title');
 
+  // Fallback: Attempt to find by internal MongoDB _id (in case QR contains _id)
+  if (!ticket && ticketId.match(/^[0-9a-fA-F]{24}$/)) {
+    console.log(`[TicketService] Ticket not found by UUID, attempting fallback to _id...`);
+    ticket = await Ticket.findById(ticketId)
+      .populate('userId', 'name email')
+      .populate('eventId', 'title');
+  }
+
   if (!ticket) {
+    console.warn(`[TicketService] Verification failed: Ticket NOT FOUND for input "${ticketId}"`);
     return { status: 'invalid', message: 'Ticket not found' };
   }
 
+  console.log(`[TicketService] Ticket found: ${ticket.ticketId || ticket._id} for event: ${ticket.eventId?.title} (${ticket.eventId?._id})`);
+
   // Event-specific validation — prevent cross-event entry
+  // Converting both to string for robust comparison
   if (ticket.eventId._id.toString() !== eventId.toString()) {
+    console.warn(`[TicketService] Mismatch! Ticket belongs to ${ticket.eventId._id} but scanned for ${eventId}`);
     return {
       status: 'wrong_event',
       message: '✗ Wrong Event — This QR code belongs to a different event',
@@ -23,6 +39,7 @@ const verifyTicket = async (ticketId, eventId, scannedByUserId) => {
   }
 
   if (ticket.status === 'used') {
+    console.warn(`[TicketService] Ticket already used. Scanned at: ${ticket.scannedAt}`);
     return {
       status: 'already_used',
       message: '⚠ Already checked in',
@@ -32,6 +49,7 @@ const verifyTicket = async (ticketId, eventId, scannedByUserId) => {
     };
   }
   if (ticket.status === 'cancelled') {
+    console.warn(`[TicketService] Ticket is cancelled.`);
     return { status: 'invalid', message: 'Ticket has been cancelled' };
   }
 
@@ -42,10 +60,13 @@ const verifyTicket = async (ticketId, eventId, scannedByUserId) => {
   await ticket.save();
 
   // Also mark the Registration as checked-in
+  // We search by userId and eventId to ensure the specific registration is updated
   await Registration.findOneAndUpdate(
     { userId: ticket.userId._id, eventId: ticket.eventId._id },
     { checkedIn: true, checkedInAt: new Date(), checkedInBy: scannedByUserId }
   );
+
+  console.log(`[TicketService] Verification SUCCESS for ${ticket.userId?.name}`);
 
   return {
     status: 'valid',
