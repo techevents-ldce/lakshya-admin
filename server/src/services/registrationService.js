@@ -78,19 +78,9 @@ const getRegistrations = async (query = {}, viewer = null) => {
     } else {
       filter.userId = { $in: matchedUserIds };
     }
-  } else if ((query.groupTeams === 'true' || query.groupTeams === true) && eventId) {
-    // If grouping teams but no search, only show solo regs + team leaders
-    const teams = await Team.find({ eventId }).select('leaderId');
-    if (teams.length > 0) {
-      const leaderUserIds = teams.map(t => t.leaderId);
-      filter.$or = [
-        { teamId: null },
-        { teamId: { $exists: false } },
-        { userId: { $in: leaderUserIds } }
-      ];
-    }
   }
 
+  console.log(`[getRegistrations] Filter evaluating:`, JSON.stringify(filter));
   const skip = (Number(page) - 1) * Number(limit);
   const [registrations, total] = await Promise.all([
     Registration.find(filter)
@@ -143,6 +133,7 @@ const getRegistrations = async (query = {}, viewer = null) => {
     stats = { totalParticipants: allRegs, totalCheckedIn: checkedIn };
   }
 
+  console.log(`[getRegistrations] returning ${enriched.length} records. Stats:`, stats);
   return { registrations: enriched, total, page: Number(page), pages: Math.ceil(total / Number(limit)), stats };
 };
 

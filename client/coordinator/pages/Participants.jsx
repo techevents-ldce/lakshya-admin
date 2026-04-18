@@ -21,6 +21,17 @@ export default function Participants() {
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
 
+  const handleManualCheckIn = async (regId, e) => {
+    e.stopPropagation();
+    try {
+      await api.patch(`/registrations/${regId}/mark-attendance`);
+      toast.success('Successfully checked in');
+      fetchRegs();
+    } catch (err) {
+      toast.error('Failed to manually check in');
+    }
+  };
+
   useEffect(() => {
     api.get(`/events/${eventId}`).then(({ data }) => {
       setEventTitle(data.data.title);
@@ -246,7 +257,15 @@ export default function Participants() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Pending</span>
+                            <div className="flex flex-col items-end gap-2">
+                              <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Pending</span>
+                              <button 
+                                onClick={(e) => handleManualCheckIn(r._id, e)}
+                                className="bg-[#22C55E]/10 hover:bg-[#22C55E]/20 text-[#22C55E] border border-[#22C55E]/30 px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-1 outline-none focus:ring-2 focus:ring-[#22C55E]"
+                              >
+                                <HiOutlineCheckCircle className="w-3 h-3" /> Check In
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
