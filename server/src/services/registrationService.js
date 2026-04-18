@@ -48,7 +48,9 @@ const getRegistrations = async (query = {}, viewer = null) => {
     }).select('_id');
     const matchedUserIds = matchingUsers.map((u) => u._id);
 
-    if (query.groupTeams) {
+    const groupTeamsReq = query.groupTeams === 'true' || query.groupTeams === true;
+
+    if (groupTeamsReq) {
       // Find teams matching by teamName
       const matchingTeamsByName = await Team.find({
         eventId,
@@ -76,14 +78,17 @@ const getRegistrations = async (query = {}, viewer = null) => {
     } else {
       filter.userId = { $in: matchedUserIds };
     }
-  } else if (query.groupTeams && eventId) {
+  } else if ((query.groupTeams === 'true' || query.groupTeams === true) && eventId) {
     // If grouping teams but no search, only show solo regs + team leaders
     const teams = await Team.find({ eventId }).select('leaderId');
-    const leaderUserIds = teams.map(t => t.leaderId);
-    filter.$or = [
-      { teamId: null },
-      { userId: { $in: leaderUserIds } }
-    ];
+    if (teams.length > 0) {
+      const leaderUserIds = teams.map(t => t.leaderId);
+      filter.$or = [
+        { teamId: null },
+        { teamId: { $exists: false } },
+        { userId: { $in: leaderUserIds } }
+      ];
+    }
   }
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -129,7 +134,8 @@ const getRegistrations = async (query = {}, viewer = null) => {
 
   // If grouping teams, we might need the actual participant counts for the dashboard
   let stats = null;
-  if (query.groupTeams && eventId) {
+  const isGrouping = query.groupTeams === 'true' || query.groupTeams === true;
+  if (isGrouping && eventId) {
     const [allRegs, checkedIn] = await Promise.all([
       Registration.countDocuments({ eventId, status: { $ne: 'cancelled' } }),
       Registration.countDocuments({ eventId, status: { $ne: 'cancelled' }, checkedIn: true })

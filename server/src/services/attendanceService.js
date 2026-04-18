@@ -179,7 +179,7 @@ const getTeamWiseAttendance = async (eventId, query = {}) => {
     const teamMembers = membersByTeam[t._id.toString()] || [];
     const presentCount = teamMembers.filter((m) => m.attendanceStatus === 'present').length;
     return { ...t, members: teamMembers, memberCount: teamMembers.length, presentCount, allPresent: teamMembers.length > 0 && presentCount === teamMembers.length };
-  });
+  }).filter((t) => t.memberCount > 0);
 
   if (search) {
     const q = search.toLowerCase();
