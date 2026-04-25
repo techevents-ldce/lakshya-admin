@@ -1,7 +1,7 @@
 const BulkEmailJob = require('../models/BulkEmailJob');
 const BulkEmailRecipient = require('../models/BulkEmailRecipient');
 const User = require('../models/User');
-const { SENDER_IDENTITIES } = require('../services/mailService');
+const { SENDER_IDENTITIES, sendEmailWithAttachment } = require('../services/mailService');
 const { processJob, syncJobCounts } = require('../services/bulkEmailWorker');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../middleware/AppError');
@@ -501,3 +501,31 @@ async function parseExcel(filePath) {
 
   return emails;
 }
+
+// ─── POST /api/mail/send-certificate — Send single certificate with PDF ────────
+exports.sendCertificate = asyncHandler(async (req, res) => {
+  const { to, subject, html, attachment, filename, senderIdentity = 'updates' } = req.body;
+
+  if (!to || !subject || !html || !attachment) {
+    throw new AppError('Missing required fields (to, subject, html, attachment)', 400, 'MISSING_FIELDS');
+  }
+
+  const result = await sendEmailWithAttachment({
+    to,
+    subject,
+    html,
+    attachment,
+    filename,
+    senderIdentity
+  });
+
+  if (!result.success) {
+    throw new AppError(result.error || 'Failed to send certificate', 400, 'MAIL_SEND_FAILED');
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Certificate sent successfully',
+    data: { resendId: result.resendId }
+  });
+});

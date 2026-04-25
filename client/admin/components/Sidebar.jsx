@@ -25,6 +25,7 @@ const links = [
   
   { type: 'divider', label: 'Email' },
   { to: '/bulk-email', label: 'Bulk Email', icon: HiOutlineMail, superadminOnly: true },
+  { to: '/certificates', label: 'Certificates', icon: HiOutlineSparkles },
   { to: '/bulk-email/jobs', label: 'Email Logs', icon: HiOutlineInboxIn, superadminOnly: true },
   
   { type: 'divider', label: 'System' },

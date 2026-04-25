@@ -315,6 +315,54 @@ const sendSingleEmail = async (recipient, subject, body, template = 'raw', sende
 };
 
 /**
+ * Send an email with a base64 encoded attachment.
+ * Specifically designed for certificate delivery.
+ */
+const sendEmailWithAttachment = async ({ to, subject, html, attachment, filename, senderIdentity = 'updates' }) => {
+  const fromAddress = SENDER_IDENTITIES[senderIdentity];
+  if (!fromAddress) return { success: false, error: 'Invalid sender identity' };
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await getResend().emails.send({
+        from: fromAddress,
+        replyTo: REPLY_TO_EMAIL,
+        to,
+        subject,
+        html,
+        attachments: [
+          {
+            filename: filename || 'Attachment.pdf',
+            content: attachment, // Base64 content
+          },
+        ],
+      });
+
+      if (result.error) {
+        const errMsg = result.error.message || result.error.name || 'Unknown Resend error';
+        if (attempt < MAX_RETRIES && isRetryableError(result.error)) {
+          const delay = BASE_BACKOFF_MS * Math.pow(2, attempt);
+          await sleep(delay);
+          continue;
+        }
+        return { success: false, error: errMsg };
+      }
+
+      return { success: true, resendId: result.data?.id };
+    } catch (err) {
+      const errMsg = err.message || 'Unknown exception';
+      if (attempt < MAX_RETRIES && isRetryableException(err)) {
+        const delay = BASE_BACKOFF_MS * Math.pow(2, attempt);
+        await sleep(delay);
+        continue;
+      }
+      return { success: false, error: errMsg };
+    }
+  }
+  return { success: false, error: 'Max retries exceeded' };
+};
+
+/**
  * Check if a Resend error object is retryable (rate limit, server error).
  */
 function isRetryableError(error) {
@@ -350,4 +398,4 @@ function isRetryableException(err) {
   );
 }
 
-module.exports = { sendSingleEmail, templates, SENDER_IDENTITIES, REPLY_TO_EMAIL };
+module.exports = { sendSingleEmail, sendEmailWithAttachment, templates, SENDER_IDENTITIES, REPLY_TO_EMAIL };

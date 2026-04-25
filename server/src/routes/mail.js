@@ -20,5 +20,7 @@ router.get('/jobs', mailController.getJobs);
 router.get('/jobs/:jobId', mailController.getJobDetail);
 router.post('/jobs/:jobId/retry', verifyAdminPassword, mailController.retryFailedRecipients);
 router.post('/jobs/:jobId/cancel', mailController.cancelJob);
+router.post('/send-certificate', mailController.sendCertificate);
+
 
 module.exports = router;
