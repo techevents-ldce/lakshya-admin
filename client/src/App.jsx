@@ -99,7 +99,7 @@ export default function App() {
           <Route path="teams" element={<RoleRoute role="admin"><TeamsList /></RoleRoute>} />
           <Route path="alumni" element={<RoleRoute role="admin"><AlumniManagementPage /></RoleRoute>} />
           <Route path="hackathon" element={<RoleRoute role="admin" requireSuperadmin><HackathonImport /></RoleRoute>} />
-          <Route path="certificates" element={<RoleRoute role="admin"><Certificates /></RoleRoute>} />
+          <Route path="certificates" element={<RoleRoute role="admin" requireSuperadmin><Certificates /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />
