@@ -88,31 +88,41 @@ export async function generateCertificate(
         ctx.drawImage(img, 0, 0);
 
         // Configure text styling
-        const fontStyle = `${config.italic ? 'italic' : ''} ${config.bold ? 'bold' : ''} ${config.fontSize}px ${fontFamily}`.trim();
-        ctx.font = fontStyle;
-        ctx.fillStyle = config.textColor;
-        ctx.textBaseline = 'middle';
+        const fontStyle = `${config.italic ? 'italic' : ''} ${config.bold ? 'bold' : ''} ${config.fontSize}px "${fontFamily}", sans-serif`.trim();
+        
+        // Ensure font is loaded before drawing
+        document.fonts.load(fontStyle).then(() => {
+          ctx.font = fontStyle;
+          ctx.fillStyle = config.textColor;
+          ctx.textBaseline = 'middle';
 
-        // Set text alignment
-        if (config.alignment === 'left') {
-          ctx.textAlign = 'left';
-        } else if (config.alignment === 'right') {
-          ctx.textAlign = 'right';
-        } else {
-          ctx.textAlign = 'center';
-        }
-
-        // Draw member name
-        ctx.fillText(member.fullName, config.namePosition.x, config.namePosition.y);
-
-        // Convert canvas to blob
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
+          // Set text alignment
+          if (config.alignment === 'left') {
+            ctx.textAlign = 'left';
+          } else if (config.alignment === 'right') {
+            ctx.textAlign = 'right';
           } else {
-            reject(new Error('Failed to generate certificate'));
+            ctx.textAlign = 'center';
           }
-        }, 'image/jpeg', 0.8);
+
+          // Draw member name
+          ctx.fillText(member.fullName, config.namePosition.x, config.namePosition.y);
+
+          // Convert canvas to blob
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to generate certificate'));
+            }
+          }, 'image/jpeg', 0.8);
+        }).catch((err) => {
+          console.error('Font load error:', err);
+          // Fallback draw
+          ctx.font = `${config.fontSize}px sans-serif`;
+          ctx.fillText(member.fullName, config.namePosition.x, config.namePosition.y);
+          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+        });
       } catch (error) {
         reject(error);
       }
@@ -147,22 +157,29 @@ export async function generateCertificatePreview(
 
         ctx.drawImage(img, 0, 0);
 
-        const fontStyle = `${config.italic ? 'italic' : ''} ${config.bold ? 'bold' : ''} ${config.fontSize}px ${fontFamily}`.trim();
-        ctx.font = fontStyle;
-        ctx.fillStyle = config.textColor;
-        ctx.textBaseline = 'middle';
+        const fontStyle = `${config.italic ? 'italic' : ''} ${config.bold ? 'bold' : ''} ${config.fontSize}px "${fontFamily}", sans-serif`.trim();
+        
+        document.fonts.load(fontStyle).then(() => {
+          ctx.font = fontStyle;
+          ctx.fillStyle = config.textColor;
+          ctx.textBaseline = 'middle';
 
-        if (config.alignment === 'left') {
-          ctx.textAlign = 'left';
-        } else if (config.alignment === 'right') {
-          ctx.textAlign = 'right';
-        } else {
-          ctx.textAlign = 'center';
-        }
+          if (config.alignment === 'left') {
+            ctx.textAlign = 'left';
+          } else if (config.alignment === 'right') {
+            ctx.textAlign = 'right';
+          } else {
+            ctx.textAlign = 'center';
+          }
 
-        ctx.fillText(sampleName, config.namePosition.x, config.namePosition.y);
-
-        resolve(canvas.toDataURL('image/png'));
+          ctx.fillText(sampleName, config.namePosition.x, config.namePosition.y);
+          resolve(canvas.toDataURL('image/png'));
+        }).catch((err) => {
+          console.error('Font load error:', err);
+          ctx.font = `${config.fontSize}px sans-serif`;
+          ctx.fillText(sampleName, config.namePosition.x, config.namePosition.y);
+          resolve(canvas.toDataURL('image/png'));
+        });
       } catch (error) {
         reject(error);
       }

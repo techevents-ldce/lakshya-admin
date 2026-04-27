@@ -80,16 +80,16 @@ export const Step5EmailDelivery = ({
           setProgress((prev) =>
             prev
               ? {
-                  ...prev,
-                  sent: prev.sent + prog.sent,
-                  failed: (prev.failed || 0) - (prog.sent), // Rough update
-                  failedRecipients: [
-                    ...prev.failedRecipients.filter(
-                      (f) => !prog.failedRecipients.some((nf) => nf.email === f.email)
-                    ),
-                    ...prog.failedRecipients
-                  ]
-                }
+                ...prev,
+                sent: prev.sent + prog.sent,
+                failed: (prev.failed || 0) - (prog.sent), // Rough update
+                failedRecipients: [
+                  ...prev.failedRecipients.filter(
+                    (f) => !prog.failedRecipients.some((nf) => nf.email === f.email)
+                  ),
+                  ...prog.failedRecipients
+                ]
+              }
               : prog
           );
         }
@@ -105,18 +105,18 @@ export const Step5EmailDelivery = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h2>Step 5: Email Delivery to All Recipients</h2>
-        <p className={styles.description}>
+    <div className="space-y-6">
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/[0.05] rounded-3xl p-8 shadow-2xl animate-fade-in">
+        <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Step 5: Email Delivery to All Recipients</h2>
+        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
           Configure the email message and send certificates to all {members.length} members.
         </p>
 
         {/* Email Configuration */}
         {!progress && (
-          <div className={styles.emailConfig}>
-            <div className={styles.section}>
-              <label className="block mb-2 font-semibold text-slate-300">
+          <div className="grid gap-8">
+            <div className="grid gap-3">
+              <label className="block mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                 Email Subject:
               </label>
               <input
@@ -124,20 +124,20 @@ export const Step5EmailDelivery = ({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 disabled={sending || isLoading}
-                className={styles.input}
+                className="w-full px-5 py-3.5 rounded-xl border border-white/[0.05] bg-slate-950 text-gray-100 placeholder-slate-700 focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-200 font-medium text-sm"
               />
             </div>
 
-            <div className={styles.section}>
-              <label className="block mb-2 font-semibold text-slate-300">
+            <div className="grid gap-3">
+              <label className="block mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                 Email Body:
               </label>
-              <p className="text-xs text-slate-500 mb-2">Use {'{{name}}'} placeholder for personalization</p>
+              <p className="text-[10px] text-slate-600 mb-1 font-bold uppercase tracking-widest">Use {'{{name}}'} placeholder for personalization</p>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 disabled={sending || isLoading}
-                className={styles.textarea}
+                className="w-full px-5 py-3.5 rounded-xl border border-white/[0.05] bg-slate-950 text-white placeholder-slate-700 focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-200 font-medium text-sm resize-none min-h-[150px]"
                 rows={6}
               />
             </div>
@@ -145,7 +145,7 @@ export const Step5EmailDelivery = ({
             {/* Email Preview */}
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className={styles.previewBtn}
+              className="btn-secondary w-full"
               disabled={sending || isLoading}
             >
               {showPreview ? '✓ Hide Email Preview' : '👁️ Show Email Preview'}
@@ -174,7 +174,7 @@ export const Step5EmailDelivery = ({
             <button
               onClick={handleSendAll}
               disabled={sending || isLoading}
-              className={styles.sendBtn}
+              className="btn-primary w-full mt-10 !bg-emerald-600 hover:!bg-emerald-500 !shadow-emerald-900/20"
             >
               {sending ? '📧 Sending...' : '✓ Send Certificates to All Members'}
             </button>
@@ -223,16 +223,16 @@ export const Step5EmailDelivery = ({
             )}
 
             {progress.total > 0 && progress.failed === 0 && progress.sent === progress.total && (
-              <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-center">
-                <p className="font-bold">✓ Success!</p>
-                <p className="text-sm">All {progress.sent} certificates sent successfully as PDF attachments.</p>
+              <div className={styles.successMessage}>
+                <p className="text-xl font-extrabold mb-2 uppercase tracking-tighter">✓ Delivery Complete</p>
+                <p className="text-sm font-medium opacity-80">All {progress.sent} certificates sent successfully as PDF attachments.</p>
               </div>
             )}
-            
+
             {progress.failed > 0 && !sending && (
-               <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
-                 ⚠️ Some deliveries failed. You can attempt to retry the failed recipients.
-               </div>
+              <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs font-bold text-center">
+                ⚠️ Some deliveries failed. You can attempt to retry the failed recipients.
+              </div>
             )}
           </div>
         )}

@@ -1,114 +1,12 @@
-.container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-}
-
-.card {
-  max-width: 900px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  padding: 40px;
-}
-
-.card h2 {
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 28px;
-}
-
-.description {
-  color: #666;
-  margin-bottom: 30px;
-  line-height: 1.6;
-}
-
-.uploadArea {
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  padding: 40px;
-  text-align: center;
-  background: #f9f9f9;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.uploadArea:hover {
-  border-color: #667eea;
-  background: #f0f4ff;
-}
-
-.fileInput {
-  display: none;
-}
-
-.uploadLabel {
-  cursor: pointer;
-  font-size: 16px;
-  color: #667eea;
-  font-weight: 500;
-}
-
-.templateSection {
-  margin-top: 30px;
-}
-
-.templateSection h3 {
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.instructionText {
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 15px;
-}
-
-.canvas {
-  max-width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: crosshair;
-  margin: 20px 0;
-  background: #f9f9f9;
-}
-
-.positionInfo {
-  background: #e8f5e9;
-  border-left: 4px solid #4caf50;
-  padding: 12px;
-  border-radius: 4px;
-  color: #2e7d32;
-  margin: 15px 0;
-}
-
-.changeTemplateBtn {
-  padding: 10px 20px;
-  background: #999;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s ease;
-}
-
-.changeTemplateBtn:hover:not(:disabled) {
-  background: #777;
-}
-
-.changeTemplateBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.error {
-  background: #fee;
-  border-left: 4px solid #f55;
-  padding: 12px;
-  border-radius: 4px;
-  color: #c33;
-  margin: 20px 0;
-}
+/* Refactored to Tailwind in JSX */
+.container {}
+.card {}
+.description {}
+.uploadArea {}
+.uploadLabel {}
+.templateSection {}
+.instructionText {}
+.canvas {}
+.positionInfo {}
+.changeTemplateBtn {}
+.error {}

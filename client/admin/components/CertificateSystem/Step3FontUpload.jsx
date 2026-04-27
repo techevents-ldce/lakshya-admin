@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { loadCustomFont, createFontFace, generateCertificatePreview } from './utils/certificateGenerator';
 import styles from './Step3FontUpload.module.css';
 
-const DEFAULT_FONTS = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
+const DEFAULT_FONTS = ['Sephora & Hayden', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
 
 export const Step3FontUpload = ({
   templateImage,
@@ -11,7 +11,7 @@ export const Step3FontUpload = ({
   isLoading = false
 }) => {
   const [fontFile, setFontFile] = useState(null);
-  const [fontFamily, setFontFamily] = useState('Arial');
+  const [fontFamily, setFontFamily] = useState('Sephora & Hayden');
   const [fontSize, setFontSize] = useState(48);
   const [textColor, setTextColor] = useState('#000000');
   const [alignment, setAlignment] = useState('center');
@@ -101,19 +101,19 @@ export const Step3FontUpload = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h2>Step 3: Font & Text Styling</h2>
-        <p className={styles.description}>
+    <div className="space-y-6">
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/[0.05] rounded-3xl p-8 shadow-2xl animate-fade-in">
+        <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Step 3: Font & Text Styling</h2>
+        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
           Choose a custom font or use a system font, then configure text styling options.
         </p>
 
-        <div className={styles.content}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           {/* Font Upload Section */}
-          <div className={styles.section}>
-            <h3>📝 Font</h3>
-            <div className={styles.fontSelect}>
-              <label className="flex items-center gap-2 cursor-pointer">
+          <div className="border-b border-slate-800/50 pb-6 md:border-b-0 md:pb-0 md:border-r md:pr-8">
+            <h3 className="text-indigo-400 font-bold mb-6 flex items-center gap-2 uppercase tracking-widest text-xs">📝 Font</h3>
+            <div className="flex items-center gap-4 mb-4">
+              <label className="flex items-center gap-3 cursor-pointer text-slate-300 font-bold text-xs uppercase tracking-wider transition-colors hover:text-white">
                 <input
                   type="radio"
                   name="font-choice"
@@ -123,6 +123,7 @@ export const Step3FontUpload = ({
                     setFontFamily('Arial');
                   }}
                   disabled={isLoading}
+                  className="w-4 h-4 accent-indigo-500"
                 />
                 Use System Font:
               </label>
@@ -130,7 +131,7 @@ export const Step3FontUpload = ({
                 value={fontFamily}
                 onChange={(e) => setFontFamily(e.target.value)}
                 disabled={fontFile !== null || isLoading}
-                className={styles.select}
+                className="bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-500/50 transition-all flex-1"
               >
                 {DEFAULT_FONTS.map((font) => (
                   <option key={font} value={font}>
@@ -140,8 +141,8 @@ export const Step3FontUpload = ({
               </select>
             </div>
 
-            <div className={styles.fontUpload}>
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="flex items-center gap-4 mb-4">
+              <label className="flex items-center gap-3 cursor-pointer text-slate-300 font-bold text-xs uppercase tracking-wider transition-colors hover:text-white">
                 <input
                   type="radio"
                   name="font-choice"
@@ -150,6 +151,7 @@ export const Step3FontUpload = ({
                     fileInput.current?.click();
                   }}
                   disabled={isLoading}
+                  className="w-4 h-4 accent-indigo-500"
                 />
                 Upload Custom Font:
               </label>
@@ -158,21 +160,24 @@ export const Step3FontUpload = ({
                 type="file"
                 accept=".ttf,.otf,.woff"
                 onChange={handleFontUpload}
-                className={styles.fileInput}
                 disabled={isLoading}
                 style={{ display: 'none' }}
               />
-              {fontFile && <span className={styles.fileName}>{fontFile.name} (Active)</span>}
+              {fontFile && (
+                <span className="bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-indigo-500/20">
+                  {fontFile.name} (Active)
+                </span>
+              )}
             </div>
           </div>
 
           {/* Text Styling Section */}
-          <div className={styles.section}>
-            <h3>✨ Text Styling</h3>
+          <div className="space-y-6">
+            <h3 className="text-indigo-400 font-bold mb-6 flex items-center gap-2 uppercase tracking-widest text-xs">✨ Text Styling</h3>
 
-            <div className={styles.controlGroup}>
-              <label>
-                Font Size (px):
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-3 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                <label>Font Size (px):</label>
                 <input
                   type="number"
                   min="8"
@@ -180,56 +185,54 @@ export const Step3FontUpload = ({
                   value={fontSize}
                   onChange={(e) => setFontSize(Number(e.target.value))}
                   disabled={isLoading}
-                  className={styles.input}
+                  className="bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-500/50 transition-all"
                 />
-              </label>
-            </div>
+              </div>
 
-            <div className={styles.controlGroup}>
-              <label>
-                Text Color:
+              <div className="flex flex-col gap-3 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                <label>Text Color:</label>
                 <input
                   type="color"
                   value={textColor}
                   onChange={(e) => setTextColor(e.target.value)}
                   disabled={isLoading}
-                  className={styles.colorInput}
+                  className="w-full h-[46px] rounded-xl border border-slate-800 cursor-pointer overflow-hidden bg-slate-950 p-1 transition-all hover:border-white/20"
                 />
-              </label>
+              </div>
             </div>
 
-            <div className={styles.controlGroup}>
-              <label>
-                Alignment:
-                <select
-                  value={alignment}
-                  onChange={(e) => setAlignment(e.target.value)}
-                  disabled={isLoading}
-                  className={styles.select}
-                >
-                  <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
-                </select>
-              </label>
+            <div className="flex flex-col gap-3 text-slate-400 font-bold text-xs uppercase tracking-wider">
+              <label>Alignment:</label>
+              <select
+                value={alignment}
+                onChange={(e) => setAlignment(e.target.value)}
+                disabled={isLoading}
+                className="bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-500/50 transition-all"
+              >
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
             </div>
 
-            <div className={styles.toggleGroup}>
-              <label className={styles.toggleLabel}>
+            <div className="flex gap-6 pt-2">
+              <label className="flex items-center gap-3 cursor-pointer text-slate-300 font-bold text-xs uppercase tracking-wider hover:text-white transition-colors">
                 <input
                   type="checkbox"
                   checked={bold}
                   onChange={(e) => setBold(e.target.checked)}
                   disabled={isLoading}
+                  className="w-4 h-4 rounded accent-indigo-500"
                 />
                 <span>Bold</span>
               </label>
-              <label className={styles.toggleLabel}>
+              <label className="flex items-center gap-3 cursor-pointer text-slate-300 font-bold text-xs uppercase tracking-wider hover:text-white transition-colors">
                 <input
                   type="checkbox"
                   checked={italic}
                   onChange={(e) => setItalic(e.target.checked)}
                   disabled={isLoading}
+                  className="w-4 h-4 rounded accent-indigo-500"
                 />
                 <span>Italic</span>
               </label>
@@ -239,20 +242,20 @@ export const Step3FontUpload = ({
 
         {/* Preview Section */}
         {preview && (
-          <div className={styles.previewSection}>
-            <h3>👁️ Preview</h3>
-            <div className="relative border border-slate-800 rounded-lg overflow-hidden bg-slate-900/50">
-              <img src={preview} alt="Certificate Preview" className={styles.previewImage} style={{ maxWidth: '100%', height: 'auto' }} />
+          <div className="mt-10 space-y-6 animate-fade-in text-center">
+            <h3 className="text-xl font-bold text-white">👁️ Preview</h3>
+            <div className="relative border border-slate-800 rounded-2xl overflow-hidden bg-slate-950/50 shadow-2xl">
+              <img src={preview} alt="Certificate Preview" className="max-w-full rounded-2xl shadow-2xl max-h-[400px] mx-auto object-contain bg-slate-900/30" />
             </div>
           </div>
         )}
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-400 text-sm font-bold mt-6 animate-fade-in">{error}</div>}
 
         <button
           onClick={handleConfirm}
           disabled={isLoading}
-          className={styles.confirmBtn}
+          className="btn-primary w-full mt-8"
         >
           ✓ Confirm Font & Styling
         </button>

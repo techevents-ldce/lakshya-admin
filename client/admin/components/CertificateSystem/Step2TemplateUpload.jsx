@@ -101,47 +101,47 @@ export const Step2TemplateUpload = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h2>Step 2: Upload Certificate Template</h2>
-        <p className={styles.description}>
+    <div className="space-y-6">
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/[0.05] rounded-3xl p-8 shadow-2xl animate-fade-in">
+        <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Step 2: Upload Certificate Template</h2>
+        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
           Upload a PNG or JPG image that serves as your certificate template. This image should contain
           the design, borders, logos, and any fixed content. Then click on the template to mark where
           the member's name should be placed.
         </p>
 
         {!templateImage ? (
-          <div className={styles.uploadArea}>
+          <div className="border-2 border-dashed border-slate-800 rounded-3xl p-12 text-center bg-slate-950/50 cursor-pointer transition-all duration-300 hover:border-indigo-500/50 hover:bg-slate-900/60 group">
             <input
               type="file"
               accept="image/png,image/jpeg"
               onChange={handleImageUpload}
-              className={styles.fileInput}
               disabled={isLoading}
               id="template-upload"
               style={{ display: 'none' }}
             />
-            <label htmlFor="template-upload" className={styles.uploadLabel} style={{ cursor: 'pointer' }}>
-              <span>🖼️ Click to upload certificate template (PNG or JPG)</span>
+            <label htmlFor="template-upload" className="cursor-pointer text-lg font-bold text-slate-400 group-hover:text-indigo-400 transition-colors flex flex-col items-center gap-4">
+              <span className="text-4xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">🖼️</span>
+              Click to upload certificate template (PNG or JPG)
             </label>
           </div>
         ) : (
-          <div className={styles.templateSection}>
-            <h3>Certificate Template Preview</h3>
-            <p className={styles.instructionText}>
+          <div className="mt-10 space-y-6 animate-fade-in text-center">
+            <h3 className="text-xl font-bold text-white">Certificate Template Preview</h3>
+            <p className="text-slate-400 text-sm font-medium mb-4">
               Click on the template to mark where the member's name should be displayed
             </p>
-            <canvas
-              ref={canvasRef}
-              className={styles.canvas}
-              onClick={handleCanvasClick}
-              style={{ cursor: 'crosshair', maxWidth: '100%', height: 'auto', border: '1px solid #e2e8f0' }}
-            />
+            <div className="relative border border-slate-800 rounded-2xl overflow-hidden bg-slate-950/50 shadow-2xl">
+              <canvas
+                ref={canvasRef}
+                onClick={handleCanvasClick}
+                className="max-w-full rounded-2xl cursor-crosshair mx-auto object-contain bg-slate-900/30"
+                style={{ height: 'auto' }}
+              />
+            </div>
             {selectedPosition && (
-              <div className={styles.positionInfo}>
-                <p>
-                  ✓ Position selected at: X={Math.round(selectedPosition.x)}, Y={Math.round(selectedPosition.y)}
-                </p>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 text-sm font-bold my-6 flex items-center justify-center gap-2">
+                <span>✓ Position selected at: X={Math.round(selectedPosition.x)}, Y={Math.round(selectedPosition.y)}</span>
               </div>
             )}
             <button
@@ -149,7 +149,7 @@ export const Step2TemplateUpload = ({
                 setTemplateImage('');
                 setSelectedPosition(null);
               }}
-              className={styles.changeTemplateBtn}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-2.5 rounded-xl transition-all duration-200 text-xs uppercase tracking-widest border border-slate-700 mt-4"
               disabled={isLoading}
             >
               Change Template
@@ -157,7 +157,7 @@ export const Step2TemplateUpload = ({
           </div>
         )}
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-400 text-sm font-bold mt-6 animate-fade-in">{error}</div>}
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ export default function Certificates() {
   const [members, setMembers] = useState([]);
   const [templateImage, setTemplateImage] = useState('');
   const [namePosition, setNamePosition] = useState({ x: 0, y: 0 });
-  const [fontFamily, setFontFamily] = useState('Arial');
+  const [fontFamily, setFontFamily] = useState('Sephora & Hayden');
   const [certificateConfig, setCertificateConfig] = useState(null);
   const [certificates, setCertificates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);

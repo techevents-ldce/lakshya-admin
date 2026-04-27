@@ -42,16 +42,32 @@ export const Step1MemberUpload = ({ onMembersLoaded, isLoading = false }) => {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h2>Step 1: Upload Member List</h2>
-        <p className={styles.description}>
+    <div className="space-y-6">
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/[0.05] rounded-3xl p-8 shadow-2xl animate-fade-in">
+        <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Step 1: Upload Member List</h2>
+        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
           Upload an Excel file (.xlsx, .csv) with member details. The file should have:
           <br />
-          <strong>Column A:</strong> Full Name | <strong>Column B:</strong> Email Address
+          <strong className="text-indigo-400">Column A:</strong> Full Name | <strong className="text-indigo-400">Column B:</strong> Email Address
         </p>
 
-        <div className={styles.uploadArea}>
+        <div 
+          onClick={handleLabelClick}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files?.[0];
+            if (file) {
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(file);
+              if (fileInput.current) {
+                fileInput.current.files = dataTransfer.files;
+                handleFileUpload({ target: { files: dataTransfer.files } });
+              }
+            }
+          }}
+          className="border-2 border-dashed border-slate-800 rounded-3xl p-12 text-center bg-slate-950/50 cursor-pointer transition-all duration-300 hover:border-indigo-500/50 hover:bg-slate-900/60 group"
+        >
           <input
             ref={fileInput}
             type="file"
@@ -60,33 +76,18 @@ export const Step1MemberUpload = ({ onMembersLoaded, isLoading = false }) => {
             disabled={isLoading}
             style={{ display: 'none' }}
           />
-          <label 
-            onClick={handleLabelClick}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files?.[0];
-              if (file) {
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                if (fileInput.current) {
-                  fileInput.current.files = dataTransfer.files;
-                  handleFileUpload({ target: { files: dataTransfer.files } });
-                }
-              }
-            }}
-            className={styles.uploadLabel}
-          >
-            <span>📁 Click to upload or drag and drop</span>
-          </label>
+          <span className="cursor-pointer text-lg font-bold text-slate-400 group-hover:text-indigo-400 transition-colors flex flex-col items-center gap-4">
+            <span className="text-4xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">📁</span>
+            Click to upload or drag and drop
+          </span>
         </div>
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-400 text-sm font-bold mt-6 animate-fade-in">{error}</div>}
 
         {validation && !validation.isValid && validation.errors.length > 0 && (
-          <div className={styles.warnings}>
-            <h4>⚠️ Validation Issues Found:</h4>
-            <ul>
+          <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl mt-8 animate-fade-in">
+            <h4 className="text-amber-400 font-bold mb-3 flex items-center gap-2 uppercase tracking-widest text-xs">⚠️ Validation Issues Found:</h4>
+            <ul className="text-xs text-amber-200/70 space-y-2 list-disc list-inside">
               {validation.errors.map((err, idx) => (
                 <li key={idx}>
                   Row {err.rowIndex}: {err.message}
@@ -97,38 +98,38 @@ export const Step1MemberUpload = ({ onMembersLoaded, isLoading = false }) => {
         )}
 
         {members.length > 0 && (
-          <div className={styles.preview}>
-            <h3>
+          <div className="mt-10 space-y-6 animate-fade-in">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
               ✓ Members Preview ({validation?.isValid ? 'All Valid' : 'Some Invalid'})
             </h3>
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
+            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/50 backdrop-blur-sm shadow-xl">
+              <table className="w-full border-collapse text-left">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Full Name</th>
-                    <th>Email</th>
+                    <th className="bg-slate-900/80 text-slate-400 p-4 text-[10px] font-bold uppercase tracking-widest border-b border-slate-800">#</th>
+                    <th className="bg-slate-900/80 text-slate-400 p-4 text-[10px] font-bold uppercase tracking-widest border-b border-slate-800">Full Name</th>
+                    <th className="bg-slate-900/80 text-slate-400 p-4 text-[10px] font-bold uppercase tracking-widest border-b border-slate-800">Email</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.slice(0, 10).map((member, idx) => (
-                    <tr key={idx}>
-                      <td>{idx + 1}</td>
-                      <td>{member.fullName}</td>
-                      <td>{member.email}</td>
+                    <tr key={idx} className="border-b border-slate-800/50 transition-colors hover:bg-white/[0.02]">
+                      <td className="p-4 text-sm text-slate-500 font-mono">{idx + 1}</td>
+                      <td className="p-4 text-sm text-slate-300 font-medium">{member.fullName}</td>
+                      <td className="p-4 text-sm text-slate-300 font-medium">{member.email}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {members.length > 10 && (
-                <p className={styles.moreText}>
+                <p className="text-center text-slate-600 text-[10px] font-bold py-4 bg-slate-900/20 uppercase tracking-widest">
                   ...and {members.length - 10} more members
                 </p>
               )}
             </div>
-            <p className={styles.summary}>
-              <strong>Total Valid Members: {members.length}</strong>
-              {validation?.errors.length ? ` | Invalid Rows: ${validation.errors.length}` : ''}
+            <p className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl text-indigo-400 text-xs font-bold mt-4 flex items-center justify-between uppercase tracking-widest">
+              <span>Total Valid Members: {members.length}</span>
+              {validation?.errors.length ? <span className="text-red-400">Invalid Rows: {validation.errors.length}</span> : ''}
             </p>
           </div>
         )}
