@@ -16,7 +16,8 @@ export const Step5EmailDelivery = ({
   members,
   certificates,
   onEmailsSent,
-  isLoading = false
+  isLoading = false,
+  eventName: eventNameProp = 'Lakshya TechFest 2026'
 }) => {
   // ── Email form state ──────────────────────────────────────────────────────
   const [subject, setSubject] = useState('Your Certificate from Lakshya TechFest 2026');
@@ -24,6 +25,7 @@ export const Step5EmailDelivery = ({
     'Dear {{name}},\n\nCongratulations! We are pleased to send you your certificate for participating in Lakshya TechFest 2026.\n\nBest regards,\nThe Lakshya Team'
   );
   const [showPreview, setShowPreview] = useState(false);
+  const [eventName, setEventName] = useState(eventNameProp);
 
   // ── Send state ────────────────────────────────────────────────────────────
   const [sending, setSending] = useState(false);
@@ -55,6 +57,14 @@ export const Step5EmailDelivery = ({
     return map;
   }, [certificates]);
 
+  const buildHashMap = useCallback(() => {
+    const map = new Map();
+    certificates.forEach(({ member, hash }) => {
+      if (hash) map.set(member.email, hash);
+    });
+    return map;
+  }, [certificates]);
+
   // ── Handle: Start fresh ───────────────────────────────────────────────────
   const handleSendAll = async () => {
     setError('');
@@ -68,6 +78,7 @@ export const Step5EmailDelivery = ({
 
     setSending(true);
     const certificateMap = buildCertificateMap();
+    const hashMap = buildHashMap();
 
     try {
       const result = await sendCertificates(
@@ -84,7 +95,9 @@ export const Step5EmailDelivery = ({
         (stoppedProg) => {
           setQuotaStopped(true);
           setProgress({ ...stoppedProg });
-        }
+        },
+        hashMap,
+        eventName
       );
       setProgress(result);
     } catch (err) {
@@ -108,6 +121,7 @@ export const Step5EmailDelivery = ({
 
     const alreadySent = new Set(checkpoint.sentEmails || []);
     const certificateMap = buildCertificateMap();
+    const hashMap = buildHashMap();
 
     // Seed UI progress with previously sent count
     setProgress({
@@ -136,7 +150,9 @@ export const Step5EmailDelivery = ({
         (stoppedProg) => {
           setQuotaStopped(true);
           setProgress({ ...stoppedProg });
-        }
+        },
+        hashMap,
+        eventName
       );
       setProgress(result);
     } catch (err) {
@@ -157,8 +173,8 @@ export const Step5EmailDelivery = ({
     setQuotaStopped(false);
 
     const failedEmails = new Set(progress.failedRecipients.map((r) => r.email));
-    const failedMembers = members.filter((m) => failedEmails.has(m.email));
     const certificateMap = buildCertificateMap();
+    const hashMap = buildHashMap();
 
     // Already-sent = everyone NOT in failed list
     const alreadySent = new Set(members.map((m) => m.email).filter((e) => !failedEmails.has(e)));
@@ -188,7 +204,9 @@ export const Step5EmailDelivery = ({
         (stoppedProg) => {
           setQuotaStopped(true);
           setProgress({ ...stoppedProg });
-        }
+        },
+        hashMap,
+        eventName
       );
       setProgress(result);
     } catch (err) {
@@ -306,6 +324,21 @@ export const Step5EmailDelivery = ({
         {/* ── Email Configuration (shown only before sending begins) ────────── */}
         {!progress && (
           <div className="grid gap-8">
+            {/* Event Name (embedded in certificate for DB record) */}
+            <div className="grid gap-3">
+              <label className="block mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                Event Name <span className="text-indigo-400/60 normal-case font-normal">(stored with each certificate for verification)</span>
+              </label>
+              <input
+                type="text"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                disabled={sending || isLoading}
+                placeholder="e.g. Lakshya TechFest 2026 — Roborace"
+                className="w-full px-5 py-3.5 rounded-xl border border-white/[0.05] bg-slate-950 text-gray-100 placeholder-slate-700 focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-200 font-medium text-sm"
+              />
+            </div>
+
             <div className="grid gap-3">
               <label className="block mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                 Email Subject:

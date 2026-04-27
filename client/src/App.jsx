@@ -30,6 +30,7 @@ import AlumniManagementPage from '@admin/pages/AlumniManagementPage';
 import HackathonImport from '@admin/pages/HackathonImport';
 import EventInsights from '@admin/pages/EventInsights';
 import Certificates from '@admin/pages/Certificates';
+import CertificateValidator from '@admin/pages/CertificateValidator';
 
 // ── Coordinator pages (imported directly from coordinator folder) ──
 import Participants from '@coordinator/pages/Participants';
@@ -62,6 +63,8 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<Login />} />
+        {/* Public certificate validator — no auth required */}
+        <Route path="/verify-certificate" element={<CertificateValidator />} />
 
         {/* Protected – RoleLayout renders admin sidebar or coordinator navbar */}
         <Route
@@ -100,6 +103,7 @@ export default function App() {
           <Route path="alumni" element={<RoleRoute role="admin"><AlumniManagementPage /></RoleRoute>} />
           <Route path="hackathon" element={<RoleRoute role="admin" requireSuperadmin><HackathonImport /></RoleRoute>} />
           <Route path="certificates" element={<RoleRoute role="admin" requireSuperadmin><Certificates /></RoleRoute>} />
+          <Route path="certificates/validator" element={<RoleRoute role="admin" requireSuperadmin><CertificateValidator /></RoleRoute>} />
 
           {/* ── Coordinator-only routes ── */}
           <Route path="events/:id/participants" element={<RoleRoute role="coordinator"><Participants /></RoleRoute>} />

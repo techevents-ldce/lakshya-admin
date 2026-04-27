@@ -84,14 +84,16 @@ export async function sendCertificateEmail(member, certificateBlob, subject, bod
 /**
  * Send certificates to a list of members with full checkpoint support.
  *
- * @param {Array}    members          – Full member list for this session.
- * @param {Map}      certificateBlobs – email → Blob map.
+ * @param {Array}    members           – Full member list for this session.
+ * @param {Map}      certificateBlobs  – email → Blob map.
  * @param {string}   subject
  * @param {string}   body
- * @param {Function} onProgress       – Called with progress object after every send.
- * @param {string}   sessionId        – Unique ID for this delivery batch.
+ * @param {Function} onProgress        – Called with progress object after every send.
+ * @param {string}   sessionId         – Unique ID for this delivery batch.
  * @param {Set}      alreadySentEmails – Emails already delivered (from a resumed checkpoint).
- * @param {Function} [onStopped]      – Called if the loop is interrupted (quota / abort).
+ * @param {Function} [onStopped]       – Called if the loop is interrupted (quota / abort).
+ * @param {Map}      [certHashes]      – email → hash map for DB registration.
+ * @param {string}   [eventName]       – Optional event name stored in the DB record.
  * @returns {Promise<Object>} Final progress snapshot.
  */
 export async function sendCertificates(
@@ -102,7 +104,9 @@ export async function sendCertificates(
   onProgress,
   sessionId,
   alreadySentEmails = new Set(),
-  onStopped = null
+  onStopped = null,
+  certHashes = new Map(),
+  eventName = ''
 ) {
   const progress = {
     total: members.length,
@@ -132,6 +136,22 @@ export async function sendCertificates(
     if (result.success) {
       progress.sent++;
       progress.sentEmails.push(member.email);
+
+      // Register hash in DB for future verification
+      const hash = certHashes.get(member.email);
+      if (hash) {
+        try {
+          await api.post('/certificates/register', {
+            hash,
+            recipientName: member.fullName,
+            recipientEmail: member.email,
+            eventName,
+          });
+        } catch (regErr) {
+          // Non-fatal: email was sent, just log
+          console.warn('[Cert] Hash registration failed:', regErr?.message);
+        }
+      }
     } else {
       progress.failed++;
       progress.failedRecipients.push({

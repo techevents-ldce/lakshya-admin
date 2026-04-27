@@ -85,6 +85,7 @@ app.use('/api/admin/alumni', require('./routes/alumni.routes'));
 app.use('/api/hackathon',   require('./routes/hackathon'));
 app.use('/uploads', express.static(require('path').join(__dirname, '..', 'uploads')));
 app.use('/api/mail', require('./routes/mail'));
+app.use('/api/certificates', require('./routes/certificates'));
 
 // ─── 404 catch ─────────────────────────────────────────────────────────────────
 app.use((req, res) => {

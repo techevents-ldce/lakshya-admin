@@ -1,9 +1,21 @@
 import { jsPDF } from 'jspdf';
 
+// ─── Generate a unique SHA-256 hash for a certificate ────────────────────────
+export async function generateCertificateHash(member) {
+  const raw = `${member.fullName}|${member.email}|${Date.now()}|${Math.random()}`;
+  const encoded = new TextEncoder().encode(raw);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 /**
- * Convert an image Blob to a PDF Blob
+ * Convert an image Blob to a PDF Blob.
+ * Embeds the certificate `hash` in the PDF metadata (Keywords field)
+ * so it survives JPEG compression and can be read back during verification.
  */
-export async function convertBlobToPDF(imageBlob) {
+export async function convertBlobToPDF(imageBlob, hash = '') {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -12,13 +24,24 @@ export async function convertBlobToPDF(imageBlob) {
       img.onload = () => {
         const width = img.width;
         const height = img.height;
-        
+
         const doc = new jsPDF({
           orientation: width > height ? 'landscape' : 'portrait',
           unit: 'px',
           format: [width, height]
         });
-        
+
+        // ── Embed hash in PDF metadata (invisible, compression-proof) ──────
+        if (hash) {
+          doc.setProperties({
+            title: 'Lakshya TechFest Certificate',
+            subject: 'Certificate of Participation',
+            author: 'Lakshya TechFest',
+            keywords: `lakshya-cert:${hash}`,
+            creator: 'Lakshya Admin System',
+          });
+        }
+
         doc.addImage(imgData, 'JPEG', 0, 0, width, height, undefined, 'FAST');
         resolve(doc.output('blob'));
       };
@@ -108,20 +131,29 @@ export async function generateCertificate(
           // Draw member name
           ctx.fillText(member.fullName, config.namePosition.x, config.namePosition.y);
 
-          // Convert canvas to blob
-          canvas.toBlob((blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('Failed to generate certificate'));
-            }
-          }, 'image/jpeg', 0.8);
+          // Generate hash, then export canvas as blob
+          generateCertificateHash(member).then((hash) => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve({ blob, hash });
+              } else {
+                reject(new Error('Failed to generate certificate'));
+              }
+            }, 'image/jpeg', 0.92);
+          }).catch(() => {
+            // Fallback: no hash if crypto fails
+            canvas.toBlob((blob) => resolve({ blob, hash: null }), 'image/jpeg', 0.92);
+          });
         }).catch((err) => {
           console.error('Font load error:', err);
           // Fallback draw
           ctx.font = `${config.fontSize}px sans-serif`;
           ctx.fillText(member.fullName, config.namePosition.x, config.namePosition.y);
-          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+          generateCertificateHash(member).then((hash) => {
+            canvas.toBlob((blob) => resolve({ blob, hash }), 'image/jpeg', 0.92);
+          }).catch(() => {
+            canvas.toBlob((blob) => resolve({ blob, hash: null }), 'image/jpeg', 0.92);
+          });
         });
       } catch (error) {
         reject(error);
@@ -204,17 +236,17 @@ export async function generateBatchCertificates(
   for (let i = 0; i < members.length; i++) {
     const member = members[i];
     try {
-      const certificateImage = await generateCertificate(
+      const { blob: certificateImage, hash } = await generateCertificate(
         templateImage,
         member,
         config,
         fontFamily
       );
       
-      // Convert image to PDF as requested by user
-      const certificate = await convertBlobToPDF(certificateImage);
+      // Convert image to PDF — hash is embedded in PDF metadata
+      const certificate = await convertBlobToPDF(certificateImage, hash);
       
-      results.push({ member, certificate });
+      results.push({ member, certificate, hash });
     } catch (error) {
       console.error(`Failed to generate certificate for ${member.fullName}:`, error);
     }
