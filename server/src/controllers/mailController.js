@@ -502,20 +502,40 @@ async function parseExcel(filePath) {
   return emails;
 }
 
-// ─── POST /api/mail/send-certificate — Send single certificate with PDF ────────
+// ─── POST /api/mail/send-certificate — Send certificate(s) with PDF attachment(s) ─
+//
+// Accepts two shapes (both backward-compatible):
+//   Legacy : { to, subject, html, attachment (base64), filename }
+//   New    : { to, subject, html, attachments: [{ content (base64), filename }] }
+//
+// When multiple members share the same email the client sends the "new" shape
+// so every person's PDF is included as a separate named attachment in one email.
 exports.sendCertificate = asyncHandler(async (req, res) => {
-  const { to, subject, html, attachment, filename, senderIdentity = 'updates' } = req.body;
+  const { to, subject, html, attachment, filename, attachments, senderIdentity = 'updates' } = req.body;
 
-  if (!to || !subject || !html || !attachment) {
-    throw new AppError('Missing required fields (to, subject, html, attachment)', 400, 'MISSING_FIELDS');
+  if (!to || !subject || !html) {
+    throw new AppError('Missing required fields (to, subject, html)', 400, 'MISSING_FIELDS');
+  }
+
+  // Normalise to an array of { content, filename } objects
+  let normalizedAttachments;
+  if (Array.isArray(attachments) && attachments.length > 0) {
+    // New format — validate each entry has content
+    const invalid = attachments.some((a) => !a.content);
+    if (invalid) throw new AppError('Each attachment must include a content field', 400, 'MISSING_FIELDS');
+    normalizedAttachments = attachments;
+  } else if (attachment) {
+    // Legacy format — wrap single base64 string
+    normalizedAttachments = [{ content: attachment, filename: filename || 'Certificate.pdf' }];
+  } else {
+    throw new AppError('Missing required field: attachment or attachments', 400, 'MISSING_FIELDS');
   }
 
   const result = await sendEmailWithAttachment({
     to,
     subject,
     html,
-    attachment,
-    filename,
+    attachments: normalizedAttachments,
     senderIdentity
   });
 

@@ -315,12 +315,30 @@ const sendSingleEmail = async (recipient, subject, body, template = 'raw', sende
 };
 
 /**
- * Send an email with a base64 encoded attachment.
- * Specifically designed for certificate delivery.
+ * Send an email with one or more base64-encoded PDF attachments.
+ * Designed for certificate delivery — supports multiple certs in a single email
+ * when several members share the same email address.
+ *
+ * @param {Object}   opts
+ * @param {string}   opts.to               – Recipient email address.
+ * @param {string}   opts.subject
+ * @param {string}   opts.html
+ * @param {Array}    opts.attachments       – Array of { content: base64, filename }.
+ * @param {string}   [opts.senderIdentity]
  */
-const sendEmailWithAttachment = async ({ to, subject, html, attachment, filename, senderIdentity = 'updates' }) => {
+const sendEmailWithAttachment = async ({ to, subject, html, attachments, senderIdentity = 'updates' }) => {
   const fromAddress = SENDER_IDENTITIES[senderIdentity];
   if (!fromAddress) return { success: false, error: 'Invalid sender identity' };
+
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return { success: false, error: 'No attachments provided' };
+  }
+
+  // Map to Resend's expected shape: { filename, content }
+  const resendAttachments = attachments.map((a) => ({
+    filename: a.filename || 'Certificate.pdf',
+    content: a.content,  // Base64 string
+  }));
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -330,12 +348,7 @@ const sendEmailWithAttachment = async ({ to, subject, html, attachment, filename
         to,
         subject,
         html,
-        attachments: [
-          {
-            filename: filename || 'Attachment.pdf',
-            content: attachment, // Base64 content
-          },
-        ],
+        attachments: resendAttachments,
       });
 
       if (result.error) {

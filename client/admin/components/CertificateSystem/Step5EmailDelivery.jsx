@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   sendCertificates,
+  memberKey,
   validateEmailConfig,
   loadCheckpoint,
   clearCheckpoint,
@@ -49,10 +50,12 @@ export const Step5EmailDelivery = ({
   }, []);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+  // Keys are "email|fullName" (via memberKey) so multiple members sharing
+  // the same email address never overwrite each other's certificate.
   const buildCertificateMap = useCallback(() => {
     const map = new Map();
     certificates.forEach(({ member, certificate }) => {
-      map.set(member.email, certificate);
+      map.set(memberKey(member), certificate);
     });
     return map;
   }, [certificates]);
@@ -60,7 +63,7 @@ export const Step5EmailDelivery = ({
   const buildHashMap = useCallback(() => {
     const map = new Map();
     certificates.forEach(({ member, hash }) => {
-      if (hash) map.set(member.email, hash);
+      if (hash) map.set(memberKey(member), hash);
     });
     return map;
   }, [certificates]);
@@ -172,12 +175,21 @@ export const Step5EmailDelivery = ({
     setError('');
     setQuotaStopped(false);
 
-    const failedEmails = new Set(progress.failedRecipients.map((r) => r.email));
+    // Build Set of failed memberKeys ("email|fullName") — not just emails —
+    // so members who share an inbox are still individually tracked.
+    const failedMemberKeys = new Set(
+      progress.failedRecipients.map((r) => memberKey({ email: r.email, fullName: r.name || '' }))
+    );
+
+    // alreadySent = memberKey strings for everyone NOT in the failed set
+    const alreadySent = new Set(
+      members
+        .filter((m) => !failedMemberKeys.has(memberKey(m)))
+        .map((m) => memberKey(m))
+    );
+
     const certificateMap = buildCertificateMap();
     const hashMap = buildHashMap();
-
-    // Already-sent = everyone NOT in failed list
-    const alreadySent = new Set(members.map((m) => m.email).filter((e) => !failedEmails.has(e)));
 
     setSending(true);
     try {
@@ -233,7 +245,9 @@ export const Step5EmailDelivery = ({
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
-  const sentCount = progress?.sentEmails?.length ?? progress?.sent ?? 0;
+  // Use progress.sent (member count) not sentEmails.length (unique email count)
+  // so the percentage is correct when multiple members share one email address.
+  const sentCount = progress?.sent ?? 0;
   const totalCount = progress?.total ?? members.length;
   const pct = totalCount > 0 ? Math.round((sentCount / totalCount) * 100) : 0;
 
@@ -478,9 +492,17 @@ export const Step5EmailDelivery = ({
                 </summary>
                 <div className="max-h-40 overflow-y-auto bg-slate-900/50 p-3 rounded-lg border border-slate-800 mt-2">
                   <ul className="text-xs space-y-1">
-                    {progress.sentEmails.map((email, idx) => (
-                      <li key={idx} className="text-emerald-400/80">✓ {email}</li>
-                    ))}
+                    {progress.sentEmails.map((key, idx) => {
+                      // sentEmails stores memberKey strings: "email|fullName"
+                      const pipeIdx = key.indexOf('|');
+                      const email = pipeIdx !== -1 ? key.slice(0, pipeIdx) : key;
+                      const name  = pipeIdx !== -1 ? key.slice(pipeIdx + 1) : '';
+                      return (
+                        <li key={idx} className="text-emerald-400/80">
+                          ✓ {name ? `${name} (${email})` : email}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </details>
@@ -494,7 +516,9 @@ export const Step5EmailDelivery = ({
                   <ul className="text-xs space-y-1">
                     {progress.failedRecipients.map((recipient, idx) => (
                       <li key={idx} className="text-slate-400">
-                        <span className="text-red-400 font-semibold">{recipient.email}</span>:{' '}
+                        <span className="text-red-400 font-semibold">
+                          {recipient.name ? `${recipient.name} (${recipient.email})` : recipient.email}
+                        </span>:{' '}
                         {recipient.error}
                       </li>
                     ))}
